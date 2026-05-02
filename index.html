@@ -24,18 +24,27 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;min-h
 .auth-btn:disabled{opacity:.6;cursor:not-allowed}
 .auth-error{font-size:.8rem;color:#dc2626;margin-top:10px;text-align:center;min-height:20px}
 
-/* App */
+/* App shell */
 #app-screen{display:none;min-height:100vh;flex-direction:column}
-header{background:linear-gradient(135deg,#1a3c5e,#2d6a9f);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header{background:linear-gradient(135deg,#1a3c5e,#2d6a9f);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
 header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .header-right{display:flex;align-items:center;gap:12px}
 .user-badge{font-size:.78rem;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:20px}
 .logout-btn{font-size:.78rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;transition:background .2s}
 .logout-btn:hover{background:rgba(255,255,255,.22)}
 
-main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
+/* Portal nav */
+#portal-nav{background:#fff;border-bottom:2px solid #e0e6f0;display:flex;gap:0;padding:0 20px;flex-wrap:wrap;flex-shrink:0}
+.pnav-btn{padding:12px 18px;cursor:pointer;font-size:.85rem;font-weight:600;color:#666;border:none;background:none;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+.pnav-btn.active{color:#1a3c5e;border-bottom-color:#2d6a9f}
+.pnav-btn:hover{color:#1a3c5e}
 
-/* Search */
+/* Pages */
+.portal-page{display:none;flex:1}
+.portal-page.active{display:flex;flex-direction:column}
+
+/* Search page */
+#page-search main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
 .search-box{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:20px}
 .search-box h2{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:14px}
 .search-row{display:flex;gap:10px}
@@ -71,9 +80,15 @@ main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
 .loading{text-align:center;padding:40px;color:#6b7280;font-size:.9rem}
 .err-box{padding:14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:.85rem}
 
-/* Admin panel */
-#admin-panel{margin-top:24px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:20px}
-#admin-panel h2{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:14px}
+/* KPI iframe */
+#page-kpi{flex-direction:column}
+#kpi-frame{flex:1;border:none;width:100%;min-height:calc(100vh - 104px)}
+
+/* Config page */
+#page-config main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
+.admin-box{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:20px}
+.admin-box h2{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:6px}
+.admin-box p{font-size:.8rem;color:#6b7280;margin-bottom:14px}
 .admin-table{width:100%;border-collapse:collapse;font-size:.83rem}
 .admin-table th{text-align:left;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.4px}
 .admin-table td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
@@ -91,7 +106,7 @@ main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
   <div class="auth-card">
     <div class="logo">
       <h1>🏠 Portal Figueira Home</h1>
-      <p>Pesquisa IA de Oportunidades</p>
+      <p>Pesquisa IA · KPI Dashboard</p>
     </div>
     <div class="auth-field">
       <label>Email</label>
@@ -115,34 +130,52 @@ main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
-  <main>
-    <div class="search-box">
-      <h2>Pesquisa de Oportunidades</h2>
-      <div class="search-row">
-        <textarea id="q" placeholder="Ex: clientes que procuram T2 com urgência, angariações sem tarefa..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doSearch()}"></textarea>
-        <button id="search-btn" onclick="doSearch()">Pesquisar</button>
-      </div>
-      <div class="suggestions">
-        <button class="sug" onclick="setSug(this)">Leads mais activos</button>
-        <button class="sug" onclick="setSug(this)">Angariações sem tarefa ou em atraso</button>
-        <button class="sug" onclick="setSug(this)">Clientes com proposta activa</button>
-        <button class="sug" onclick="setSug(this)">Oportunidades de venda com urgência</button>
-        <button class="sug" onclick="setSug(this)">Tarefas em atraso</button>
-      </div>
-    </div>
 
-    <div id="results"></div>
+  <nav id="portal-nav">
+    <button class="pnav-btn active" id="tab-search" onclick="showTab('search')">🔍 Pesquisa IA</button>
+    <button class="pnav-btn" id="tab-kpi" style="display:none" onclick="showTab('kpi')">📊 KPI Dashboard</button>
+    <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
+  </nav>
 
-    <!-- Painel admin: mapeamento ego_responsavel -->
-    <div id="admin-panel" style="display:none">
-      <h2>⚙️ Mapeamento Consultores → eGO</h2>
-      <p style="font-size:.8rem;color:#6b7280;margin-bottom:12px">Define o nome exacto de cada consultor no campo "responsavel" do eGO para que a pesquisa seja filtrada correctamente.</p>
-      <table class="admin-table">
-        <thead><tr><th>Utilizador</th><th>Email</th><th>Nome no eGO (responsavel)</th><th></th></tr></thead>
-        <tbody id="admin-tbody"></tbody>
-      </table>
-    </div>
-  </main>
+  <!-- Pesquisa IA -->
+  <div class="portal-page active" id="page-search">
+    <main>
+      <div class="search-box">
+        <h2>Pesquisa de Oportunidades</h2>
+        <div class="search-row">
+          <textarea id="q" placeholder="Ex: clientes que procuram T2 com urgência, angariações sem tarefa..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doSearch()}"></textarea>
+          <button id="search-btn" onclick="doSearch()">Pesquisar</button>
+        </div>
+        <div class="suggestions">
+          <button class="sug" onclick="setSug(this)">Leads mais activos</button>
+          <button class="sug" onclick="setSug(this)">Angariações sem tarefa ou em atraso</button>
+          <button class="sug" onclick="setSug(this)">Clientes com proposta activa</button>
+          <button class="sug" onclick="setSug(this)">Oportunidades de venda com urgência</button>
+          <button class="sug" onclick="setSug(this)">Tarefas em atraso</button>
+        </div>
+      </div>
+      <div id="results"></div>
+    </main>
+  </div>
+
+  <!-- KPI Dashboard (admin only) -->
+  <div class="portal-page" id="page-kpi">
+    <iframe id="kpi-frame" src="" allowfullscreen></iframe>
+  </div>
+
+  <!-- Configuração (admin only) -->
+  <div class="portal-page" id="page-config">
+    <main>
+      <div class="admin-box">
+        <h2>⚙️ Mapeamento Consultores → eGO</h2>
+        <p>Define o nome exacto de cada consultor no campo "responsavel" do eGO para que a pesquisa seja filtrada correctamente.</p>
+        <table class="admin-table">
+          <thead><tr><th>Utilizador</th><th>Email</th><th>Nome no eGO (responsavel)</th><th></th></tr></thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script>
@@ -153,6 +186,7 @@ var EGO_EDGE = 'https://zphasvfopnbzwnaidsnw.supabase.co/functions/v1/query-lead
 
 var sb = supabase.createClient(DOORSTEP_URL, DOORSTEP_ANON)
 var _profile = null
+var _kpiLoaded = false
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 async function doLogin() {
@@ -172,9 +206,12 @@ async function doLogin() {
 async function doLogout() {
   await sb.auth.signOut()
   _profile = null
+  _kpiLoaded = false
+  document.getElementById('kpi-frame').src = ''
   document.getElementById('app-screen').style.display = 'none'
   document.getElementById('auth-screen').style.display = 'flex'
   document.getElementById('results').innerHTML = ''
+  showTab('search')
 }
 
 document.getElementById('email').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('password').focus() })
@@ -191,12 +228,30 @@ async function loadApp() {
   document.getElementById('app-screen').style.display = 'flex'
   document.getElementById('app-screen').style.flexDirection = 'column'
 
-  if (_profile.role === 'admin') await loadAdminPanel()
+  if (_profile.role === 'admin') {
+    document.getElementById('tab-kpi').style.display = 'block'
+    document.getElementById('tab-config').style.display = 'block'
+    loadAdminPanel()
+  }
 }
 
-// ── Admin panel ──────────────────────────────────────────────────────────────
+// ── Tab navigation ───────────────────────────────────────────────────────────
+function showTab(name) {
+  ['search','kpi','config'].forEach(function(n) {
+    var page = document.getElementById('page-'+n)
+    var btn = document.getElementById('tab-'+n)
+    if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
+    if (btn) btn.className = 'pnav-btn' + (n === name ? ' active' : '')
+  })
+  // Lazy-load KPI iframe on first open
+  if (name === 'kpi' && !_kpiLoaded) {
+    _kpiLoaded = true
+    document.getElementById('kpi-frame').src = '/dashboard.html'
+  }
+}
+
+// ── Admin panel (Configuração) ────────────────────────────────────────────────
 async function loadAdminPanel() {
-  document.getElementById('admin-panel').style.display = 'block'
   var { data: profiles } = await sb.from('profiles').select('user_id,nome,email,ego_responsavel').order('nome')
   var tbody = document.getElementById('admin-tbody')
   tbody.innerHTML = ''
@@ -233,7 +288,6 @@ async function doSearch() {
   res.innerHTML = '<div class="loading">🔍 A analisar a pergunta e pesquisar oportunidades...</div>'
 
   var body = { question: q }
-  // consultor: forçar filtro pelo seu responsavel no eGO
   if (_profile && _profile.role !== 'admin' && _profile.ego_responsavel) {
     body.force_responsavel = _profile.ego_responsavel
   }
@@ -271,7 +325,6 @@ function renderResults(data, q) {
   results.forEach(function(r) {
     var isHot = r.hot === true
     h += '<div class="card'+(isHot?' hot':'')+'">'
-    // Header
     h += '<div class="card-header">'
     if (isHot) h += '<span title="Lead quente">🔥</span>'
     h += '<span class="card-ref">'+esc(r.oportunidade_ref)+'</span>'
