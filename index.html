@@ -61,7 +61,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 #results{margin-top:20px;display:grid;gap:10px}
 .result-meta{font-size:.82rem;color:#6b7280;margin-bottom:4px}
 .card{background:#fff;border:1px solid #e5e7eb;border-left:4px solid #2d6a9f;border-radius:8px;padding:12px 16px}
-.card.hot{background:#fff7f7;border-color:#fca5a5;border-left-color:#dc2626}
+.card.hot{background:#fff7f7;border-color:#fca5a5;border-left-color:#dc2626}.card.engano{background:#f9fafb;border-color:#e5e7eb;border-left-color:#9ca3af;opacity:.75}.card-summary.engano-sum{background:#f3f4f6;border-left-color:#d1d5db;color:#9ca3af}
 .card-header{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .card-ref{font-weight:700;color:#1a3c5e;font-size:.92rem}
 .card-client{color:#374151;font-size:.83rem}
@@ -311,26 +311,61 @@ function renderResults(data, q) {
   var res = document.getElementById('results')
   var results = data.results || []
   var descr = data.description || ''
+  var qs = data.quality_stats || null
+  var modoQualidade = data.mostrar_qualidade === true
+
   if (!results.length) {
     res.innerHTML = '<div style="padding:16px;color:#6b7280">Nenhum resultado para: <em>'+esc(q)+'</em></div>'
     return
   }
-  var hotCount = results.filter(function(r){ return r.hot }).length
+
+  var hotCount = results.filter(function(r){ return r.hot && !r.engano }).length
+  var enganoCount = results.filter(function(r){ return r.engano }).length
+
   var h = '<div class="result-meta">'
     + (descr ? '<em>'+esc(descr)+'</em> — ' : '')
     + '<strong>'+results.length+'</strong> resultado(s)'
-    + (hotCount ? ' · <span style="color:#dc2626;font-weight:700">🔥 '+hotCount+' hot</span>' : '')
+    + (hotCount ? ' · <span style="color:#dc2626;font-weight:700">🔥 '+hotCount+' quentes</span>' : '')
+    + (enganoCount ? ' · <span style="color:#9ca3af;font-weight:600">❌ '+enganoCount+' engano</span>' : '')
     + '</div>'
 
+  // Painel de qualidade
+  if (modoQualidade && qs) {
+    var pctHot = qs.total > 0 ? Math.round((qs.hot / qs.total) * 100) : 0
+    var pctEngano = qs.total > 0 ? Math.round((qs.engano / qs.total) * 100) : 0
+    var pctCold = 100 - pctHot - pctEngano
+    var indexCor = pctHot >= 40 ? '#15803d' : pctHot >= 20 ? '#b45309' : '#dc2626'
+    h += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin-bottom:18px">'
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">'
+    h += '<span style="font-weight:700;color:#1a3c5e;font-size:.95rem">📊 Índice de Qualidade</span>'
+    h += '<span style="font-size:2rem;font-weight:800;color:'+indexCor+'">'+pctHot+'%</span>'
+    h += '</div>'
+    h += '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:10px">'
+    if (pctHot > 0) h += '<div style="width:'+pctHot+'%;background:#16a34a" title="Quentes: '+qs.hot+'"></div>'
+    if (pctCold > 0) h += '<div style="width:'+pctCold+'%;background:#93c5fd" title="Frias: '+qs.cold+'"></div>'
+    if (pctEngano > 0) h += '<div style="width:'+pctEngano+'%;background:#d1d5db" title="Engano: '+qs.engano+'"></div>'
+    h += '</div>'
+    h += '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.78rem;color:#4b5563">'
+    h += '<span><span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;margin-right:4px"></span>🔥 Quentes: <strong>'+qs.hot+'</strong> ('+pctHot+'%)</span>'
+    h += '<span><span style="display:inline-block;width:10px;height:10px;background:#93c5fd;border-radius:2px;margin-right:4px"></span>❄️ Frias: <strong>'+qs.cold+'</strong> ('+pctCold+'%)</span>'
+    if (qs.engano > 0) h += '<span><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px;margin-right:4px"></span>❌ Engano: <strong>'+qs.engano+'</strong> ('+pctEngano+'%)</span>'
+    if (qs.sem_notas > 0) h += '<span style="color:#9ca3af">⚪ Sem notas: <strong>'+qs.sem_notas+'</strong></span>'
+    h += '</div>'
+    h += '</div>'
+  }
+
   results.forEach(function(r) {
-    var isHot = r.hot === true
-    h += '<div class="card'+(isHot?' hot':'')+'">'
+    var isHot = r.hot === true && !r.engano
+    var isEngano = r.engano === true
+    h += '<div class="card'+(isEngano?' engano':(isHot?' hot':''))+'">'
     h += '<div class="card-header">'
-    if (isHot) h += '<span title="Lead quente">🔥</span>'
-    h += '<span class="card-ref">'+esc(r.oportunidade_ref)+'</span>'
+    if (isEngano) h += '<span title="Lead inválida — engano">❌</span>'
+    else if (isHot) h += '<span title="Lead quente">🔥</span>'
+    h += '<span class="card-ref" style="'+(isEngano?'text-decoration:line-through;color:#9ca3af':'')+'">'+esc(r.oportunidade_ref)+'</span>'
     if (r.cliente_nome) h += '<span class="card-client">· '+esc(r.cliente_nome)+'</span>'
     if (r.tipo_oportunidade) h += '<span class="card-resp">'+esc(r.tipo_oportunidade)+'</span>'
     if (r.responsavel && (!_profile || _profile.role === 'admin')) h += '<span class="card-resp">'+esc(r.responsavel)+'</span>'
+    if (r.origem_label) h += '<span style="background:#f1f5f9;color:#475569;font-size:.68rem;padding:1px 6px;border-radius:10px;border:1px solid #e2e8f0">'+esc(r.origem_label)+'</span>'
     if (r.url) h += '<a class="card-link" href="'+esc(r.url)+'" target="_blank" rel="noopener">Ver no eGO ↗</a>'
     else h += '<span style="font-size:.74rem;color:#9ca3af;margin-left:auto">'+esc(r.oportunidade_ref)+'</span>'
     h += '</div>'
@@ -344,37 +379,38 @@ function renderResults(data, q) {
     if (preco) iparts.push(new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(preco))
     if (iparts.length) h += '<div class="card-imovel">🏠 '+esc(iparts.join(' · '))+'</div>'
     else if (r.preferencia_imovel) h += '<div class="card-imovel">🔍 '+esc(r.preferencia_imovel)+'</div>'
-    // Meta
-    var diasDesde = ''; var corData = '#6b7280'
-    if (r.ultimo_contacto) {
-      var dias = Math.floor((Date.now() - new Date(r.ultimo_contacto).getTime()) / 86400000)
-      diasDesde = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há '+dias+' dias'
-      corData = dias <= 14 ? '#15803d' : dias <= 60 ? '#b45309' : '#dc2626'
-    }
-    if (r.etapa_atual || r.ultimo_contacto || r.ego_data_criacao) {
-      h += '<div class="card-meta">'
-      if (r.etapa_atual) h += '<span>'+esc(r.etapa_atual)+(r.estado_proposta?' · '+esc(r.estado_proposta):'')+'</span>'
-      if (r.ultimo_contacto) h += '<span style="color:'+corData+';font-weight:600">📅 '+esc(diasDesde)+'</span>'
-      if (r.ego_data_criacao) h += '<span>criado '+esc(r.ego_data_criacao)+'</span>'
+    // Meta e tarefa apenas se não for engano
+    if (!isEngano) {
+      var diasDesde = ''; var corData = '#6b7280'
+      if (r.ultimo_contacto) {
+        var dias = Math.floor((Date.now() - new Date(r.ultimo_contacto).getTime()) / 86400000)
+        diasDesde = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há '+dias+' dias'
+        corData = dias <= 14 ? '#15803d' : dias <= 60 ? '#b45309' : '#dc2626'
+      }
+      if (r.etapa_atual || r.ultimo_contacto || r.ego_data_criacao) {
+        h += '<div class="card-meta">'
+        if (r.etapa_atual) h += '<span>'+esc(r.etapa_atual)+(r.estado_proposta?' · '+esc(r.estado_proposta):'')+'</span>'
+        if (r.ultimo_contacto) h += '<span style="color:'+corData+';font-weight:600">📅 '+esc(diasDesde)+'</span>'
+        if (r.ego_data_criacao) h += '<span>criado '+esc(r.ego_data_criacao)+'</span>'
+        h += '</div>'
+      }
+      h += '<div class="card-tarefa">'
+      if (r.tarefa) {
+        var t = r.tarefa
+        if (t.atrasada) {
+          var atr = t.dias_atraso > 0 ? ' · '+t.dias_atraso+' dia'+(t.dias_atraso===1?'':'s')+' atraso' : ''
+          h += '<span class="tag-red">⚠ '+esc(t.titulo)+esc(atr)+'</span>'
+        } else {
+          h += '<span class="tag-green">📋 '+esc(t.titulo)+(t.due?' · '+esc(t.due):'')+'</span>'
+        }
+      } else {
+        h += '<span class="tag-gray">sem tarefa</span>'
+      }
       h += '</div>'
     }
-    // Tarefa
-    h += '<div class="card-tarefa">'
-    if (r.tarefa) {
-      var t = r.tarefa
-      if (t.atrasada) {
-        var atr = t.dias_atraso > 0 ? ' · '+t.dias_atraso+' dia'+(t.dias_atraso===1?'':'s')+' atraso' : ''
-        h += '<span class="tag-red">⚠ '+esc(t.titulo)+esc(atr)+'</span>'
-      } else {
-        h += '<span class="tag-green">📋 '+esc(t.titulo)+(t.due?' · '+esc(t.due):'')+'</span>'
-      }
-    } else {
-      h += '<span class="tag-gray">sem tarefa</span>'
-    }
-    h += '</div>'
-    // Notas
+    // Notas/summary
     if (r.summary) {
-      h += '<div class="card-summary'+(isHot?' hot-sum':'')+'">'+esc(r.summary)+'</div>'
+      h += '<div class="card-summary'+(isEngano?' engano-sum':(isHot?' hot-sum':''))+'">'+esc(r.summary)+'</div>'
     } else if (r.notas_preview && r.notas_preview.length) {
       h += '<div class="card-preview">'
       r.notas_preview.forEach(function(n){ h += '<div>· '+esc(n)+'</div>' })
