@@ -392,6 +392,7 @@ function renderResults(data, q) {
         if (r.etapa_atual) h += '<span>'+esc(r.etapa_atual)+(r.estado_proposta?' · '+esc(r.estado_proposta):'')+'</span>'
         if (r.ultimo_contacto) h += '<span style="color:'+corData+';font-weight:600">📅 '+esc(diasDesde)+'</span>'
         if (r.ego_data_criacao) h += '<span>criado '+esc(r.ego_data_criacao)+'</span>'
+        if (r.ego_editado_em && r.ego_editado_em !== r.ego_data_criacao) h += '<span style="color:#6b7280">✏️ editado '+esc(r.ego_editado_em)+'</span>'
         h += '</div>'
       }
       h += '<div class="card-tarefa">'

@@ -1356,8 +1356,184 @@ function origAllAnos() {
   return [...s].sort().reverse();
 }
 
-function origInit() { origAno = 'all'; origRender(); }
-function origSetAno(a) { origAno = a; origRender(); }
+let origMode = 'vend';
+let origCapCache = {};
+
+function origInit() { origAno = 'all'; origMode = 'vend'; origCapCache = {}; origRender(); }
+function origSetAno(a) {
+  origAno = a;
+  origRender();
+  if (origMode === 'cap' && !origCapCache[a]) origFetchCap(a);
+}
+function origSetMode(m) {
+  origMode = m;
+  origRender();
+  if (m === 'cap' && !origCapCache[origAno]) origFetchCap(origAno);
+}
+
+async function origFetchCap(ano) {
+  let url = _SB_URL + '/rest/v1/oportunidades?select=origem,sub_origem,oportunidade_estado'
+    + '&tipo_oportunidade=ilike.*Angaria*';
+  if (ano !== 'all') {
+    url += '&ego_data_criacao=gte.' + ano + '-01-01&ego_data_criacao=lte.' + ano + '-12-31';
+  } else {
+    url += '&ego_data_criacao=gte.2020-01-01';
+  }
+  try {
+    const r = await fetch(url, {
+      headers: { 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON, 'Range': '0-4999' }
+    });
+    const rows = await r.json();
+    const agg = {};
+    (Array.isArray(rows) ? rows : []).forEach(function(row) {
+      const orig = row.origem || 'Sem origem';
+      const sub  = row.sub_origem || '';
+      const key  = orig + '|||' + sub;
+      if (!agg[key]) agg[key] = { origem: orig, sub_origem: sub, total: 0, ganhas: 0, perdidas: 0 };
+      agg[key].total++;
+      if (row.oportunidade_estado === 'Ganha')   agg[key].ganhas++;
+      if (row.oportunidade_estado === 'Perdida') agg[key].perdidas++;
+    });
+    origCapCache[ano] = Object.values(agg).sort(function(a,b) { return b.total - a.total; });
+  } catch(e) {
+    origCapCache[ano] = { error: e.message };
+  }
+  if (origMode === 'cap') origRender();
+}
+
+function origCapRender(sec, pills) {
+  const ano = origAno;
+  const data = origCapCache[ano];
+
+  if (!data) {
+    sec.innerHTML = '<div style="padding:20px">' + origModeToggle() + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px"><span style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px">Ano</span>' + pills + '</div>'
+      + '<div style="padding:40px;text-align:center;color:#0d9488;font-size:.9rem">⏳ A carregar dados de angariação…</div></div>';
+    return;
+  }
+  if (data.error) {
+    sec.innerHTML = '<div style="padding:20px"><div style="color:#991b1b;padding:16px;background:#fef2f2;border-radius:8px">Erro: ' + data.error + '</div></div>';
+    return;
+  }
+
+  // Group by origem
+  const byOrig = {};
+  data.forEach(function(r) {
+    if (!byOrig[r.origem]) byOrig[r.origem] = { total:0, ganhas:0, perdidas:0, subs:[] };
+    byOrig[r.origem].total   += r.total;
+    byOrig[r.origem].ganhas  += r.ganhas;
+    byOrig[r.origem].perdidas+= r.perdidas;
+    if (r.sub_origem) byOrig[r.origem].subs.push(r);
+  });
+  const origens = Object.entries(byOrig).sort(function(a,b) { return b[1].total - a[1].total; });
+  const totalAll  = origens.reduce(function(s,e){return s+e[1].total;}, 0);
+  const ganhasAll = origens.reduce(function(s,e){return s+e[1].ganhas;}, 0);
+  const maxTotal  = origens.length ? origens[0][1].total : 1;
+
+  const CAP_COLORS = {
+    'Recomendação':'#16a34a','Internet':'#2563eb','Loja/Agência':'#9333ea',
+    'Outros':'#94a3b8','Sem origem':'#d1d5db'
+  };
+  function capColor(orig) {
+    for (const k of Object.keys(CAP_COLORS)) { if (orig.startsWith(k)) return CAP_COLORS[k]; }
+    return '#64748b';
+  }
+
+  // Cards
+  let cards = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px">';
+  origens.forEach(function(entry) {
+    const orig = entry[0], d = entry[1];
+    const col = capColor(orig);
+    const pct = totalAll > 0 ? (d.total/totalAll*100).toFixed(1) : '0';
+    const convG = d.total > 0 ? (d.ganhas/d.total*100).toFixed(1) : '—';
+    cards += '<div style="background:#fff;border:1px solid #e8edf3;border-radius:10px;padding:14px 18px;min-width:130px;flex:1;max-width:200px;border-top:3px solid '+col+'">'
+           + '<div style="font-size:.7rem;font-weight:700;color:'+col+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">'+orig+'</div>'
+           + '<div style="font-size:1.5rem;font-weight:800;color:#1a3c5e">'+d.total.toLocaleString('pt-PT')+'</div>'
+           + '<div style="font-size:.72rem;color:#888;margin-top:2px">'+pct+'% &nbsp;·&nbsp; G <span style="color:#1a7a3c;font-weight:700">'+convG+'%</span></div>'
+           + '</div>';
+  });
+  cards += '</div>';
+
+  // Summary badge
+  const badge = '<div style="font-size:.8rem;color:#6b7280;margin-bottom:16px">'
+    + '<strong style="color:#1a3c5e">'+totalAll.toLocaleString('pt-PT')+'</strong> angariações'
+    + (ano !== 'all' ? ' em <strong>'+ano+'</strong>' : ' desde 2020')
+    + ' &nbsp;·&nbsp; <strong style="color:#166534">'+ganhasAll+'</strong> ganhas'
+    + ' &nbsp;·&nbsp; conv. global <strong style="color:'+(ganhasAll/totalAll>=0.1?'#166534':'#991b1b')+'">'+(totalAll>0?(ganhasAll/totalAll*100).toFixed(1):'0')+'%</strong>'
+    + '</div>';
+
+  // Table
+  const thS = 'padding:9px 12px;text-align:right;border-bottom:2px solid #dde3ed;font-size:.77rem;color:#555;font-weight:700;white-space:nowrap';
+  const thL = 'padding:9px 12px;text-align:left;border-bottom:2px solid #dde3ed;font-size:.77rem;color:#1a3c5e;font-weight:700';
+  let tbl = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem">';
+  tbl += '<thead><tr style="background:#f0f4f8">';
+  tbl += '<th style="'+thL+'">Origem / Sub-origem</th>';
+  tbl += '<th style="'+thS+'">Leads</th>';
+  tbl += '<th style="'+thS+'">Quota</th>';
+  tbl += '<th style="'+thS+'">Ganhas</th>';
+  tbl += '<th style="'+thS+'">Perdidas</th>';
+  tbl += '<th style="'+thS+'">Em curso</th>';
+  tbl += '<th style="'+thS+'">Conv. L→G</th>';
+  tbl += '<th style="'+thS+';min-width:120px">Distribuição</th>';
+  tbl += '</tr></thead><tbody>';
+
+  origens.forEach(function(entry, i) {
+    const orig = entry[0], d = entry[1];
+    const col    = capColor(orig);
+    const bg     = i%2===0 ? '#fff' : '#fafbfc';
+    const pct    = totalAll > 0 ? (d.total/totalAll*100).toFixed(1)+'%' : '—';
+    const emCurso= d.total - d.ganhas - d.perdidas;
+    const convG  = d.total > 0 ? (d.ganhas/d.total*100).toFixed(2)+'%' : '—';
+    const gColor = d.total > 0 ? (d.ganhas/d.total>=0.12?'#1a7a3c':d.ganhas/d.total>=0.06?'#e67e22':'#c0392b') : '#aaa';
+    const barW   = Math.round(d.total/maxTotal*100);
+    tbl += '<tr style="background:'+bg+';border-bottom:1px solid #eef0f3">';
+    tbl += '<td style="padding:8px 12px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+col+';margin-right:7px"></span><strong style="color:#1a3c5e">'+orig+'</strong></td>';
+    tbl += '<td style="padding:8px 12px;text-align:right;font-weight:700;color:#1a3c5e">'+d.total.toLocaleString('pt-PT')+'</td>';
+    tbl += '<td style="padding:8px 12px;text-align:right;color:#555">'+pct+'</td>';
+    tbl += '<td style="padding:8px 12px;text-align:right;font-weight:700;color:#1a7a3c">'+d.ganhas+'</td>';
+    tbl += '<td style="padding:8px 12px;text-align:right;color:#c0392b">'+d.perdidas+'</td>';
+    tbl += '<td style="padding:8px 12px;text-align:right;color:#888">'+emCurso+'</td>';
+    tbl += '<td style="padding:8px 12px;text-align:right"><span style="font-weight:700;color:'+gColor+'">'+convG+'</span></td>';
+    tbl += '<td style="padding:8px 12px"><div style="background:#e9ecef;border-radius:4px;height:14px;min-width:80px"><div style="width:'+barW+'%;height:100%;background:'+col+';border-radius:4px;opacity:.8"></div></div></td>';
+    tbl += '</tr>';
+    // Sub-origens
+    d.subs.sort(function(a,b){return b.total-a.total;}).forEach(function(sub) {
+      const sE = sub.total - sub.ganhas - sub.perdidas;
+      const sC = sub.total > 0 ? (sub.ganhas/sub.total*100).toFixed(2)+'%' : '—';
+      const sCCol = sub.total>0?(sub.ganhas/sub.total>=0.12?'#1a7a3c':sub.ganhas/sub.total>=0.06?'#e67e22':'#c0392b'):'#aaa';
+      const sBW = Math.round(sub.total/maxTotal*100);
+      const sPct = totalAll>0?(sub.total/totalAll*100).toFixed(1)+'%':'—';
+      tbl += '<tr style="background:'+bg+';border-bottom:1px solid #f3f4f6">';
+      tbl += '<td style="padding:5px 12px 5px 28px;color:#555">↳ '+sub.sub_origem+'</td>';
+      tbl += '<td style="padding:5px 12px;text-align:right;color:#444">'+sub.total+'</td>';
+      tbl += '<td style="padding:5px 12px;text-align:right;color:#888;font-size:.76rem">'+sPct+'</td>';
+      tbl += '<td style="padding:5px 12px;text-align:right;color:#166534">'+sub.ganhas+'</td>';
+      tbl += '<td style="padding:5px 12px;text-align:right;color:#991b1b">'+sub.perdidas+'</td>';
+      tbl += '<td style="padding:5px 12px;text-align:right;color:#9ca3af">'+sE+'</td>';
+      tbl += '<td style="padding:5px 12px;text-align:right;font-weight:600;color:'+sCCol+'">'+sC+'</td>';
+      tbl += '<td style="padding:5px 12px"><div style="background:#e9ecef;border-radius:4px;height:8px"><div style="width:'+sBW+'%;height:100%;background:'+col+';border-radius:4px;opacity:.5"></div></div></td>';
+      tbl += '</tr>';
+    });
+  });
+  tbl += '</tbody></table></div>';
+
+  sec.innerHTML =
+    '<div style="padding:20px">'
+    + origModeToggle()
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px">'
+    + '<span style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px">Ano</span>'
+    + pills + '</div>'
+    + badge + cards + tbl + '</div>';
+}
+
+function origModeToggle() {
+  const bStyle = function(active, col) {
+    return 'padding:7px 18px;border-radius:20px;border:2px solid '+(active?col:'#d1d5db')+';background:'+(active?col:'#fff')+';color:'+(active?'#fff':'#555')+';cursor:pointer;font-size:.83rem;font-weight:700;transition:all .15s';
+  };
+  return '<div style="display:flex;gap:8px;margin-bottom:18px">'
+    + '<button onclick="origSetMode(\'vend\')" style="'+bStyle(origMode==='vend','#2d6a9f')+'">🛒 Venda</button>'
+    + '<button onclick="origSetMode(\'cap\')" style="'+bStyle(origMode==='cap','#059669')+'">🏠 Angariação</button>'
+    + '</div>';
+}
 
 function origRender() {
   const sec = document.getElementById('orig-content');
@@ -1371,6 +1547,9 @@ function origRender() {
   anos.forEach(a => {
     pills += '<button onclick="origSetAno(this.dataset.a)" data-a="' + a + '" style="' + origPillStyle(origAno===a) + '">' + a + '</button>';
   });
+
+  // Delegate to angariação view if in cap mode
+  if (origMode === 'cap') { origCapRender(sec, pills); return; }
 
   // Gather totals per category
   const cats = ORIG_ORDER.filter(c => ov[c]);
@@ -1444,6 +1623,7 @@ function origRender() {
 
   sec.innerHTML =
     '<div style="padding:20px">'
+    + origModeToggle()
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
     + '<span style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px">Ano</span>'
     + pills + '</div>'
@@ -1618,9 +1798,11 @@ function origCostSave(el) {
 let analAno = 'all';
 let analSelCons = null;   // null = all; Set when user changes selection
 let analExpanded = new Set();
+let analOrigExpanded = new Set();
+let analOrigCache = {};
 
 function analInit(){
-  analAno = 'all'; analSelCons = null; analExpanded = new Set();
+  analAno = 'all'; analSelCons = null; analExpanded = new Set(); analOrigExpanded = new Set(); analOrigCache = {};
   analRender();
 }
 function analSetAno(a){ analAno=a; analRender(); }
@@ -1632,6 +1814,137 @@ function analToggleCons(c){
 function analToggleExpand(c){
   if(analExpanded.has(c)) analExpanded.delete(c); else analExpanded.add(c);
   analRender();
+}
+
+function analToggleOrig(resp){
+  if(analOrigExpanded.has(resp)){
+    analOrigExpanded.delete(resp);
+    analRender();
+  } else {
+    analOrigExpanded.add(resp);
+    const cacheKey = resp + '|' + analAno;
+    if(analOrigCache[cacheKey]){
+      analRender();
+    } else {
+      analRender(); // render loading state first
+      analFetchOrig(resp, analAno);
+    }
+  }
+}
+
+async function analFetchOrig(resp, ano){
+  const cacheKey = resp + '|' + ano;
+  let url = _SB_URL + '/rest/v1/oportunidades?select=origem,sub_origem,oportunidade_estado'
+    + '&tipo_oportunidade=ilike.*Angaria*'
+    + '&responsavel_nome=eq.' + encodeURIComponent(resp);
+  if(ano !== 'all'){
+    url += '&ego_data_criacao=gte.' + ano + '-01-01&ego_data_criacao=lte.' + ano + '-12-31';
+  } else {
+    url += '&ego_data_criacao=gte.2024-01-01';
+  }
+  try {
+    const r = await fetch(url, {
+      headers:{ 'apikey': _SB_ANON, 'Authorization': 'Bearer ' + _SB_ANON, 'Range': '0-999' }
+    });
+    const rows = await r.json();
+    const agg = {};
+    (Array.isArray(rows) ? rows : []).forEach(function(row){
+      const orig = row.origem || 'Sem origem';
+      const sub  = row.sub_origem || '';
+      const key  = orig + '|||' + sub;
+      if(!agg[key]) agg[key] = { origem: orig, sub_origem: sub, total: 0, ganhas: 0, perdidas: 0 };
+      agg[key].total++;
+      if(row.oportunidade_estado === 'Ganha')   agg[key].ganhas++;
+      if(row.oportunidade_estado === 'Perdida') agg[key].perdidas++;
+    });
+    analOrigCache[cacheKey] = Object.values(agg).sort(function(a,b){ return b.total - a.total; });
+  } catch(e){
+    analOrigCache[cacheKey] = { error: e.message };
+  }
+  analRender();
+}
+
+function analOrigRow(resp, ano){
+  const NCOLS = 11;
+  const cacheKey = resp + '|' + ano;
+  const data = analOrigCache[cacheKey];
+
+  if(!data){
+    return '<tr><td colspan="'+NCOLS+'" style="padding:10px 20px;background:#f0fdf9;font-size:.8rem;color:#0d9488">⏳ A carregar origens…</td></tr>';
+  }
+  if(data.error){
+    return '<tr><td colspan="'+NCOLS+'" style="padding:10px 20px;background:#fef2f2;font-size:.8rem;color:#991b1b">Erro: '+data.error+'</td></tr>';
+  }
+  if(!data.length){
+    return '<tr><td colspan="'+NCOLS+'" style="padding:10px 20px;background:#f0fdf9;font-size:.8rem;color:#888">Sem dados de origem para este período.</td></tr>';
+  }
+
+  // Group by origem
+  const byOrig = {};
+  data.forEach(function(r){
+    if(!byOrig[r.origem]) byOrig[r.origem] = [];
+    byOrig[r.origem].push(r);
+  });
+
+  const maxTotal = Math.max(1, ...data.map(function(r){ return r.total; }));
+  const totalAll = data.reduce(function(s,r){ return s+r.total; }, 0);
+  const ganhasAll = data.reduce(function(s,r){ return s+r.ganhas; }, 0);
+
+  const thS = 'padding:5px 8px;text-align:right;font-weight:700;color:#065f46;font-size:.74rem;border-bottom:1px solid #6ee7b7';
+  const thL = 'padding:5px 8px;text-align:left;font-weight:700;color:#065f46;font-size:.74rem;border-bottom:1px solid #6ee7b7';
+
+  let h = '<tr><td colspan="'+NCOLS+'" style="padding:0;background:#ecfdf5;border-bottom:3px solid #6ee7b7">';
+  h += '<div style="padding:12px 20px 16px">';
+  h += '<div style="font-size:.8rem;font-weight:700;color:#065f46;margin-bottom:2px">📊 Breakdown por Origem/Sub-origem'+(ano!=='all'?' — '+ano:' — 2024+')+'</div>';
+  h += '<div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">'+totalAll+' leads angariação · '+ganhasAll+' ganhas · conv. global '+(totalAll>0?(ganhasAll/totalAll*100).toFixed(1):'0')+'%</div>';
+  h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
+  h += '<thead><tr style="background:#d1fae5">';
+  h += '<th style="'+thL+'">Origem / Sub-origem</th>';
+  h += '<th style="'+thS+'">Leads</th>';
+  h += '<th style="'+thS+'">Ganhas</th>';
+  h += '<th style="'+thS+'">Perdidas</th>';
+  h += '<th style="'+thS+'">Em curso</th>';
+  h += '<th style="'+thS+'">Conv. %</th>';
+  h += '<th style="'+thS+';text-align:left;min-width:110px">Distribuição</th>';
+  h += '</tr></thead><tbody>';
+
+  Object.entries(byOrig).forEach(function(entry){
+    const orig = entry[0], rows = entry[1];
+    const oT = rows.reduce(function(s,r){return s+r.total;},0);
+    const oG = rows.reduce(function(s,r){return s+r.ganhas;},0);
+    const oP = rows.reduce(function(s,r){return s+r.perdidas;},0);
+    const oE = oT - oG - oP;
+    const oC = oT > 0 ? (oG/oT*100).toFixed(1)+'%' : '—';
+    const oCCol = oT>0 ? (oG/oT>=0.15?'#166534':oG/oT>=0.07?'#92400e':'#991b1b') : '#9ca3af';
+    const barW = Math.round(oT/maxTotal*100);
+    h += '<tr style="background:#f0fdf4;border-top:2px solid #a7f3d0">';
+    h += '<td style="padding:6px 10px;font-weight:700;color:#064e3b">📂 '+orig+'</td>';
+    h += '<td style="padding:6px 8px;text-align:right;font-weight:700;color:#1e3a5f">'+oT+'</td>';
+    h += '<td style="padding:6px 8px;text-align:right;font-weight:700;color:#166534">'+oG+'</td>';
+    h += '<td style="padding:6px 8px;text-align:right;color:#991b1b">'+oP+'</td>';
+    h += '<td style="padding:6px 8px;text-align:right;color:#6b7280">'+oE+'</td>';
+    h += '<td style="padding:6px 8px;text-align:right;font-weight:700;color:'+oCCol+'">'+oC+'</td>';
+    h += '<td style="padding:6px 8px"><div style="background:#bbf7d0;border-radius:4px;height:12px"><div style="width:'+barW+'%;height:100%;background:#059669;border-radius:4px"></div></div></td>';
+    h += '</tr>';
+    rows.filter(function(r){ return r.sub_origem; }).forEach(function(row){
+      const sC = row.total>0?(row.ganhas/row.total*100).toFixed(1)+'%':'—';
+      const sCCol = row.total>0?(row.ganhas/row.total>=0.15?'#166534':row.ganhas/row.total>=0.07?'#92400e':'#991b1b'):'#9ca3af';
+      const sBW = Math.round(row.total/maxTotal*100);
+      const sE = row.total - row.ganhas - row.perdidas;
+      h += '<tr style="border-top:1px solid #d1fae5">';
+      h += '<td style="padding:4px 10px 4px 22px;color:#374151">↳ '+row.sub_origem+'</td>';
+      h += '<td style="padding:4px 8px;text-align:right;color:#374151">'+row.total+'</td>';
+      h += '<td style="padding:4px 8px;text-align:right;color:#166534">'+row.ganhas+'</td>';
+      h += '<td style="padding:4px 8px;text-align:right;color:#991b1b">'+row.perdidas+'</td>';
+      h += '<td style="padding:4px 8px;text-align:right;color:#6b7280">'+sE+'</td>';
+      h += '<td style="padding:4px 8px;text-align:right;font-weight:600;color:'+sCCol+'">'+sC+'</td>';
+      h += '<td style="padding:4px 8px"><div style="background:#d1fae5;border-radius:4px;height:8px"><div style="width:'+sBW+'%;height:100%;background:#34d399;border-radius:4px;opacity:.8"></div></div></td>';
+      h += '</tr>';
+    });
+  });
+
+  h += '</tbody></table></div></div></td></tr>';
+  return h;
 }
 function analAllCons(){
   const s=new Set();
@@ -1889,8 +2202,10 @@ function analRender(){
     const r = analRates(d);
     const inSel = !analSelCons || analSelCons.has(resp);
     const isExp = analExpanded.has(resp);
+    const origOpen = analOrigExpanded.has(resp);
     const rowBg = inSel ? '#fff' : '#fafafa';
     const nameCol = inSel ? '#1a3c5e' : '#aaa';
+    const respEsc = resp.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     table += '<tr style="background:'+rowBg+';border-bottom:1px solid #eee">';
     table += '<td style="padding:7px 12px">';
     table += '<div style="display:flex;align-items:center;gap:8px">';
@@ -1900,7 +2215,9 @@ function analRender(){
     table += '</div></td>';
     ['cv','vp','pa','ag'].forEach(m=>{ table+='<td style="padding:6px 8px">'+analBar(r[m], inSel?avg[m]:null, maxOf(m))+'</td>'; });
     table += '<td style="padding:6px 8px;background:#f7fbff">'+analBar(r.tot, inSel?avg.tot:null, maxTot)+'</td>';
-    table += '<td style="padding:6px 8px;background:#f7fdf9">'+analBar(r.cmi, inSel?avg.cmi:null, maxCMI)+'</td>';
+    table += '<td style="padding:6px 8px;background:'+(origOpen?'#d1fae5':'#f7fdf9')+';cursor:pointer;user-select:none" onclick="analToggleOrig(\''+respEsc+'\')" title="Clica para ver breakdown por origem/sub-origem">'
+           + analBar(r.cmi, inSel?avg.cmi:null, maxCMI)
+           + '<div style="text-align:center;font-size:.62rem;color:#0d9488;margin-top:2px">'+(origOpen?'▲ fechar':'🔍 origens')+'</div></td>';
     const maxPACMI=maxOf('pa_cmi');
     table += '<td style="padding:6px 8px;background:#fffbf0">'+analBar(r.pa_cmi, inSel?avg.pa_cmi:null, maxPACMI)+'</td>';
     table += '<td style="padding:6px 8px;background:#f7f4ff">'+analNumBar(r.leads_cmi, inSel?avg.leads_cmi:null, maxLeadsCMI)+'</td>';
@@ -1909,6 +2226,7 @@ function analRender(){
     table += '<td style="padding:6px 10px;background:#f0fdf4">'+(inSel?stBar:'<span style="color:#ccc">—</span>')+'</td>';
     table += '<td style="padding:6px 8px">'+analSparkYears(resp,'tot')+'</td>';
     table += '</tr>';
+    if(origOpen) table += analOrigRow(resp, analAno);
     if(isExp) table += analYearTable(resp, selCons);
   });
 
