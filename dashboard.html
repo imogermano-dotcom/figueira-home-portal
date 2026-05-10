@@ -2041,7 +2041,7 @@ function analSparkYears(resp, metric){
 function analYearTable(resp, selCons){
   const anos = (D.anos_vend||[]).filter(a=>a>='2020');
   const cols = ['cv','vp','pa','ag','tot','cmi','pa_cmi','leads_cmi'];
-  const labels = {'cv':'C→V','vp':'V→P','pa':'P→A','ag':'A→G','tot':'Total','cmi':'CMI→G','pa_cmi':'PA/CMI','leads_cmi':'Leads/CMI'};
+  const labels = {'cv':'C→V','vp':'V→P','pa':'P→A','ag':'A→G','tot':'Total','cmi':'CMI→G','pa_cmi':'PA/CMI','leads_cmi':'CMI/Leads'};
   let h = '<tr style="background:#f7f8fa"><td colspan="'+(cols.length+1)+'" style="padding:0">';
   h += '<div style="padding:8px 14px 12px;border-top:1px dashed #dde3ed">';
   h += '<table style="width:100%;border-collapse:collapse;font-size:.76rem">';
@@ -2180,7 +2180,7 @@ function analRender(){
   table += '<th style="'+thStyle+';background:#eaf2ff">Total<br><span style="font-weight:400;color:#aaa;font-size:.7rem">Contact.→Ganho</span></th>';
   table += '<th style="'+thStyle+';background:#eaf7ee">CMI→G<br><span style="font-weight:400;color:#aaa;font-size:.7rem">Lead→CMI Ganha</span></th>';
   table += '<th style="'+thStyle+';background:#fff8e6">PA/CMI<br><span style="font-weight:400;color:#aaa;font-size:.7rem">Prop.Aceite÷CMI</span></th>';
-  table += '<th style="'+thStyle+';background:#f0eeff">Leads/CMI<br><span style="font-weight:400;color:#aaa;font-size:.7rem">Leads÷CMI Ganha</span></th>';
+  table += '<th style="'+thStyle+';background:#f0eeff">CMI/Leads<br><span style="font-weight:400;color:#aaa;font-size:.7rem">CMI Ganha÷Leads</span></th>';
   table += '<th style="'+thStyle+';background:#f0fdf4">CMI→Venda<br><span style="font-weight:400;color:#aaa;font-size:.7rem">% CMIs Vendidos</span></th>';
   table += '<th style="'+thStyle+'">Tendência</th>';
   table += '</tr></thead><tbody>';
@@ -2699,7 +2699,7 @@ function simRender(){
   }
   html+=benchCard('🏠 Angariação','#0d9488','#f0fdf4',[
     {k:'cmi_wr', label:'CMI/LEAD',             sub:'contactos → mandato',    fmt:'%'},
-    {k:'l_cmi',  label:'Leads/CMI ganho',      sub:'compradores por imóvel', fmt:'#'},
+    {k:'l_cmi',  label:'CMI/Leads ganho',      sub:'compradores por imóvel', fmt:'#'},
     {k:'sv_cmi', label:'Venda/CMI',            sub:'sell-through rate',       fmt:'%'},
   ]);
   html+=benchCard('🏃 Compradores','#2563eb','#eff6ff',[
