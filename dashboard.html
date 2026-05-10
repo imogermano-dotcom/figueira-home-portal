@@ -1373,7 +1373,7 @@ function origSetMode(m) {
 
 async function origFetchCap(ano) {
   let url = _SB_URL + '/rest/v1/oportunidades?select=origem,sub_origem,oportunidade_estado'
-    + '&tipo_oportunidade=ilike.*Angaria*';
+    + '&tipo_oportunidade=eq.' + encodeURIComponent('Angariação');
   if (ano !== 'all') {
     url += '&ego_data_criacao=gte.' + ano + '-01-01&ego_data_criacao=lte.' + ano + '-12-31';
   } else {
@@ -1835,7 +1835,7 @@ function analToggleOrig(resp){
 async function analFetchOrig(resp, ano){
   const cacheKey = resp + '|' + ano;
   let url = _SB_URL + '/rest/v1/oportunidades?select=origem,sub_origem,oportunidade_estado'
-    + '&tipo_oportunidade=ilike.*Angaria*'
+    + '&tipo_oportunidade=eq.' + encodeURIComponent('Angariação')
     + '&responsavel_nome=eq.' + encodeURIComponent(resp);
   if(ano !== 'all'){
     url += '&ego_data_criacao=gte.' + ano + '-01-01&ego_data_criacao=lte.' + ano + '-12-31';
