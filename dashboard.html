@@ -168,6 +168,10 @@ input[type=number]{-moz-appearance:textfield}
       <span class="v3-filter-lbl">Per&#237;odo</span>
       <div id="fin-year-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
     </div>
+    <div class="v3-filter-row">
+      <span class="v3-filter-lbl">Consultor</span>
+      <div id="fin-cons-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+    </div>
   </div>
   <div class="kpi-row" id="kpi-fin" style="margin-top:8px"></div>
   <div class="tabs" id="tabs-fin">
@@ -327,10 +331,19 @@ function showTab(p,t,btn){
 // ── FINANCEIRA ────────────────────────────────────────────────────────────────
 function finInit(){
   const anos = (D.anos_fin||[]).slice().reverse();
-  const pillStyle = (active) => 'padding:5px 13px;border-radius:14px;border:1.5px solid '+(active?'#2d6a9f':'#ccc')+';background:'+(active?'#2d6a9f':'#fff')+';color:'+(active?'#fff':'#555')+';cursor:pointer;font-size:.8rem;font-weight:600;margin-right:2px';
+  const pillStyle = (active, col) => {
+    const c = col||'#2d6a9f';
+    return 'padding:5px 13px;border-radius:14px;border:1.5px solid '+(active?c:'#ccc')+';background:'+(active?c:'#fff')+';color:'+(active?'#fff':'#555')+';cursor:pointer;font-size:.8rem;font-weight:600;margin-right:2px';
+  };
   let ph = '<button class="fin-pill active" data-a="all" onclick="finPill(this)" style="'+pillStyle(true)+'">Todos</button>';
   anos.forEach(a => { ph += '<button class="fin-pill" data-a="'+a+'" onclick="finPill(this)" style="'+pillStyle(false)+'">'+a+'</button>'; });
   document.getElementById('fin-year-pills').innerHTML = ph;
+
+  const consultores = Object.keys(D.financeiro||{}).sort();
+  let ch = '<button class="fin-cons-pill active" data-c="all" onclick="finConsPill(this)" style="'+pillStyle(true,'#1a3c5e')+'">Todos</button>';
+  consultores.forEach(c => { ch += '<button class="fin-cons-pill" data-c="'+c+'" onclick="finConsPill(this)" style="'+pillStyle(false,'#1a3c5e')+'">'+c+'</button>'; });
+  document.getElementById('fin-cons-pills').innerHTML = ch;
+
   finRender();
 }
 
@@ -347,8 +360,31 @@ function finPill(btn){
 }
 
 let finSelAno = 'all';
+let finSelCons = 'all';
+
+function finConsPill(btn){
+  document.querySelectorAll('.fin-cons-pill').forEach(b=>{
+    const act = b===btn;
+    b.style.background = act?'#1a3c5e':'#fff';
+    b.style.color = act?'#fff':'#555';
+    b.style.borderColor = act?'#1a3c5e':'#ccc';
+    if(act) b.classList.add('active'); else b.classList.remove('active');
+  });
+  finSelCons = btn.dataset.c;
+  finRender();
+}
 
 function finYrTotals(ano){
+  if(finSelCons !== 'all'){
+    const fin = D.financeiro||{};
+    const cData = fin[finSelCons]||{};
+    if(ano==='all'){
+      let n=0,v=0,ca=0,pc=0,m=0;
+      Object.values(cData).forEach(y=>{n+=y.neg||0;v+=y.valor||0;ca+=y.comm_ag||0;pc+=y.pago_cons||0;m+=y.margem||0;});
+      return {neg:n,valor:v,comm_ag:ca,pago_cons:pc,margem:m};
+    }
+    return cData[ano]||{neg:0,valor:0,comm_ag:0,pago_cons:0,margem:0};
+  }
   const yr = D.yearly_fin||{};
   if(ano==='all'){
     let n=0,v=0,ca=0,pc=0,m=0;
@@ -375,7 +411,7 @@ function finRender(){
   }
 
   const pend = ((D.alertas||{}).pendentes||[]);
-  const aceitesPend = pend.filter(r=>r.estado_prop==='Aceite');
+  const aceitesPend = pend.filter(r=>r.estado_prop==='Aceite' && (finSelCons==='all' || (r.consultor||r.negociador||'')===finSelCons));
   const pipeCount = aceitesPend.length;
   const pipeValor = aceitesPend.reduce((s,r)=>s+(parseFloat(r.xlsx_comm_ag)||((parseFloat(r.proposta)||0)*0.05)),0);
 
@@ -429,7 +465,8 @@ function finRender(){
 
 function finBuildTables(ano){
   const anos = ano==='all' ? (D.anos_fin||[]) : [ano];
-  const fin=D.financeiro, yr=D.yearly_fin, cs=Object.keys(fin).sort();
+  const fin=D.financeiro, yr=D.yearly_fin;
+  const cs = finSelCons==='all' ? Object.keys(fin).sort() : [finSelCons];
 
   function mk(field,fmtFn,col){
     const allVals=[];
@@ -443,7 +480,8 @@ function finBuildTables(ano){
   }
   function mkCas(){
     let h='<thead><tr><th>Ano</th><th>Neg&#243;cios</th><th>Valor Im&#243;veis</th><th>Comiss&#227;o Ag&#234;ncia</th><th>Pago Consultores</th><th>Margem Ag&#234;ncia</th></tr></thead>',b='',t={neg:0,v:0,c:0,p:0,m:0};
-    anos.forEach(a=>{const y=yr[a];if(!y)return;t.neg+=y.neg;t.v+=y.valor;t.c+=y.comm_ag;t.p+=y.pago_cons;t.m+=y.margem;b+='<tr><td>'+a+'</td><td>'+fmt(y.neg)+'</td><td>'+fmtEur(y.valor)+'</td><td>'+fmtEur(y.comm_ag)+'</td><td>'+fmtEur(y.pago_cons)+'</td><td>'+fmtEur(y.margem)+'</td></tr>';});
+    const casSource = finSelCons==='all' ? yr : (fin[finSelCons]||{});
+    anos.forEach(a=>{const y=casSource[a];if(!y)return;t.neg+=y.neg||0;t.v+=y.valor||0;t.c+=y.comm_ag||0;t.p+=y.pago_cons||0;t.m+=y.margem||0;b+='<tr><td>'+a+'</td><td>'+fmt(y.neg||0)+'</td><td>'+fmtEur(y.valor||0)+'</td><td>'+fmtEur(y.comm_ag||0)+'</td><td>'+fmtEur(y.pago_cons||0)+'</td><td>'+fmtEur(y.margem||0)+'</td></tr>';});
     return '<table>'+h+'<tbody>'+b+'</tbody><tfoot><tr><td>Total</td><td>'+fmt(t.neg)+'</td><td>'+fmtEur(t.v)+'</td><td>'+fmtEur(t.c)+'</td><td>'+fmtEur(t.p)+'</td><td>'+fmtEur(t.m)+'</td></tr></tfoot></table>';
   }
   document.getElementById('fin-tables').innerHTML=
