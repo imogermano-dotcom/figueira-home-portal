@@ -362,7 +362,10 @@ function renderControls() {
   div.className = 'ctrl-bar'
   var h = ''
   if (hasBtn) h += '<button id="load-more-btn" class="ctrl-btn more" onclick="doLoadMore()">Carregar mais 25 ↓</button>'
-  if (hasExport) h += '<button class="ctrl-btn export" onclick="doExport()">📥 Exportar Excel (' + _allResults.length + ')</button>'
+  if (hasExport) {
+    h += '<button class="ctrl-btn export" onclick="doExport()">📥 Exportar (' + _allResults.length + ')</button>'
+    h += '<button class="ctrl-btn export" style="background:#1a3c5e" onclick="doExportAll()">📥 Exportar todos (sem IA)</button>'
+  }
   div.innerHTML = h
   var res = document.getElementById('results')
   res.parentNode.insertBefore(div, res.nextSibling)
@@ -401,6 +404,45 @@ function doExport() {
   XLSX.utils.book_append_sheet(wb, ws, 'Resultados')
   var date = new Date().toISOString().slice(0,10)
   XLSX.writeFile(wb, 'portal_resultados_' + date + '.xlsx')
+}
+
+async function doExportAll() {
+  if (!_lastBody) return
+  var btn = document.querySelector('.ctrl-btn.export[onclick="doExportAll()"]')
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ A exportar...' }
+  try {
+    var body = Object.assign({}, _lastBody, { raw_export: true })
+    var r = await fetch(EGO_EDGE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    var data = await r.json()
+    var allR = data.results || []
+    if (!allR.length) { if (btn) { btn.disabled = false; btn.textContent = '📥 Exportar todos (sem IA)' }; return }
+    var rows = allR.map(function(r2) {
+      return {
+        'Ref': r2.oportunidade_ref || '',
+        'Tipo': r2.tipo_oportunidade || '',
+        'Cliente': r2.cliente_nome || '',
+        'Telefone': r2.cliente_telefone || '',
+        'Email': r2.cliente_email || '',
+        'Responsável': r2.responsavel || '',
+        'Etapa': r2.etapa_atual || '',
+        'Estado': r2.oportunidade_estado || '',
+        'Imóvel': r2.titulo_imovel || '',
+        'Preferência': r2.preferencia_imovel || '',
+        'Último Contacto': r2.ultimo_contacto || '',
+        'Criado em': r2.ego_data_criacao || '',
+        'Tarefa': r2.tarefa ? r2.tarefa.titulo : '',
+        'Tarefa data': r2.tarefa ? r2.tarefa.due : '',
+        'URL': r2.url || ''
+      }
+    })
+    var ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [{wch:12},{wch:12},{wch:24},{wch:16},{wch:28},{wch:20},{wch:18},{wch:10},{wch:30},{wch:24},{wch:14},{wch:12},{wch:28},{wch:12},{wch:60}]
+    var wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Resultados')
+    var date = new Date().toISOString().slice(0,10)
+    XLSX.writeFile(wb, 'portal_todos_' + date + '.xlsx')
+  } catch(e) { console.error('exportAll error', e) }
+  if (btn) { btn.disabled = false; btn.textContent = '📥 Exportar todos (sem IA)' }
 }
 
 function renderResults(data, q) {
