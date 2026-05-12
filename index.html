@@ -368,8 +368,39 @@ function renderControls() {
   res.parentNode.insertBefore(div, res.nextSibling)
 }
 
-function doExport() {
+async function doExport() {
   if (!_allResults.length) return
+  // Se ainda há mais resultados, vai buscar tudo antes de exportar
+  if (_hasMore) {
+    var exportBtn = document.querySelector('.ctrl-btn.export')
+    if (exportBtn) { exportBtn.disabled = true; exportBtn.textContent = '⏳ A carregar todos...' }
+    try {
+      while (_hasMore) {
+        var fetchBody = Object.assign({}, _lastBody, { offset: _allResults.length })
+        var fr = await fetch(EGO_EDGE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fetchBody)
+        })
+        var fd = await fr.json().catch(function(){ return {} })
+        if (!fr.ok) throw new Error((fd && fd.error) ? fd.error : 'HTTP ' + fr.status)
+        var newR = fd.results || []
+        _allResults = _allResults.concat(newR)
+        _hasMore = fd.has_more === true
+        // Também adiciona os cards ao ecrã
+        var ctrl = document.getElementById('results-controls')
+        if (ctrl) ctrl.remove()
+        var hh = ''
+        newR.forEach(function(r2) { hh += buildCardHtml(r2) })
+        document.getElementById('results').insertAdjacentHTML('beforeend', hh)
+        if (exportBtn) exportBtn.textContent = '⏳ A carregar... (' + _allResults.length + ')'
+      }
+      renderControls()
+    } catch(err) {
+      renderControls()
+      return
+    }
+  }
   var rows = _allResults.map(function(r) {
     return {
       'Ref': r.oportunidade_ref || '',
