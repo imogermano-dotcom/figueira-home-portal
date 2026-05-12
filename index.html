@@ -79,6 +79,10 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .card-nonotas{margin-top:6px;font-size:.74rem;color:#9ca3af;font-style:italic}
 .loading{text-align:center;padding:40px;color:#6b7280;font-size:.9rem}
 .err-box{padding:14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:.85rem}
+.ctrl-bar{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.ctrl-btn{padding:8px 18px;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:background .2s}
+.ctrl-btn.more{background:#1a3c5e;color:#fff}.ctrl-btn.more:hover{background:#2d6a9f}.ctrl-btn.more:disabled{opacity:.6;cursor:not-allowed}
+.ctrl-btn.export{background:#15803d;color:#fff}.ctrl-btn.export:hover{background:#166534}
 
 /* KPI iframe */
 #page-kpi{flex-direction:column}
@@ -98,6 +102,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .save-btn:hover{background:#2d6a9f}
 .save-ok{color:#15803d;font-size:.75rem;margin-left:6px}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -187,6 +192,9 @@ var EGO_EDGE = 'https://zphasvfopnbzwnaidsnw.supabase.co/functions/v1/query-lead
 var sb = supabase.createClient(DOORSTEP_URL, DOORSTEP_ANON)
 var _profile = null
 var _kpiLoaded = false
+var _allResults = []
+var _lastBody = null
+var _hasMore = false
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 async function doLogin() {
@@ -286,11 +294,15 @@ async function doSearch() {
   var res = document.getElementById('results')
   btn.disabled = true; btn.textContent = 'A pesquisar...'
   res.innerHTML = '<div class="loading">🔍 A analisar a pergunta e pesquisar oportunidades...</div>'
+  var oldCtrl = document.getElementById('results-controls')
+  if (oldCtrl) oldCtrl.remove()
 
+  _allResults = []; _hasMore = false
   var body = { question: q }
   if (_profile && _profile.role !== 'admin' && _profile.ego_responsavel) {
     body.force_responsavel = _profile.ego_responsavel
   }
+  _lastBody = body
 
   try {
     var r = await fetch(EGO_EDGE, {
@@ -300,11 +312,95 @@ async function doSearch() {
     })
     var data = await r.json().catch(function(){ return {} })
     if (!r.ok) throw new Error((data && data.error) ? data.error : 'HTTP ' + r.status)
+    _allResults = data.results || []
+    _hasMore = data.has_more === true
     renderResults(data, q)
   } catch(err) {
     res.innerHTML = '<div class="err-box"><strong>Erro:</strong> ' + esc(err.message) + '</div>'
   }
   btn.disabled = false; btn.textContent = 'Pesquisar'
+}
+
+async function doLoadMore() {
+  var btn = document.getElementById('load-more-btn')
+  if (btn) { btn.disabled = true; btn.textContent = 'A carregar...' }
+  var body = Object.assign({}, _lastBody, { offset: _allResults.length })
+  try {
+    var r = await fetch(EGO_EDGE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    var data = await r.json().catch(function(){ return {} })
+    if (!r.ok) throw new Error((data && data.error) ? data.error : 'HTTP ' + r.status)
+    var newResults = data.results || []
+    _allResults = _allResults.concat(newResults)
+    _hasMore = data.has_more === true
+    // Append new cards
+    var ctrl = document.getElementById('results-controls')
+    if (ctrl) ctrl.remove()
+    var h = ''
+    newResults.forEach(function(r2) { h += buildCardHtml(r2) })
+    document.getElementById('results').insertAdjacentHTML('beforeend', h)
+    renderControls()
+  } catch(err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Erro — tentar novamente' }
+    return
+  }
+  renderControls()
+}
+
+function renderControls() {
+  var existing = document.getElementById('results-controls')
+  if (existing) existing.remove()
+  if (!_allResults.length) return
+  var hasBtn = _hasMore
+  var hasExport = _profile && _profile.role === 'admin'
+  if (!hasBtn && !hasExport) return
+  var div = document.createElement('div')
+  div.id = 'results-controls'
+  div.className = 'ctrl-bar'
+  var h = ''
+  if (hasBtn) h += '<button id="load-more-btn" class="ctrl-btn more" onclick="doLoadMore()">Carregar mais 25 ↓</button>'
+  if (hasExport) h += '<button class="ctrl-btn export" onclick="doExport()">📥 Exportar Excel (' + _allResults.length + ')</button>'
+  div.innerHTML = h
+  var res = document.getElementById('results')
+  res.parentNode.insertBefore(div, res.nextSibling)
+}
+
+function doExport() {
+  if (!_allResults.length) return
+  var rows = _allResults.map(function(r) {
+    return {
+      'Ref': r.oportunidade_ref || '',
+      'Tipo': r.tipo_oportunidade || '',
+      'Cliente': r.cliente_nome || '',
+      'Telefone': r.cliente_telefone || '',
+      'Email': r.cliente_email || '',
+      'Responsável': r.responsavel || '',
+      'Etapa': r.etapa_atual || '',
+      'Estado': r.oportunidade_estado || '',
+      'Imóvel': r.titulo_imovel || '',
+      'Preferência': r.preferencia_imovel || '',
+      'Último Contacto': r.ultimo_contacto || '',
+      'Criado em': r.ego_data_criacao || '',
+      'Tarefa': r.tarefa ? r.tarefa.titulo : '',
+      'Tarefa data': r.tarefa ? r.tarefa.due : '',
+      'Sumário IA': r.summary || '',
+      'URL': r.url || ''
+    }
+  })
+  var ws = XLSX.utils.json_to_sheet(rows)
+  // Ajustar largura das colunas
+  var wscols = [
+    {wch:12},{wch:12},{wch:24},{wch:16},{wch:28},{wch:20},{wch:18},
+    {wch:10},{wch:30},{wch:24},{wch:14},{wch:12},{wch:28},{wch:12},{wch:60},{wch:60}
+  ]
+  ws['!cols'] = wscols
+  var wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Resultados')
+  var date = new Date().toISOString().slice(0,10)
+  XLSX.writeFile(wb, 'portal_resultados_' + date + '.xlsx')
 }
 
 function renderResults(data, q) {
@@ -354,7 +450,13 @@ function renderResults(data, q) {
     h += '</div>'
   }
 
-  results.forEach(function(r) {
+  results.forEach(function(r) { h += buildCardHtml(r) })
+  res.innerHTML = h
+  renderControls()
+}
+
+function buildCardHtml(r) {
+  var h = ''
     var isHot = r.hot === true && !r.engano
     var isEngano = r.engano === true
     h += '<div class="card'+(isEngano?' engano':(isHot?' hot':''))+'">'
@@ -420,8 +522,7 @@ function renderResults(data, q) {
       h += '<div class="card-nonotas">Sem notas registadas.</div>'
     }
     h += '</div>'
-  })
-  res.innerHTML = h
+  return h
 }
 
 function esc(s) {
