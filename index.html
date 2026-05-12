@@ -362,7 +362,12 @@ function renderControls() {
   div.className = 'ctrl-bar'
   var h = ''
   if (hasBtn) h += '<button id="load-more-btn" class="ctrl-btn more" onclick="doLoadMore()">Carregar mais 25 ↓</button>'
-  if (hasExport) h += '<button class="ctrl-btn export" onclick="doExport()">📥 Exportar Excel (' + _allResults.length + ')</button>'
+  if (hasExport) {
+    var exportLabel = _hasMore
+      ? '📥 Exportar todos ↓'
+      : '📥 Exportar Excel (' + _allResults.length + ')'
+    h += '<button class="ctrl-btn export" onclick="doExport()">' + exportLabel + '</button>'
+  }
   div.innerHTML = h
   var res = document.getElementById('results')
   res.parentNode.insertBefore(div, res.nextSibling)
