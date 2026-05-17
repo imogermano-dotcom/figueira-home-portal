@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Figueira Home</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
@@ -4738,65 +4737,76 @@ async function bibUploadSubmit() {
 }
 
 async function bibUploadVideoSDK(file, path, progBar, progLbl) {
-  // TUS resumable upload via tus-js-client — bypasses Cloudflare 100 MB request limit
-  // by splitting the file into 6 MB chunks sent as separate requests.
+  // Upload em chunks de 5 MB via Edge Function upload-video.
+  // Contorna o limite de 100 MB do Cloudflare: cada chunk é um request separado
+  // (< 6 MB), a edge function junta tudo internamente e faz o upload final ao Storage.
+  var CHUNK_SIZE   = 5 * 1024 * 1024  // 5 MB
+  var EDGE_UPLOAD  = DOORSTEP_URL + '/functions/v1/upload-video'
   var { data: { session } } = await sb.auth.getSession()
-  if (!session) { console.warn('[tus] sem sessão'); return null }
+  if (!session) { console.warn('[upload-video] sem sessão'); return null }
 
-  var TUS_ENDPOINT = DOORSTEP_URL + '/storage/v1/upload/resumable'
-  var publicUrl    = DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
+  var totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+  var uploadId    = Date.now() + '_' + file.name.replace(/[^a-z0-9]/gi, '_').slice(0, 40)
 
-  return new Promise(function(resolve) {
-    var upload = new tus.Upload(file, {
-      endpoint:   TUS_ENDPOINT,
-      retryDelays: [0, 3000, 5000, 10000, 20000],
-      headers: {
-        authorization:  'Bearer ' + session.access_token,
-        'x-upsert':     'true'
-      },
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      metadata: {
-        bucketName:   'videos-conteudos',
-        objectName:   path,
-        contentType:  file.type || 'video/mp4',
-        cacheControl: '3600'
-      },
-      chunkSize: 6 * 1024 * 1024,  // 6 MB por chunk
+  console.log('[upload-video] início', { nome: file.name, tamanho: Math.round(file.size/1024/1024) + 'MB', chunks: totalChunks })
 
-      onError: function(err) {
-        console.warn('[tus] erro', err)
-        if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-        if (progLbl) progLbl.textContent = '✗ ' + (err.message || 'upload falhou')
-        resolve(null)
-      },
+  for (var i = 0; i < totalChunks; i++) {
+    var start = i * CHUNK_SIZE
+    var end   = Math.min(start + CHUNK_SIZE, file.size)
+    var chunk = file.slice(start, end)
 
-      onProgress: function(uploaded, total) {
-        var pct = total > 0 ? Math.round(uploaded / total * 100) : 0
-        if (progBar) progBar.style.width = pct + '%'
-        if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + pct + '%'
-        console.log('[tus] progresso', pct + '%', Math.round(uploaded/1024/1024) + 'MB / ' + Math.round(total/1024/1024) + 'MB')
-      },
+    var pct = Math.round((i / totalChunks) * 100)
+    if (progBar) progBar.style.width = pct + '%'
+    if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + pct + '% (chunk ' + (i+1) + '/' + totalChunks + ')'
 
-      onSuccess: function() {
-        if (progBar) progBar.style.width = '100%'
-        if (progLbl) progLbl.textContent = '100%'
-        console.log('[tus] upload completo', publicUrl)
-        resolve(publicUrl)
-      }
-    })
+    var resp
+    try {
+      resp = await fetch(EDGE_UPLOAD, {
+        method: 'POST',
+        headers: {
+          'Authorization':   'Bearer ' + session.access_token,
+          'Content-Type':    'application/octet-stream',
+          'x-chunk-index':   String(i),
+          'x-total-chunks':  String(totalChunks),
+          'x-file-path':     path,
+          'x-file-type':     file.type || 'video/mp4',
+          'x-upload-id':     uploadId
+        },
+        body: chunk
+      })
+    } catch(e) {
+      console.warn('[upload-video] erro de rede no chunk ' + i, e)
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ Erro de rede no chunk ' + (i+1)
+      return null
+    }
 
-    // Retomar upload anterior se existir (recover from dropped connection)
-    upload.findPreviousUploads().then(function(prev) {
-      if (prev.length) {
-        console.log('[tus] a retomar upload anterior', prev[0])
-        upload.resumeFromPreviousUpload(prev[0])
-      }
-      upload.start()
-    })
-  })
+    var result
+    try { result = await resp.json() } catch(e) { result = {} }
+
+    if (!resp.ok || result.error) {
+      console.warn('[upload-video] erro no chunk ' + i, resp.status, result)
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ ' + (result.error || 'Erro ' + resp.status)
+      return null
+    }
+
+    // Último chunk — a edge function devolveu a URL final
+    if (result.done && result.url) {
+      if (progBar) progBar.style.width = '100%'
+      if (progLbl) progLbl.textContent = '100%'
+      console.log('[upload-video] concluído', result.url)
+      return result.url
+    }
+
+    console.log('[upload-video] chunk ' + (i+1) + '/' + totalChunks + ' ok')
+  }
+
+  // Segurança: se chegar aqui sem resultado.done, construir URL manualmente
+  if (progBar) progBar.style.width = '100%'
+  if (progLbl) progLbl.textContent = '100%'
+  return DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
 }
-
 function bibGetVideoMeta(file) {
   return new Promise(function(resolve) {
     var video = document.createElement('video')
