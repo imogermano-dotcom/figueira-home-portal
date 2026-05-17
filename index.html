@@ -109,6 +109,28 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .cont-btn{padding:10px 22px;border:none;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s}
 .cont-btn.primary{background:#1a3c5e;color:#fff}.cont-btn.primary:hover{background:#2d6a9f}.cont-btn.primary:disabled{opacity:.6;cursor:not-allowed}
 .cont-btn.secondary{background:#fff;color:#1a3c5e;border:1.5px solid #1a3c5e}.cont-btn.secondary:hover{background:#f0f4f8}.cont-btn.secondary:disabled{opacity:.6;cursor:not-allowed}
+/* Image upload */
+.img-upload-zone{border:2px dashed #d1d5db;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.img-upload-zone:hover,.img-upload-zone.drag-over{border-color:#2d6a9f;background:#f0f5ff}
+.img-upload-zone.has-files{border-style:solid;border-color:#2d6a9f;background:#f7fbff;justify-content:flex-start;align-items:flex-start;padding:14px}
+.img-upload-prompt{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
+.img-upload-icon{font-size:1.8rem}
+.img-upload-hint{font-size:.78rem;color:#9ca3af}
+.img-upload-hint span{color:#2d6a9f;font-weight:600}
+.img-previews{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.img-preview-item{position:relative;width:80px;height:80px;border-radius:6px;overflow:hidden;border:1.5px solid #e0e6f0;flex-shrink:0}
+.img-preview-item img{width:100%;height:100%;object-fit:cover}
+.img-preview-remove{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.img-preview-item .img-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+.img-preview-item .img-overlay-spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.img-preview-item .img-ok{position:absolute;top:2px;left:2px;background:#15803d;color:#fff;border-radius:50%;width:16px;height:16px;font-size:.6rem;display:flex;align-items:center;justify-content:center}
+.img-add-more{width:80px;height:80px;border:2px dashed #d1d5db;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9ca3af;font-size:1.4rem;transition:all .2s;flex-shrink:0}
+.img-add-more:hover{border-color:#2d6a9f;color:#2d6a9f}
+.img-progress-bar-wrap{margin-top:8px;background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;width:100%}
+.img-progress-bar{height:100%;background:#2d6a9f;border-radius:4px;transition:width .3s}
+.img-progress-text{font-size:.74rem;color:#6b7280;margin-top:4px}
+.img-warn{font-size:.75rem;color:#dc2626;margin-top:6px;display:none}
 .cont-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px;margin-bottom:16px}
 .cont-card{border-radius:10px;border:1.5px solid #e0e6f0;padding:16px}
 .cont-card.ig{border-color:#f9a8d4;background:#fff9fb}
@@ -240,6 +262,28 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <label class="cont-label">Texto base</label>
             <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
           </div>
+          <div class="cont-field">
+            <label class="cont-label">Imagens <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(1–10 imagens · JPG, PNG, WebP · max 10MB cada)</span></label>
+            <input type="file" id="img-file-input" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="imgOnFileInput(this)">
+            <div class="img-upload-zone" id="img-upload-zone"
+              onclick="imgZoneClick(event)"
+              ondragover="imgDragOver(event)"
+              ondragleave="imgDragLeave(event)"
+              ondrop="imgDrop(event)">
+              <div class="img-upload-prompt" id="img-upload-prompt">
+                <span class="img-upload-icon">🖼️</span>
+                <span style="font-size:.85rem;font-weight:600;color:#4b5563">Arrasta as imagens ou <span style="color:#2d6a9f">clica para seleccionar</span></span>
+                <span class="img-upload-hint">Drag &amp; drop · até 10 imagens</span>
+              </div>
+              <div class="img-previews" id="img-previews" style="display:none"></div>
+            </div>
+            <div class="img-progress-bar-wrap" id="img-progress-wrap" style="display:none">
+              <div class="img-progress-bar" id="img-progress-bar" style="width:0%"></div>
+            </div>
+            <div class="img-progress-text" id="img-progress-text"></div>
+            <div class="img-warn" id="img-warn-instagram">⚠️ Instagram seleccionado — é necessária pelo menos 1 imagem.</div>
+          </div>
+
           <div class="cont-field">
             <label class="cont-label">Redes sociais</label>
             <div class="cont-redes">
@@ -713,6 +757,8 @@ function esc(s) {
 // ── Conteúdo Social ──────────────────────────────────────────────────────────
 var _contGerado = null
 var _histRows = []
+var _imgFiles = []   // File objects pendentes
+var _imgUrls  = []   // URLs públicos já carregados
 var EDGE_GERAR = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
 var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
 
@@ -723,6 +769,148 @@ var REDE_CFG = {
   youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
 }
 
+// ── Image upload ─────────────────────────────────────────────────────────────
+function imgZoneClick(e) {
+  if (e.target.closest('.img-preview-remove') || e.target.closest('.img-add-more')) return
+  document.getElementById('img-file-input').click()
+}
+
+function imgDragOver(e) {
+  e.preventDefault()
+  document.getElementById('img-upload-zone').classList.add('drag-over')
+}
+
+function imgDragLeave(e) {
+  document.getElementById('img-upload-zone').classList.remove('drag-over')
+}
+
+function imgDrop(e) {
+  e.preventDefault()
+  document.getElementById('img-upload-zone').classList.remove('drag-over')
+  imgAddFiles(Array.from(e.dataTransfer.files))
+}
+
+function imgOnFileInput(input) {
+  imgAddFiles(Array.from(input.files))
+  input.value = ''
+}
+
+function imgAddFiles(newFiles) {
+  var allowed = newFiles.filter(function(f) {
+    return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024
+  })
+  if (!allowed.length) return
+  var remaining = 10 - _imgFiles.length
+  allowed = allowed.slice(0, remaining)
+  _imgFiles = _imgFiles.concat(allowed)
+  imgRenderPreviews()
+}
+
+function imgRenderPreviews() {
+  var zone = document.getElementById('img-upload-zone')
+  var prompt = document.getElementById('img-upload-prompt')
+  var previews = document.getElementById('img-previews')
+  if (!_imgFiles.length) {
+    zone.classList.remove('has-files')
+    prompt.style.display = ''
+    previews.style.display = 'none'
+    previews.innerHTML = ''
+    return
+  }
+  zone.classList.add('has-files')
+  prompt.style.display = 'none'
+  previews.style.display = 'flex'
+  previews.innerHTML = ''
+  _imgFiles.forEach(function(f, i) {
+    var item = document.createElement('div')
+    item.className = 'img-preview-item'
+    item.id = 'img-item-' + i
+    var url = URL.createObjectURL(f)
+    var uploaded = i < _imgUrls.length
+    item.innerHTML = '<img src="' + url + '" alt="">'
+      + (uploaded ? '<span class="img-ok">✓</span>' : '')
+      + '<button class="img-preview-remove" onclick="imgRemove(' + i + ')" title="Remover">✕</button>'
+    previews.appendChild(item)
+  })
+  if (_imgFiles.length < 10) {
+    var addMore = document.createElement('div')
+    addMore.className = 'img-add-more'
+    addMore.title = 'Adicionar mais imagens'
+    addMore.textContent = '+'
+    addMore.onclick = function() { document.getElementById('img-file-input').click() }
+    previews.appendChild(addMore)
+  }
+}
+
+function imgRemove(i) {
+  _imgFiles.splice(i, 1)
+  if (i < _imgUrls.length) _imgUrls.splice(i, 1)
+  imgRenderPreviews()
+}
+
+async function imgUploadAll() {
+  if (!_imgFiles.length) return
+  var { data: { session } } = await sb.auth.getSession()
+  var userId = session.user.id
+  var progressWrap = document.getElementById('img-progress-wrap')
+  var progressBar = document.getElementById('img-progress-bar')
+  var progressText = document.getElementById('img-progress-text')
+  progressWrap.style.display = ''
+  _imgUrls = []
+  for (var i = 0; i < _imgFiles.length; i++) {
+    var f = _imgFiles[i]
+    var ext = f.name.split('.').pop()
+    var path = userId + '/' + Date.now() + '_' + i + '.' + ext
+    progressText.textContent = 'A carregar ' + (i + 1) + ' de ' + _imgFiles.length + '...'
+    progressBar.style.width = Math.round((i / _imgFiles.length) * 100) + '%'
+    // Show spinner on item
+    var item = document.getElementById('img-item-' + i)
+    if (item) {
+      var overlay = document.createElement('div')
+      overlay.className = 'img-overlay'
+      overlay.innerHTML = '<div class="img-overlay-spinner"></div>'
+      item.appendChild(overlay)
+    }
+    var { error } = await sb.storage.from('conteudos-imagens').upload(path, f, { upsert: true })
+    if (error) { console.warn('upload error', error); continue }
+    var { data: pub } = sb.storage.from('conteudos-imagens').getPublicUrl(path)
+    _imgUrls.push(pub.publicUrl)
+    // Update item: remove spinner, show tick
+    if (item) {
+      var ov = item.querySelector('.img-overlay')
+      if (ov) ov.remove()
+      var tick = document.createElement('span')
+      tick.className = 'img-ok'
+      tick.textContent = '✓'
+      item.appendChild(tick)
+    }
+  }
+  progressBar.style.width = '100%'
+  progressText.textContent = _imgUrls.length + ' imagem(ns) carregada(s) com sucesso.'
+  setTimeout(function() {
+    progressWrap.style.display = 'none'
+    progressText.textContent = ''
+  }, 2000)
+}
+
+function imgCheckInstagram() {
+  var warn = document.getElementById('img-warn-instagram')
+  var igChecked = document.getElementById('cb-instagram').checked
+  var show = igChecked && _imgFiles.length === 0
+  warn.style.display = show ? 'block' : 'none'
+  return !show
+}
+
+function imgReset() {
+  _imgFiles = []
+  _imgUrls = []
+  imgRenderPreviews()
+  document.getElementById('img-progress-wrap').style.display = 'none'
+  document.getElementById('img-progress-text').textContent = ''
+  document.getElementById('img-warn-instagram').style.display = 'none'
+}
+
+// ── Conteúdo Social ───────────────────────────────────────────────────────────
 function contShowView(v) {
   ['gerar','historico'].forEach(function(n) {
     document.getElementById('cont-view-'+n).style.display = n === v ? '' : 'none'
@@ -743,10 +931,17 @@ async function contGerar() {
   if (!texto) { alert('Introduz o texto base.'); return }
   var redes = contGetRedes()
   if (!redes.length) { alert('Selecciona pelo menos uma rede.'); return }
+  if (!imgCheckInstagram()) return
   var btn = document.getElementById('cont-gerar-btn')
-  btn.disabled = true; btn.textContent = '⏳ A gerar...'
+  btn.disabled = true
   document.getElementById('cont-results').style.display = 'none'
   try {
+    // Upload images first
+    if (_imgFiles.length > 0 && _imgUrls.length < _imgFiles.length) {
+      btn.textContent = '⏫ A carregar imagens...'
+      await imgUploadAll()
+    }
+    btn.textContent = '⏳ A gerar conteúdo...'
     var { data: { session } } = await sb.auth.getSession()
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
@@ -837,7 +1032,8 @@ async function contGuardar(agendar) {
   var payload = {
     texto_base: document.getElementById('cont-texto').value.trim(),
     redes_seleccionadas: redes,
-    data_agendada: agendar && data ? new Date(data).toISOString() : null
+    data_agendada: agendar && data ? new Date(data).toISOString() : null,
+    imagens_urls: _imgUrls.length ? _imgUrls : []
   }
   redes.forEach(function(r) {
     var d = _contGerado[r]; if (!d) return
@@ -876,6 +1072,7 @@ async function contGuardar(agendar) {
     document.getElementById('cont-data').value = ''
     document.getElementById('cont-results').style.display = 'none'
     _contGerado = null
+    imgReset()
   } catch(e) {
     alert('Erro ao guardar: ' + e.message)
   }
@@ -967,6 +1164,14 @@ function histModalClose() {
 // ── Init ─────────────────────────────────────────────────────────────────────
 sb.auth.onAuthStateChange(function(event, session) {
   if (session) loadApp()
+})
+
+// Aviso Instagram ao desmarcar/marcar
+document.addEventListener('DOMContentLoaded', function() {
+  var cb = document.getElementById('cb-instagram')
+  if (cb) cb.addEventListener('change', function() {
+    imgCheckInstagram()
+  })
 })
 </script>
 </body>
