@@ -137,6 +137,79 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .cont-card.fb{border-color:#93c5fd;background:#f9fbff}
 .cont-card.li{border-color:#7dd3fc;background:#f7fbff}
 .cont-card.yt{border-color:#fca5a5;background:#fff9f9}
+/* Preview toggle */
+.prev-toggle{padding:4px 10px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
+.prev-toggle:hover{border-color:#2d6a9f;color:#2d6a9f}
+.prev-toggle.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.card-preview-section{display:none;margin-top:8px}
+.card-preview-section.open{display:block}
+/* Common preview */
+.prev-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1a3c5e,#2d6a9f);color:#fff;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prev-avatar.sm{width:28px;height:28px;font-size:.62rem}
+.prev-img{width:100%;display:block;object-fit:cover}
+.prev-img-placeholder{background:linear-gradient(135deg,#e0e7ff,#c7d2fe);display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:1.6rem}
+/* Instagram preview */
+.prev-ig{background:#fff;border:1px solid #dbdbdb;border-radius:4px;max-width:360px;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden}
+.prev-ig-head{display:flex;align-items:center;gap:9px;padding:10px 12px}
+.prev-ig-name{font-size:.82rem;font-weight:700;line-height:1.2}
+.prev-ig-loc{font-size:.68rem;color:#737373}
+.prev-ig-dots{margin-left:auto;color:#262626;font-size:1.1rem;letter-spacing:2px;line-height:1}
+.prev-ig-img-wrap{aspect-ratio:1/1;overflow:hidden}
+.prev-ig-actions{display:flex;align-items:center;padding:8px 12px;gap:14px;font-size:1.15rem}
+.prev-ig-save{margin-left:auto}
+.prev-ig-likes{padding:0 12px 4px;font-size:.8rem;font-weight:700}
+.prev-ig-caption{padding:0 12px 6px;font-size:.82rem;line-height:1.4;color:#262626}
+.prev-ig-caption strong{margin-right:5px}
+.prev-ig-more{color:#8e8e8e;cursor:pointer}
+.prev-ig-tags{padding:0 12px 10px;font-size:.78rem;color:#00376b;line-height:1.6;word-break:break-word}
+.prev-ig-comments{padding:0 12px 8px;font-size:.78rem;color:#8e8e8e}
+/* Facebook preview */
+.prev-fb{background:#fff;border:1px solid #ccd0d5;border-radius:8px;max-width:500px;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.prev-fb-head{display:flex;align-items:flex-start;gap:9px;padding:12px 12px 8px}
+.prev-fb-name{font-size:.84rem;font-weight:700;color:#050505;line-height:1.2}
+.prev-fb-meta{font-size:.72rem;color:#65676b;display:flex;align-items:center;gap:4px;margin-top:1px}
+.prev-fb-more{margin-left:auto;font-size:1.2rem;color:#65676b;padding:4px}
+.prev-fb-text{padding:0 12px 10px;font-size:.84rem;color:#050505;line-height:1.5;white-space:pre-line}
+.prev-fb-more-link{color:#216fdb;cursor:pointer;font-size:.84rem}
+.prev-fb-img-wrap{aspect-ratio:16/9;overflow:hidden}
+.prev-fb-reaction-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-bottom:1px solid #e4e6eb;font-size:.75rem;color:#65676b}
+.prev-fb-reactions-icons{display:flex;align-items:center;gap:2px}
+.prev-fb-reaction-icon{width:17px;height:17px;border-radius:50%;border:1.5px solid #fff;font-size:.62rem;display:flex;align-items:center;justify-content:center;margin-left:-4px}
+.prev-fb-reaction-icon:first-child{margin-left:0}
+.ri-like{background:#1877f2}.ri-love{background:#f33e58}.ri-haha{background:#f7b125}
+.prev-fb-actions{display:flex;padding:4px 0;border-top:1px solid #e4e6eb}
+.prev-fb-act-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;font-size:.8rem;font-weight:600;color:#65676b;cursor:pointer;border-radius:4px;border:none;background:none}
+.prev-fb-act-btn:hover{background:#f0f2f5}
+/* LinkedIn preview */
+.prev-li{background:#fff;border:1px solid #e0e0e0;border-radius:8px;max-width:540px;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden}
+.prev-li-head{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 8px}
+.prev-li-name{font-size:.85rem;font-weight:700;color:#000;line-height:1.2}
+.prev-li-title{font-size:.74rem;color:#666;margin-top:1px}
+.prev-li-meta{font-size:.72rem;color:#666;margin-top:2px;display:flex;align-items:center;gap:4px}
+.prev-li-follow{margin-left:auto;color:#0a66c2;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;padding-top:2px}
+.prev-li-text{padding:0 12px 10px;font-size:.83rem;color:#000;line-height:1.5;white-space:pre-line}
+.prev-li-more{color:#666;cursor:pointer}
+.prev-li-img-wrap{aspect-ratio:16/9;overflow:hidden}
+.prev-li-reactions{padding:6px 12px;font-size:.74rem;color:#666;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between}
+.prev-li-react-icons{display:flex;align-items:center;gap:1px}
+.prev-li-ri{width:16px;height:16px;border-radius:50%;border:1.5px solid #fff;font-size:.58rem;display:flex;align-items:center;justify-content:center;margin-left:-4px}
+.prev-li-ri:first-child{margin-left:0}
+.lri-like{background:#378fe9}.lri-love{background:#e06c77}.lri-insightful{background:#f5bb5c}
+.prev-li-actions{display:flex;padding:4px 0}
+.prev-li-act-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 4px;font-size:.78rem;font-weight:600;color:#666;cursor:pointer;border-radius:4px;border:none;background:none}
+.prev-li-act-btn:hover{background:#f3f2ef}
+/* YouTube preview */
+.prev-yt{background:#fff;max-width:360px;font-family:Roboto,'Segoe UI',Arial,sans-serif}
+.prev-yt-thumb-wrap{position:relative;aspect-ratio:16/9;overflow:hidden;background:#000;border-radius:8px}
+.prev-yt-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.8);color:#fff;font-size:.68rem;font-weight:700;padding:2px 5px;border-radius:3px}
+.prev-yt-info{display:flex;gap:10px;padding:10px 4px 6px}
+.prev-yt-text{flex:1}
+.prev-yt-title{font-size:.88rem;font-weight:700;color:#0f0f0f;line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prev-yt-channel{font-size:.76rem;color:#606060;margin-bottom:2px}
+.prev-yt-meta{font-size:.74rem;color:#606060}
+.prev-yt-desc{font-size:.74rem;color:#606060;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* no image placeholder */
+.prev-no-img{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f0f4ff,#e8eeff);color:#a5b4fc;font-size:2rem}
 .cont-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .cont-card-title{font-weight:700;font-size:.9rem;color:#1a3c5e;display:flex;align-items:center;gap:6px}
 .cont-word-count{font-size:.72rem;color:#9ca3af;background:#f0f4f8;padding:2px 8px;border-radius:10px}
@@ -974,8 +1047,12 @@ function contRenderCards(redes) {
     div.innerHTML =
       '<div class="cont-card-header">'
       + '<span class="cont-card-title">' + cfg.icon + ' ' + cfg.label + '</span>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
       + '<span class="cont-word-count" id="wc-'+rede+'">' + countWords(mainText) + ' palavras</span>'
-      + '</div>'
+      + '<button class="prev-toggle" id="ptoggle-'+rede+'" onclick="contTogglePreview(\''+rede+'\')">👁 Preview</button>'
+      + '</div></div>'
+      // Edit section
+      + '<div id="card-edit-'+rede+'">'
       + '<div class="cont-field">'
       + '<div class="cont-field-label"><span>' + (isYt ? 'Descrição' : 'Caption') + '</span>'
       + '<button class="cont-copy-btn" onclick="contCopy(\'main-'+rede+'\',this)">📋 copiar</button></div>'
@@ -992,8 +1069,163 @@ function contRenderCards(redes) {
       + '<div class="cont-field-label" style="margin-top:6px"><span>&nbsp;</span><button class="cont-copy-btn" onclick="contCopy(\'script-'+rede+'\',this)">📋 copiar</button></div>'
       + '<textarea class="cont-textarea" id="script-'+rede+'" rows="6">' + esc(d.video_script || '') + '</textarea>'
       + '</div></div>'
+      + '</div>'
+      // Preview section
+      + '<div class="card-preview-section" id="card-preview-'+rede+'"></div>'
     wrap.appendChild(div)
   })
+}
+
+function contTogglePreview(rede) {
+  var editEl = document.getElementById('card-edit-'+rede)
+  var prevEl = document.getElementById('card-preview-'+rede)
+  var btn    = document.getElementById('ptoggle-'+rede)
+  var isOpen = prevEl.classList.contains('open')
+  if (isOpen) {
+    prevEl.classList.remove('open')
+    editEl.style.display = ''
+    btn.classList.remove('active')
+    btn.textContent = '👁 Preview'
+  } else {
+    prevEl.innerHTML = prevBuildHtml(rede)
+    prevEl.classList.add('open')
+    editEl.style.display = 'none'
+    btn.classList.add('active')
+    btn.textContent = '✏️ Editar'
+  }
+}
+
+function prevGetImg(aspect) {
+  var url = _imgUrls.length ? _imgUrls[0] : null
+  if (url) return '<img class="prev-img" src="'+esc(url)+'" style="aspect-ratio:'+aspect+';object-fit:cover;width:100%">'
+  return '<div class="prev-img-placeholder prev-no-img" style="aspect-ratio:'+aspect+'">🖼️</div>'
+}
+
+function prevTrunc(text, len) {
+  if (!text) return ''
+  return text.length > len ? text.slice(0, len) + '…' : text
+}
+
+function prevBuildHtml(rede) {
+  var mainEl   = document.getElementById('main-'+rede)
+  var hashEl   = document.getElementById('hash-'+rede)
+  var mainText = mainEl ? mainEl.value : ''
+  var hashText = hashEl ? hashEl.value : ''
+
+  if (rede === 'instagram') {
+    var lines = mainText.split('\n')
+    var caption3 = lines.slice(0, 3).join('\n')
+    var hasMore  = lines.length > 3 || mainText.length > 180
+    if (mainText.length > 180) caption3 = mainText.slice(0, 180)
+    var tagsHtml = hashText.trim()
+      ? hashText.trim().split(/\s+/).map(function(t){ return '<span style="color:#00376b">'+esc(t)+'</span>' }).join(' ')
+      : ''
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-ig">'
+      + '<div class="prev-ig-head">'
+        + '<div class="prev-avatar">MG</div>'
+        + '<div><div class="prev-ig-name">miguelgermano</div><div class="prev-ig-loc">Figueira da Foz</div></div>'
+        + '<span class="prev-ig-dots">···</span>'
+      + '</div>'
+      + '<div class="prev-ig-img-wrap">' + prevGetImg('1/1') + '</div>'
+      + '<div class="prev-ig-actions">❤️ 💬 ✈️ <span class="prev-ig-save">🔖</span></div>'
+      + '<div class="prev-ig-likes">1.243 gostos</div>'
+      + '<div class="prev-ig-caption"><strong>miguelgermano</strong>'
+        + esc(caption3).replace(/\n/g,'<br>')
+        + (hasMore ? ' <span class="prev-ig-more">... mais</span>' : '')
+      + '</div>'
+      + (tagsHtml ? '<div class="prev-ig-tags">' + tagsHtml + '</div>' : '')
+      + '<div class="prev-ig-comments">Ver todos os 24 comentários</div>'
+      + '</div></div>'
+  }
+
+  if (rede === 'facebook') {
+    var fbText  = mainText.length > 280 ? mainText.slice(0, 280) : mainText
+    var fbMore  = mainText.length > 280
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-fb">'
+      + '<div class="prev-fb-head">'
+        + '<div class="prev-avatar">MG</div>'
+        + '<div><div class="prev-fb-name">Miguel Germano</div>'
+        + '<div class="prev-fb-meta">Figueira Home · 2h · 🌐</div></div>'
+        + '<span class="prev-fb-more">···</span>'
+      + '</div>'
+      + '<div class="prev-fb-text">' + esc(fbText).replace(/\n/g,'<br>') + (fbMore ? ' <span class="prev-fb-more-link">Ver mais</span>' : '') + '</div>'
+      + '<div class="prev-fb-img-wrap">' + prevGetImg('16/9') + '</div>'
+      + '<div class="prev-fb-reaction-bar">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="display:flex">'
+            + '<div class="prev-fb-reaction-icon ri-like">👍</div>'
+            + '<div class="prev-fb-reaction-icon ri-love">❤️</div>'
+            + '<div class="prev-fb-reaction-icon ri-haha">😂</div>'
+          + '</div>156'
+        + '</div>'
+        + '<span>12 comentários · 4 partilhas</span>'
+      + '</div>'
+      + '<div class="prev-fb-actions">'
+        + '<button class="prev-fb-act-btn">👍 Gosto</button>'
+        + '<button class="prev-fb-act-btn">💬 Comentar</button>'
+        + '<button class="prev-fb-act-btn">↗ Partilhar</button>'
+      + '</div>'
+      + '</div></div>'
+  }
+
+  if (rede === 'linkedin') {
+    var liText = mainText.length > 260 ? mainText.slice(0, 260) : mainText
+    var liMore = mainText.length > 260
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-li">'
+      + '<div class="prev-li-head">'
+        + '<div class="prev-avatar">MG</div>'
+        + '<div style="flex:1">'
+          + '<div class="prev-li-name">Miguel Germano</div>'
+          + '<div class="prev-li-title">Consultor Imobiliário · Figueira Home</div>'
+          + '<div class="prev-li-meta">1h · 🌐</div>'
+        + '</div>'
+        + '<span class="prev-li-follow">+ Seguir</span>'
+      + '</div>'
+      + '<div class="prev-li-text">' + esc(liText).replace(/\n/g,'<br>') + (liMore ? ' <span class="prev-li-more">...ver mais</span>' : '') + '</div>'
+      + '<div class="prev-li-img-wrap">' + prevGetImg('16/9') + '</div>'
+      + '<div class="prev-li-reactions">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="display:flex">'
+            + '<div class="prev-li-ri lri-like">👍</div>'
+            + '<div class="prev-li-ri lri-love">❤️</div>'
+            + '<div class="prev-li-ri lri-insightful">💡</div>'
+          + '</div>42'
+        + '</div>'
+        + '<span>8 comentários · 3 reposições</span>'
+      + '</div>'
+      + '<div class="prev-li-actions">'
+        + '<button class="prev-li-act-btn">👍 Reagir</button>'
+        + '<button class="prev-li-act-btn">💬 Comentar</button>'
+        + '<button class="prev-li-act-btn">↩ Partilhar</button>'
+        + '<button class="prev-li-act-btn">✉️ Enviar</button>'
+      + '</div>'
+      + '</div></div>'
+  }
+
+  if (rede === 'youtube') {
+    var ytTitle = prevTrunc(mainText.split('\n')[0] || mainText, 80)
+    var ytDesc  = prevTrunc(mainText, 120)
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-yt">'
+      + '<div class="prev-yt-thumb-wrap">'
+        + prevGetImg('16/9')
+        + '<div class="prev-yt-duration">1:30</div>'
+      + '</div>'
+      + '<div class="prev-yt-info">'
+        + '<div class="prev-avatar sm">MG</div>'
+        + '<div class="prev-yt-text">'
+          + '<div class="prev-yt-title">' + esc(ytTitle) + '</div>'
+          + '<div class="prev-yt-channel">Figueira Home</div>'
+          + '<div class="prev-yt-meta">2,3 mil visualizações · há 1 hora</div>'
+          + '<div class="prev-yt-desc">' + esc(ytDesc) + '</div>'
+        + '</div>'
+      + '</div>'
+      + '</div></div>'
+  }
+  return ''
 }
 
 function contUpdateWc(rede, val) {
