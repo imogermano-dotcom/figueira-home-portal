@@ -303,6 +303,53 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ai-regen-btn:disabled{opacity:.5;cursor:not-allowed}
 .ai-img-badge{font-size:.7rem;background:#e8f0fb;color:#2d6a9f;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
 .ai-img-or{text-align:center;font-size:.74rem;color:#9ca3af;margin:8px 0;letter-spacing:.3px}
+/* Biblioteca de Imagens */
+#page-biblioteca main{flex:1;padding:24px;max-width:1040px;margin:0 auto;width:100%}
+.bib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.bib-header h2{font-size:1rem;font-weight:700;color:#1a3c5e;margin:0}
+.bib-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.bib-search{padding:7px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:inherit;outline:none;flex:1;min-width:140px;max-width:240px}
+.bib-search:focus{border-color:#2d6a9f}
+.bib-select{padding:6px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.8rem;font-family:inherit;outline:none;background:#fff}
+.bib-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.bib-item{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .2s,transform .15s}
+.bib-item:hover{border-color:#2d6a9f;transform:scale(1.02)}
+.bib-item img{width:100%;height:100%;object-fit:cover;display:block}
+.bib-item-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;flex-direction:column;justify-content:flex-end;padding:8px;transition:background .2s;gap:4px}
+.bib-item:hover .bib-item-overlay{background:rgba(0,0,0,.52)}
+.bib-item-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s;justify-content:flex-end}
+.bib-item:hover .bib-item-actions{opacity:1}
+.bib-action-btn{padding:4px 8px;border:none;border-radius:6px;font-size:.68rem;font-weight:600;cursor:pointer;background:rgba(255,255,255,.92);color:#1a3c5e;transition:all .2s}
+.bib-action-btn:hover{background:#fff}
+.bib-item-badge{font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:10px;align-self:flex-start;opacity:0;transition:opacity .2s;white-space:nowrap}
+.bib-item:hover .bib-item-badge{opacity:1}
+.bib-badge-ia{background:#e0e7ff;color:#4338ca}
+.bib-badge-upload{background:#dcfce7;color:#15803d}
+.bib-empty{text-align:center;padding:48px;color:#9ca3af;font-size:.9rem;grid-column:1/-1}
+.bib-upload-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:20px}
+.bib-upload-modal.open{display:flex}
+.bib-upload-box{background:#fff;border-radius:14px;padding:28px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.bib-upload-box h3{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:16px}
+.bib-upload-zone{border:2px dashed #d1d5db;border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa}
+.bib-upload-zone:hover,.bib-upload-zone.drag-over{border-color:#2d6a9f;background:#f0f5ff}
+.bib-upload-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.bib-upload-thumb{width:72px;height:72px;border-radius:6px;object-fit:cover;border:1.5px solid #e0e6f0}
+.bib-form-row{margin-top:12px}
+.bib-form-label{display:block;font-size:.75rem;font-weight:600;color:#4b5563;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.bib-form-input{width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:inherit;outline:none}
+.bib-form-input:focus{border-color:#2d6a9f}
+.bib-pick-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px}
+.bib-pick-modal.open{display:flex}
+.bib-pick-box{background:#fff;border-radius:14px;padding:24px;max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.bib-pick-box h3{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:12px;flex-shrink:0}
+.bib-pick-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0}
+.bib-pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;overflow-y:auto;flex:1;min-height:200px}
+.bib-pick-item{aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:3px solid transparent;transition:border-color .15s,transform .1s;position:relative}
+.bib-pick-item:hover{border-color:#2d6a9f;transform:scale(1.03)}
+.bib-pick-item.selected{border-color:#16a34a}
+.bib-pick-item img{width:100%;height:100%;object-fit:cover}
+.bib-pick-empty{text-align:center;padding:32px;color:#9ca3af;font-size:.85rem;grid-column:1/-1}
+.bib-pick-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;flex-shrink:0;border-top:1px solid #f0f0f0;margin-top:12px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -342,6 +389,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn active" id="tab-search" onclick="showTab('search')">🔍 Pesquisa IA</button>
     <button class="pnav-btn" id="tab-kpi" style="display:none" onclick="showTab('kpi')">📊 KPI Dashboard</button>
     <button class="pnav-btn" id="tab-conteudos" onclick="showTab('conteudos')">✨ Conteúdo Social</button>
+    <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
   </nav>
 
@@ -393,7 +441,10 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="ai-img-box" id="ai-img-box">
               <div id="ai-img-initial">
                 <div class="ai-img-hint">🤖 <span>Gera uma imagem com IA para este conteúdo</span></div>
-                <button class="ai-regen-btn" id="ai-gerar-manual-btn" onclick="aiImgGerarManual()" style="margin-top:8px">✨ Gerar com IA</button>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                  <button class="ai-regen-btn" id="ai-gerar-manual-btn" onclick="aiImgGerarManual()">✨ Gerar com IA</button>
+                  <button class="ai-regen-btn" onclick="bibOpenPickModal()">📷 Da Biblioteca</button>
+                </div>
               </div>
               <div id="ai-img-loading" style="display:none">
                 <div class="ai-img-status"><div class="ai-img-spinner"></div><span>A criar imagem com IA...</span></div>
@@ -506,6 +557,97 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <div class="modal-box" id="hist-modal-box"></div>
   </div>
 
+  <!-- Biblioteca de Imagens -->
+  <div class="portal-page" id="page-biblioteca">
+    <main>
+      <div class="cont-box">
+        <div class="bib-header">
+          <h2>🖼️ Biblioteca de Imagens</h2>
+          <button class="cont-btn primary" style="padding:8px 16px;font-size:.82rem" onclick="bibOpenUpload()">⬆️ Fazer Upload</button>
+        </div>
+        <div class="bib-filters">
+          <input type="text" class="bib-search" id="bib-search" placeholder="Pesquisar..." oninput="bibSearch(this.value)">
+          <select class="bib-select" id="bib-filter-origem" onchange="bibSetOrigem(this.value)">
+            <option value="">Todas as origens</option>
+            <option value="upload">Upload</option>
+            <option value="ia">Geradas por IA</option>
+          </select>
+          <select class="bib-select" id="bib-filter-cat" onchange="bibSetFilter('categoria', this.value)">
+            <option value="">Todas as categorias</option>
+            <option value="Imóvel">Imóvel</option>
+            <option value="Pessoas">Pessoas</option>
+            <option value="Mercado">Mercado</option>
+            <option value="Genérico">Genérico</option>
+          </select>
+        </div>
+        <div class="bib-grid" id="bib-grid">
+          <div class="bib-empty">A carregar biblioteca...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Upload modal -->
+  <div class="bib-upload-modal" id="bib-upload-modal" onclick="if(event.target===this)bibCloseUpload()">
+    <div class="bib-upload-box">
+      <h3>⬆️ Adicionar Imagens à Biblioteca</h3>
+      <input type="file" id="bib-file-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none" onchange="bibOnFileInput(this)">
+      <div class="bib-upload-zone" id="bib-upload-zone"
+        onclick="document.getElementById('bib-file-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="event.preventDefault();this.classList.remove('drag-over');bibOnDrop(event)">
+        <div style="font-size:2rem;margin-bottom:8px">📁</div>
+        <div style="font-size:.88rem;font-weight:600;color:#4b5563">Clica ou arrasta imagens</div>
+        <div style="font-size:.76rem;color:#9ca3af;margin-top:4px">JPG, PNG, WEBP · máx. 10MB</div>
+      </div>
+      <div class="bib-upload-previews" id="bib-upload-previews"></div>
+      <div class="bib-form-row">
+        <label class="bib-form-label">Categoria</label>
+        <select class="bib-form-input" id="bib-upload-cat">
+          <option>Genérico</option>
+          <option>Imóvel</option>
+          <option>Pessoas</option>
+          <option>Mercado</option>
+        </select>
+      </div>
+      <div class="bib-form-row">
+        <label class="bib-form-label">Descrição (opcional)</label>
+        <input type="text" class="bib-form-input" id="bib-upload-desc" placeholder="Ex: Vista da praia, Sala T3...">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
+        <button class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
+      </div>
+      <div id="bib-upload-msg" style="margin-top:10px;font-size:.8rem;color:#6b7280"></div>
+    </div>
+  </div>
+
+  <!-- Pick modal -->
+  <div class="bib-pick-modal" id="bib-pick-modal" onclick="if(event.target===this)bibClosePickModal()">
+    <div class="bib-pick-box">
+      <h3>📷 Escolher da Biblioteca</h3>
+      <div class="bib-pick-filters">
+        <input type="text" class="bib-search" style="max-width:200px" id="bib-pick-search" placeholder="Pesquisar..." oninput="bibLoadPick()">
+        <select class="bib-select" id="bib-pick-origem" onchange="bibLoadPick()">
+          <option value="">Todas</option>
+          <option value="upload">Upload</option>
+          <option value="ia">IA</option>
+        </select>
+      </div>
+      <div class="bib-pick-grid" id="bib-pick-grid">
+        <div class="bib-pick-empty">A carregar...</div>
+      </div>
+      <div class="bib-pick-footer">
+        <span id="bib-pick-count" style="font-size:.8rem;color:#9ca3af">—</span>
+        <div style="display:flex;gap:8px">
+          <button class="cont-btn secondary" onclick="bibClosePickModal()">Cancelar</button>
+          <button class="cont-btn primary" id="bib-pick-use-btn" onclick="bibPickConfirm()" disabled>Usar esta imagem</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Configuração (admin only) -->
   <div class="portal-page" id="page-config">
     <main>
@@ -583,17 +725,17 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','config'].forEach(function(n) {
+  ['search','kpi','conteudos','biblioteca','config'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
     if (btn) btn.className = 'pnav-btn' + (n === name ? ' active' : '')
   })
-  // Lazy-load KPI iframe on first open
   if (name === 'kpi' && !_kpiLoaded) {
     _kpiLoaded = true
     document.getElementById('kpi-frame').src = '/dashboard.html'
   }
+  if (name === 'biblioteca') bibLoad()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -1116,6 +1258,9 @@ async function aiImgGerar(textoBase, session) {
     document.getElementById('ai-img-thumb').src = finalUrl
     aiImgSetState('result')
     imgCheckInstagram()
+
+    // Save to biblioteca in background
+    bibSaveIaImage(finalUrl, data.prompt || _aiImgPrompt)
 
     // Make it available as first image if no manual uploads
     if (!_imgUrls.length) _imgUrls = [finalUrl]
@@ -2048,6 +2193,284 @@ function histModalOpen(id) {
 
 function histModalClose() {
   document.getElementById('hist-modal').style.display = 'none'
+}
+
+// ── Biblioteca de Imagens ─────────────────────────────────────────────────────
+var _bibRows = []
+var _bibFilter = { origem: '', categoria: '', search: '' }
+var _bibUploadFiles = []
+var _bibPickSelected = null
+
+async function bibLoad() {
+  var grid = document.getElementById('bib-grid')
+  if (grid) grid.innerHTML = '<div class="bib-empty">A carregar...</div>'
+  var { data: { user } } = await sb.auth.getUser()
+  if (!user) return
+  var { data, error } = await sb.from('biblioteca_imagens')
+    .select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(500)
+  _bibRows = error ? [] : (data || [])
+  bibRender()
+}
+
+function bibRender() {
+  var rows = _bibRows.filter(function(r) {
+    if (_bibFilter.origem === 'ia' && r.origem !== 'ia') return false
+    if (_bibFilter.origem === 'upload' && r.origem !== 'upload') return false
+    if (_bibFilter.categoria && r.categoria !== _bibFilter.categoria) return false
+    if (_bibFilter.search) {
+      var q = _bibFilter.search.toLowerCase()
+      var hay = ((r.descricao || '') + ' ' + (r.categoria || '') + ' ' + (r.tags || []).join(' ')).toLowerCase()
+      if (!hay.includes(q)) return false
+    }
+    return true
+  })
+  var grid = document.getElementById('bib-grid')
+  if (!grid) return
+  if (!rows.length) {
+    grid.innerHTML = '<div class="bib-empty">Nenhuma imagem encontrada.</div>'
+    return
+  }
+  grid.innerHTML = rows.map(function(r) {
+    var badge = r.origem === 'ia'
+      ? '<span class="bib-item-badge bib-badge-ia">🤖 IA</span>'
+      : '<span class="bib-item-badge bib-badge-upload">📁 Upload</span>'
+    return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')">'
+      + '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
+      + '<div class="bib-item-overlay">'
+      + badge
+      + '<div class="bib-item-actions">'
+      + '<button class="bib-action-btn" onclick="event.stopPropagation();bibUseInPost(\'' + r.id + '\')">✅ Usar</button>'
+      + '<button class="bib-action-btn" onclick="event.stopPropagation();bibDownload(\'' + r.id + '\')">⬇</button>'
+      + '<button class="bib-action-btn" style="color:#dc2626" onclick="event.stopPropagation();bibDelete(\'' + r.id + '\')">🗑</button>'
+      + '</div></div>'
+      + '</div>'
+  }).join('')
+}
+
+function bibSetFilter(key, val) {
+  _bibFilter[key] = val
+  bibRender()
+}
+
+function bibSetOrigem(val) {
+  _bibFilter.origem = val
+  bibRender()
+}
+
+function bibSearch(val) {
+  _bibFilter.search = val
+  bibRender()
+}
+
+function bibOpenModal(id) {
+  var r = _bibRows.find(function(x) { return x.id === id })
+  if (!r) return
+  var date = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-PT') : ''
+  var info = [
+    r.categoria ? '📂 ' + r.categoria : '',
+    r.origem === 'ia' ? '🤖 Gerada por IA' : '📁 Upload',
+    date ? '📅 ' + date : '',
+    r.descricao || ''
+  ].filter(Boolean).join(' · ')
+  var html = '<div style="display:flex;flex-direction:column;gap:14px">'
+    + '<img src="' + esc(r.url) + '" style="width:100%;border-radius:10px;max-height:360px;object-fit:contain;background:#f0f2f5">'
+    + (info ? '<p style="font-size:.8rem;color:#6b7280">' + esc(info) + '</p>' : '')
+    + (r.prompt_ia ? '<p style="font-size:.76rem;color:#6b7280;background:#f9fafb;border-left:3px solid #d1d5db;padding:7px 10px;border-radius:0 6px 6px 0">' + esc(r.prompt_ia) + '</p>' : '')
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button class="cont-btn primary" onclick="bibUseInPost(\'' + r.id + '\');bibModalClose()">✅ Usar no Gerador</button>'
+    + '<button class="cont-btn secondary" onclick="bibDownload(\'' + r.id + '\')">⬇️ Download</button>'
+    + '<button class="cont-btn secondary" style="color:#dc2626;border-color:#dc2626" onclick="bibDelete(\'' + r.id + '\');bibModalClose()">🗑️ Eliminar</button>'
+    + '<button class="cont-btn secondary" onclick="bibModalClose()">Fechar</button>'
+    + '</div></div>'
+  document.getElementById('hist-modal-box').innerHTML = html
+  document.getElementById('hist-modal').style.display = 'flex'
+}
+
+function bibModalClose() {
+  document.getElementById('hist-modal').style.display = 'none'
+}
+
+function bibUseInPost(id) {
+  var r = _bibRows.find(function(x) { return x.id === id })
+  if (!r) return
+  _aiImgFinal = r.url
+  if (!_imgUrls.length) _imgUrls = [r.url]
+  var thumb = document.getElementById('ai-img-thumb')
+  if (thumb) thumb.src = r.url
+  var ta = document.getElementById('ai-img-prompt-ta')
+  if (ta) ta.value = r.prompt_ia || ''
+  aiImgSetState('result')
+  imgCheckInstagram()
+  showTab('conteudos')
+}
+
+function bibDownload(id) {
+  var r = _bibRows.find(function(x) { return x.id === id })
+  if (!r) return
+  var a = document.createElement('a')
+  a.href = r.url
+  a.download = 'biblioteca_' + id.slice(0, 8) + '.jpg'
+  a.target = '_blank'
+  a.click()
+}
+
+async function bibDelete(id) {
+  if (!confirm('Eliminar esta imagem da biblioteca?')) return
+  var { error } = await sb.from('biblioteca_imagens').delete().eq('id', id)
+  if (error) { alert('Erro ao eliminar: ' + error.message); return }
+  _bibRows = _bibRows.filter(function(x) { return x.id !== id })
+  bibRender()
+}
+
+function bibOpenUpload() {
+  _bibUploadFiles = []
+  document.getElementById('bib-upload-previews').innerHTML = ''
+  document.getElementById('bib-upload-desc').value = ''
+  document.getElementById('bib-upload-msg').textContent = ''
+  document.getElementById('bib-upload-cat').value = 'Genérico'
+  document.getElementById('bib-upload-modal').classList.add('open')
+}
+
+function bibCloseUpload() {
+  document.getElementById('bib-upload-modal').classList.remove('open')
+  _bibUploadFiles = []
+}
+
+function bibOnFileInput(input) {
+  var files = Array.from(input.files).filter(function(f) { return f.size <= 10 * 1024 * 1024 })
+  _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 20)
+  bibRenderUploadPreviews()
+  input.value = ''
+}
+
+function bibOnDrop(e) {
+  var files = Array.from(e.dataTransfer.files).filter(function(f) { return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024 })
+  _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 20)
+  bibRenderUploadPreviews()
+}
+
+function bibRenderUploadPreviews() {
+  var wrap = document.getElementById('bib-upload-previews')
+  wrap.innerHTML = _bibUploadFiles.map(function(f) {
+    return '<img class="bib-upload-thumb" src="' + URL.createObjectURL(f) + '" alt="">'
+  }).join('')
+}
+
+async function bibUploadSubmit() {
+  if (!_bibUploadFiles.length) { alert('Selecciona pelo menos uma imagem.'); return }
+  var btn = document.getElementById('bib-upload-btn')
+  var msg = document.getElementById('bib-upload-msg')
+  btn.disabled = true; btn.textContent = '⏳ A guardar...'
+  var { data: { user } } = await sb.auth.getUser()
+  var cat = document.getElementById('bib-upload-cat').value
+  var desc = document.getElementById('bib-upload-desc').value.trim()
+  var ok = 0
+  for (var i = 0; i < _bibUploadFiles.length; i++) {
+    var f = _bibUploadFiles[i]
+    var ext = f.name.split('.').pop() || 'jpg'
+    var path = user.id + '/' + Date.now() + '_' + i + '.' + ext
+    msg.textContent = 'A carregar ' + (i + 1) + ' de ' + _bibUploadFiles.length + '...'
+    var { error: upErr } = await sb.storage.from('biblioteca-imagens').upload(path, f, { upsert: true })
+    if (upErr) { console.warn('bib upload error', upErr); continue }
+    var { data: pub } = sb.storage.from('biblioteca-imagens').getPublicUrl(path)
+    var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
+      user_id: user.id, url: pub.publicUrl, categoria: cat,
+      descricao: desc || null, origem: 'upload',
+      tamanho_bytes: f.size
+    })
+    if (!dbErr) ok++
+  }
+  msg.textContent = ok + ' imagem(ns) guardada(s) com sucesso.'
+  btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'
+  _bibUploadFiles = []
+  document.getElementById('bib-upload-previews').innerHTML = ''
+  setTimeout(function() {
+    document.getElementById('bib-upload-modal').classList.remove('open')
+    bibLoad()
+  }, 1200)
+}
+
+async function bibSaveIaImage(url, prompt) {
+  try {
+    var { data: { user } } = await sb.auth.getUser()
+    if (!user) return
+    await sb.from('biblioteca_imagens').insert({
+      user_id: user.id, url: url, categoria: 'Genérico',
+      origem: 'ia', prompt_ia: prompt || null,
+      tags: ['ia', 'gerada']
+    })
+  } catch(e) { console.warn('bibSaveIaImage error', e) }
+}
+
+// ── Biblioteca Pick Modal ─────────────────────────────────────────────────────
+var _bibPickRows = []
+
+async function bibOpenPickModal() {
+  _bibPickSelected = null
+  document.getElementById('bib-pick-use-btn').disabled = true
+  document.getElementById('bib-pick-count').textContent = '—'
+  document.getElementById('bib-pick-search').value = ''
+  document.getElementById('bib-pick-origem').value = ''
+  document.getElementById('bib-pick-modal').classList.add('open')
+  await bibLoadPick()
+}
+
+function bibClosePickModal() {
+  document.getElementById('bib-pick-modal').classList.remove('open')
+  _bibPickSelected = null
+}
+
+async function bibLoadPick() {
+  var grid = document.getElementById('bib-pick-grid')
+  grid.innerHTML = '<div class="bib-pick-empty">A carregar...</div>'
+  var { data: { user } } = await sb.auth.getUser()
+  if (!user) return
+  var search = (document.getElementById('bib-pick-search').value || '').toLowerCase().trim()
+  var origem = document.getElementById('bib-pick-origem').value
+  var query = sb.from('biblioteca_imagens').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(300)
+  if (origem === 'ia') query = query.eq('origem', 'ia')
+  else if (origem === 'upload') query = query.eq('origem', 'upload')
+  var { data } = await query
+  _bibPickRows = (data || []).filter(function(r) {
+    if (!search) return true
+    return ((r.descricao || '') + ' ' + (r.categoria || '') + ' ' + (r.tags || []).join(' ')).toLowerCase().includes(search)
+  })
+  document.getElementById('bib-pick-count').textContent = _bibPickRows.length + ' imagem(ns)'
+  if (!_bibPickRows.length) {
+    grid.innerHTML = '<div class="bib-pick-empty">Nenhuma imagem encontrada.</div>'
+    return
+  }
+  grid.innerHTML = _bibPickRows.map(function(r) {
+    return '<div class="bib-pick-item" id="bib-pick-' + r.id + '" onclick="bibPickSelect(\'' + r.id + '\')">'
+      + '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
+      + '</div>'
+  }).join('')
+}
+
+function bibPickSelect(id) {
+  if (_bibPickSelected) {
+    var prev = document.getElementById('bib-pick-' + _bibPickSelected)
+    if (prev) prev.classList.remove('selected')
+  }
+  _bibPickSelected = id
+  var el = document.getElementById('bib-pick-' + id)
+  if (el) el.classList.add('selected')
+  document.getElementById('bib-pick-use-btn').disabled = false
+}
+
+function bibPickConfirm() {
+  if (!_bibPickSelected) return
+  var r = _bibPickRows.find(function(x) { return x.id === _bibPickSelected })
+  if (!r) return
+  bibClosePickModal()
+  _aiImgFinal = r.url
+  if (!_imgUrls.length) _imgUrls = [r.url]
+  var thumb = document.getElementById('ai-img-thumb')
+  if (thumb) thumb.src = r.url
+  var ta = document.getElementById('ai-img-prompt-ta')
+  if (ta) ta.value = r.prompt_ia || ''
+  aiImgSetState('result')
+  imgCheckInstagram()
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
