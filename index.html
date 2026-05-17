@@ -4789,82 +4789,126 @@ async function bibUploadSubmit() {
 }
 
 async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
-  // Arquitectura directa: get-upload-url (edge fn) → uploadToSignedUrl (SDK)
-  // SDK trata Content-Type, token e headers automaticamente — sem HTTP 400
-  var GET_URL_FN = DOORSTEP_URL + '/functions/v1/get-upload-url'
-  var { data: { session } } = await sb.auth.getSession()
-  if (!session) { console.warn('[upload-video] sem sessão'); return null }
+  // S3 Multipart Upload via Supabase S3 API (não passa pelo proxy Cloudflare)
+  // Partes de 10 MB → sem limite de 50 MB do Cloudflare
+  // Fluxo: get-s3-upload-url → PUT partes S3 → complete-s3-upload
+  var INIT_FN     = DOORSTEP_URL + '/functions/v1/get-s3-upload-url'
+  var COMPLETE_FN = DOORSTEP_URL + '/functions/v1/complete-s3-upload'
+  var PART_SIZE   = 10 * 1024 * 1024  // 10 MB
 
-  console.log('[upload-video] início', {
-    nome: file.name,
-    tamanho: Math.round(file.size/1024/1024) + 'MB',
-    tipo: file.type || '(vazio)',
-    path: path
+  var { data: { session } } = await sb.auth.getSession()
+  if (!session) { console.warn('[upload-s3] sem sessão'); return null }
+
+  var mimeType    = file.type || 'video/mp4'
+  var totalParts  = Math.ceil(file.size / PART_SIZE)
+
+  console.log('[upload-s3] início S3 multipart', {
+    nome: file.name, tamanho: Math.round(file.size/1024/1024) + 'MB',
+    partes: totalParts, path: path
   })
 
-  // 1. Obter token assinado via edge function (< 1s)
-  if (progLbl) progLbl.textContent = 'A preparar upload…'
-  var urlResp, urlData
+  // ── 1. Iniciar multipart upload (edge fn, < 1s) ───────────────────────────
+  if (progLbl) progLbl.textContent = 'A iniciar upload S3…'
+  var initData
   try {
-    urlResp = await fetch(GET_URL_FN, {
+    var r = await fetch(INIT_FN, {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + session.access_token,
-        'Content-Type':  'application/json'
-      },
-      body: JSON.stringify({ filePath: path, bucket: 'videos-conteudos' })
+      headers: { 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath: path, fileType: mimeType, fileSize: file.size })
     })
-    urlData = await urlResp.json()
+    initData = await r.json()
+    if (!r.ok || !initData.uploadId) throw new Error(initData.error || 'Init falhou ' + r.status)
   } catch(e) {
-    console.error('[upload-video] get-upload-url falhou:', e.message)
-    if (progBar) { progBar.style.background = '#ef4444' }
-    if (progLbl) progLbl.textContent = '✗ Erro ao obter URL de upload'
+    console.error('[upload-s3] init erro:', e.message)
+    if (progBar) progBar.style.background = '#ef4444'
+    if (progLbl) progLbl.textContent = '✗ ' + e.message
     return null
   }
-  if (!urlResp.ok || !urlData.token) {
-    console.error('[upload-video] get-upload-url erro:', urlResp.status, urlData)
-    if (progBar) { progBar.style.background = '#ef4444' }
-    if (progLbl) progLbl.textContent = '✗ ' + (urlData.error || 'Erro ao obter URL (' + urlResp.status + ')')
-    return null
-  }
-  console.log('[upload-video] token obtido, a iniciar upload via SDK…')
 
-  // 2. Animação de progresso (SDK não expõe bytes — animar barra durante o upload)
-  var animTimer = null
-  var animPct   = 5
-  if (progBar && progLbl) {
-    progBar.style.width = '5%'
-    progLbl.textContent = 'A carregar vídeo… (' + Math.round(file.size/1024/1024) + ' MB)'
-    animTimer = setInterval(function() {
-      // Avança lentamente até 90% enquanto espera — nunca chega a 100% sozinho
-      if (animPct < 90) {
-        animPct += (90 - animPct) * 0.04  // desacelera à medida que se aproxima
-        progBar.style.width = Math.round(animPct) + '%'
+  var uploadId   = initData.uploadId
+  var s3Endpoint = initData.s3Endpoint
+  var bucket     = initData.bucket
+  console.log('[upload-s3] uploadId:', uploadId, '— a enviar', totalParts, 'partes')
+
+  // ── 2. Enviar partes directamente para S3 com Bearer token ────────────────
+  var etags = []
+
+  function _uploadPart(partBlob, partNumber) {
+    return new Promise(function(resolve, reject) {
+      var url = s3Endpoint + '/' + bucket + '/' + path +
+        '?partNumber=' + partNumber + '&uploadId=' + encodeURIComponent(uploadId)
+      var xhr = new XMLHttpRequest()
+      xhr.open('PUT', url, true)
+      xhr.setRequestHeader('Authorization', 'Bearer ' + session.access_token)
+      xhr.setRequestHeader('Content-Type',  'application/octet-stream')
+      xhr.timeout = 300000  // 5 min por parte
+
+      xhr.upload.onprogress = function(ev) {
+        if (ev.lengthComputable && progBar && progLbl) {
+          var done = (partNumber - 1) + ev.loaded / ev.total
+          var pct  = Math.round((done / totalParts) * 100)
+          progBar.style.width = pct + '%'
+          progLbl.textContent = 'A carregar… ' + pct + '% (parte ' + partNumber + '/' + totalParts + ')'
+        }
       }
-    }, 800)
+      xhr.onload = function() {
+        console.log('[upload-s3] parte ' + partNumber + ' status=' + xhr.status,
+          'ETag=' + xhr.getResponseHeader('ETag'))
+        if (xhr.status >= 200 && xhr.status < 300) {
+          var etag = xhr.getResponseHeader('ETag') || xhr.getResponseHeader('etag') || ''
+          resolve(etag)
+        } else {
+          reject(new Error('Parte ' + partNumber + ' HTTP ' + xhr.status + ': ' + xhr.responseText.slice(0, 150)))
+        }
+      }
+      xhr.onerror   = function() { reject(new Error('Erro de rede na parte ' + partNumber)) }
+      xhr.onabort   = function() { reject(new Error('Abortado na parte ' + partNumber)) }
+      xhr.ontimeout = function() { reject(new Error('Timeout na parte ' + partNumber + ' (>5 min)')) }
+      xhr.send(partBlob)
+    })
   }
 
-  // 3. Upload via SDK — trata token, Content-Type e PUT correctamente
-  var mimeType = file.type || 'video/mp4'
-  var uploadResult = await sb.storage
-    .from('videos-conteudos')
-    .uploadToSignedUrl(path, urlData.token, file, { contentType: mimeType })
+  for (var i = 0; i < totalParts; i++) {
+    var start = i * PART_SIZE
+    var end   = Math.min(start + PART_SIZE, file.size)
+    var partBlob = file.slice(start, end)
+    var partNumber = i + 1
 
-  if (animTimer) clearInterval(animTimer)
+    var etag
+    try {
+      etag = await _uploadPart(partBlob, partNumber)
+    } catch(e) {
+      console.error('[upload-s3] parte ' + partNumber + ' falhou:', e.message)
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ ' + e.message
+      return null
+    }
+    etags.push({ partNumber: partNumber, etag: etag })
+    console.log('[upload-s3] parte ' + partNumber + '/' + totalParts + ' ok ✓ ETag=' + etag)
+  }
 
-  if (uploadResult.error) {
-    console.error('[upload-video] uploadToSignedUrl erro:', uploadResult.error.message)
+  // ── 3. Finalizar multipart upload ─────────────────────────────────────────
+  if (progLbl) progLbl.textContent = 'A finalizar upload…'
+  var completeData
+  try {
+    var rc = await fetch(COMPLETE_FN, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uploadId: uploadId, filePath: path, etags: etags })
+    })
+    completeData = await rc.json()
+    if (!rc.ok || !completeData.url) throw new Error(completeData.error || 'Complete falhou ' + rc.status)
+  } catch(e) {
+    console.error('[upload-s3] complete erro:', e.message)
     if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-    if (progLbl) progLbl.textContent = '✗ ' + uploadResult.error.message
+    if (progLbl) progLbl.textContent = '✗ ' + e.message
     return null
   }
 
   if (progBar) progBar.style.width = '100%'
   if (progLbl) progLbl.textContent = '✅ Upload concluído!'
-  var publicUrl = DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
-  console.log('[upload-video] concluído:', publicUrl)
-  return publicUrl
-
+  console.log('[upload-s3] concluído:', completeData.url)
+  return completeData.url
 }
 function bibGetVideoMeta(file) {
   return new Promise(function(resolve) {
