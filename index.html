@@ -4031,7 +4031,7 @@ function bibUseVideoInPost(r) {
   _vidBibFormato = r.formato_video || null
 
   // Configure network checkboxes based on video format
-  var ativas = _vidBibFormato === 'vertical_9_16' ? ['instagram','facebook','youtube']
+  var ativas = _vidBibFormato === 'vertical_9_16' ? ['instagram','facebook','linkedin','youtube']
     : _vidBibFormato === 'horizontal_16_9' ? ['youtube']
     : ['instagram','facebook','linkedin','youtube']
   var tooltip = 'Incompatível com este formato de vídeo'
@@ -4154,7 +4154,7 @@ async function bibRenderUploadPreviews() {
 }
 
 var BIB_FMT_REDES = {
-  vertical_9_16:   ['📸 Instagram Reels', '👥 Facebook Reels', '▶️ YouTube Shorts', '🎵 TikTok'],
+  vertical_9_16:   ['📸 Instagram Reels', '👥 Facebook Reels', '▶️ YouTube Shorts', '💼 LinkedIn', '🎵 TikTok'],
   horizontal_16_9: ['▶️ YouTube']
 }
 
