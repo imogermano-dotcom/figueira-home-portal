@@ -350,6 +350,73 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .bib-pick-item img{width:100%;height:100%;object-fit:cover}
 .bib-pick-empty{text-align:center;padding:32px;color:#9ca3af;font-size:.85rem;grid-column:1/-1}
 .bib-pick-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;flex-shrink:0;border-top:1px solid #f0f0f0;margin-top:12px}
+/* Agendamento */
+#page-agendamento main{flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%}
+.ag-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.ag-metric-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:16px 20px;text-align:center}
+.ag-metric-icon{font-size:1.4rem;margin-bottom:4px}
+.ag-metric-val{font-size:2rem;font-weight:800;line-height:1.1}
+.ag-metric-lbl{font-size:.74rem;color:#6b7280;margin-top:2px;font-weight:500}
+.ag-controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.ag-month-nav{display:flex;align-items:center;gap:6px}
+.ag-month-btn{padding:5px 12px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;font-size:.9rem;cursor:pointer;transition:all .2s;color:#374151}
+.ag-month-btn:hover{border-color:#2d6a9f;color:#2d6a9f}
+.ag-month-label{font-size:.92rem;font-weight:700;color:#1a3c5e;min-width:150px;text-align:center}
+.ag-view-toggle{display:flex;border:1.5px solid #d1d5db;border-radius:8px;overflow:hidden}
+.ag-view-btn{padding:6px 14px;border:none;background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;color:#666;transition:all .2s;border-right:1px solid #d1d5db}
+.ag-view-btn:last-child{border-right:none}
+.ag-view-btn.active{background:#1a3c5e;color:#fff}
+.ag-filters{display:flex;gap:6px;flex-wrap:wrap}
+.ag-filter-btn{padding:5px 12px;border:1.5px solid #d1d5db;border-radius:20px;background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:#666;transition:all .2s}
+.ag-filter-btn:hover,.ag-filter-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.ag-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e5e7eb;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb}
+.ag-cal-hdr{background:#f0f4f8;padding:8px 4px;text-align:center;font-size:.72rem;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.3px}
+.ag-cal-cell{background:#fff;min-height:90px;padding:5px;position:relative}
+.ag-cal-empty{background:#fafafa}
+.ag-today .ag-cal-daynum{background:#1a3c5e;color:#fff;border-radius:50%}
+.ag-cal-daynum{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#374151;margin-bottom:3px}
+.ag-pill{font-size:.6rem;font-weight:600;padding:2px 5px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;line-height:1.5;transition:opacity .15s}
+.ag-pill:hover{opacity:.75}
+.ag-pill-ig{background:#f9a8d4;color:#9d174d}
+.ag-pill-fb{background:#93c5fd;color:#1e3a5f}
+.ag-pill-li{background:#7dd3fc;color:#0c4a6e}
+.ag-pill-yt{background:#fca5a5;color:#7f1d1d}
+.ag-pill-more{font-size:.6rem;color:#9ca3af;cursor:pointer;padding:1px 4px;margin-top:1px}
+.ag-pill-more:hover{color:#2d6a9f}
+.ag-list-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e0e6f0}
+.ag-list-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.ag-list-table th{text-align:left;padding:9px 12px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.ag-list-table td{padding:9px 12px;border-top:1px solid #f0f0f0;vertical-align:middle}
+.ag-list-table tr:hover td{background:#f7f9fc;cursor:pointer}
+.ag-net-badge{font-size:.85rem;margin-right:1px}
+.ag-status{font-size:.74rem;font-weight:600;white-space:nowrap}
+.ag-s-rascunho{color:#b45309}.ag-s-agendado{color:#1e40af}.ag-s-publicado{color:#15803d}.ag-s-erro{color:#b91c1c}
+.ag-act-btn{padding:4px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.74rem;font-weight:600;cursor:pointer;background:#fff;color:#1a3c5e;transition:all .2s}
+.ag-act-btn:hover{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.ag-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150;display:none}
+.ag-panel-overlay.open{display:block}
+.ag-panel{position:fixed;top:0;right:-440px;width:420px;height:100vh;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.14);z-index:151;transition:right .26s ease;display:flex;flex-direction:column;overflow:hidden}
+.ag-panel.open{right:0}
+.ag-panel-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #e0e6f0;flex-shrink:0}
+.ag-panel-header h3{font-size:.95rem;font-weight:700;color:#1a3c5e;margin:0}
+.ag-panel-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:#6b7280;padding:4px;line-height:1;transition:color .2s}
+.ag-panel-close:hover{color:#1a3c5e}
+#ag-panel-content{flex:1;overflow-y:auto;padding:0 20px 24px}
+.ag-panel-section{padding:14px 0;border-bottom:1px solid #f0f0f0}
+.ag-panel-section:last-child{border-bottom:none}
+.ag-panel-label{font-size:.71rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.ag-panel-val{font-size:.85rem;color:#374151;margin:0}
+.ag-panel-text{font-size:.82rem;color:#374151;background:#f9fafb;border-left:3px solid #d1d5db;padding:8px 12px;border-radius:0 6px 6px 0;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.ag-panel-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:16px}
+.ag-date-input{padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:inherit;outline:none;width:100%;margin-bottom:6px}
+.ag-date-input:focus{border-color:#2d6a9f}
+.ag-sm-btn{padding:5px 12px;border:1.5px solid #2d6a9f;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#2d6a9f;transition:all .2s}
+.ag-sm-btn:hover{background:#2d6a9f;color:#fff}
+@media(max-width:700px){
+  .ag-metrics{grid-template-columns:repeat(2,1fr)}
+  .ag-cal-cell{min-height:56px}
+  .ag-panel{width:100%;right:-100%}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -389,6 +456,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn active" id="tab-search" onclick="showTab('search')">🔍 Pesquisa IA</button>
     <button class="pnav-btn" id="tab-kpi" style="display:none" onclick="showTab('kpi')">📊 KPI Dashboard</button>
     <button class="pnav-btn" id="tab-conteudos" onclick="showTab('conteudos')">✨ Conteúdo Social</button>
+    <button class="pnav-btn" id="tab-agendamento" onclick="showTab('agendamento')">📅 Agendamento</button>
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
   </nav>
@@ -555,6 +623,42 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   <!-- Modal detalhe histórico -->
   <div class="modal-overlay" id="hist-modal" style="display:none" onclick="if(event.target===this)histModalClose()">
     <div class="modal-box" id="hist-modal-box"></div>
+  </div>
+
+  <!-- Agendamento Editorial -->
+  <div class="portal-page" id="page-agendamento">
+    <main>
+      <div class="ag-metrics" id="ag-metrics"></div>
+      <div class="ag-controls">
+        <div class="ag-month-nav">
+          <button class="ag-month-btn" onclick="agNavMonth(-1)">‹</button>
+          <span class="ag-month-label" id="ag-month-label">—</span>
+          <button class="ag-month-btn" onclick="agNavMonth(1)">›</button>
+        </div>
+        <div class="ag-view-toggle">
+          <button class="ag-view-btn active" id="ag-view-cal" onclick="agSetView('cal')">📅 Calendário</button>
+          <button class="ag-view-btn" id="ag-view-list" onclick="agSetView('list')">☰ Lista</button>
+        </div>
+        <div class="ag-filters">
+          <button class="ag-filter-btn active" data-filter="" onclick="agSetFilter('')">Todos</button>
+          <button class="ag-filter-btn" data-filter="agendado" onclick="agSetFilter('agendado')">🔵 Agendados</button>
+          <button class="ag-filter-btn" data-filter="publicado" onclick="agSetFilter('publicado')">🟢 Publicados</button>
+          <button class="ag-filter-btn" data-filter="rascunho" onclick="agSetFilter('rascunho')">🟡 Rascunhos</button>
+        </div>
+      </div>
+      <div id="ag-cal"><div class="bib-empty">A carregar...</div></div>
+      <div id="ag-list" style="display:none"><div class="bib-empty">A carregar...</div></div>
+    </main>
+  </div>
+
+  <!-- Agendamento: side panel + overlay -->
+  <div class="ag-panel-overlay" id="ag-panel-overlay" onclick="agClosePanel()"></div>
+  <div class="ag-panel" id="ag-panel">
+    <div class="ag-panel-header">
+      <h3>📋 Detalhe do Conteúdo</h3>
+      <button class="ag-panel-close" onclick="agClosePanel()">✕</button>
+    </div>
+    <div id="ag-panel-content"></div>
   </div>
 
   <!-- Biblioteca de Imagens -->
@@ -725,7 +829,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','biblioteca','config'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','config'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -735,6 +839,7 @@ function showTab(name) {
     _kpiLoaded = true
     document.getElementById('kpi-frame').src = '/dashboard.html'
   }
+  if (name === 'agendamento') agInit()
   if (name === 'biblioteca') bibLoad()
 }
 
@@ -2284,6 +2389,337 @@ function histModalOpen(id) {
 
 function histModalClose() {
   document.getElementById('hist-modal').style.display = 'none'
+}
+
+// ── Agendamento Editorial ─────────────────────────────────────────────────────
+var _agRows = []
+var _agView = 'cal'
+var _agFilter = ''
+var _agDate = new Date()
+var _agPanelId = null
+var _agChannel = null
+var _agInited = false
+
+var AG_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+
+function agInit() {
+  if (!_agInited) {
+    _agInited = true
+    agSetupRealtime()
+  }
+  agLoad()
+}
+
+async function agLoad() {
+  var { data, error } = await sb.from('conteudos_sociais')
+    .select('*').order('created_at', { ascending: false }).limit(500)
+  _agRows = error ? [] : (data || [])
+  agRenderMetrics()
+  agRender()
+}
+
+function agRender() {
+  if (_agView === 'cal') agRenderCal()
+  else agRenderList()
+}
+
+function agRenderMetrics() {
+  var now = new Date()
+  var month = now.getMonth(), year = now.getFullYear()
+  var monthRows = _agRows.filter(function(r) {
+    var d = new Date(r.data_agendada || r.created_at)
+    return d.getMonth() === month && d.getFullYear() === year
+  })
+  var counts = { agendado: 0, publicado: 0, rascunho: 0 }
+  _agRows.forEach(function(r) {
+    var nets = ['instagram','facebook','linkedin','youtube']
+    var statuses = nets.map(function(n) { return r['status_'+n] }).filter(Boolean)
+    if (statuses.some(function(s) { return s === 'publicado' })) counts.publicado++
+    else if (statuses.some(function(s) { return s === 'agendado' })) counts.agendado++
+    else counts.rascunho++
+  })
+  var el = document.getElementById('ag-metrics')
+  if (!el) return
+  el.innerHTML = [
+    { icon: '📅', val: monthRows.length, lbl: 'Total este mês', color: '#1a3c5e' },
+    { icon: '🔵', val: counts.agendado,  lbl: 'Agendados',      color: '#1e40af' },
+    { icon: '🟢', val: counts.publicado, lbl: 'Publicados',     color: '#15803d' },
+    { icon: '🟡', val: counts.rascunho,  lbl: 'Rascunhos',      color: '#b45309' },
+  ].map(function(m) {
+    return '<div class="ag-metric-card">'
+      + '<div class="ag-metric-icon">' + m.icon + '</div>'
+      + '<div class="ag-metric-val" style="color:' + m.color + '">' + m.val + '</div>'
+      + '<div class="ag-metric-lbl">' + m.lbl + '</div>'
+      + '</div>'
+  }).join('')
+}
+
+function agFilteredRows() {
+  if (!_agFilter) return _agRows
+  return _agRows.filter(function(r) {
+    var nets = ['instagram','facebook','linkedin','youtube']
+    return nets.some(function(n) { return r['status_'+n] === _agFilter })
+  })
+}
+
+function agRenderCal() {
+  var el = document.getElementById('ag-cal')
+  if (!el) return
+  var year = _agDate.getFullYear()
+  var month = _agDate.getMonth()
+  var lbl = document.getElementById('ag-month-label')
+  if (lbl) lbl.textContent = AG_MONTHS[month] + ' ' + year
+
+  var firstDay = new Date(year, month, 1)
+  var startOffset = (firstDay.getDay() + 6) % 7
+  var daysInMonth = new Date(year, month + 1, 0).getDate()
+  var today = new Date()
+
+  var byDay = {}
+  agFilteredRows().forEach(function(r) {
+    var d = new Date(r.data_agendada || r.created_at)
+    if (d.getMonth() !== month || d.getFullYear() !== year) return
+    var day = d.getDate()
+    if (!byDay[day]) byDay[day] = []
+    byDay[day].push(r)
+  })
+
+  var html = '<div class="ag-cal-grid">'
+  ;['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(function(d) {
+    html += '<div class="ag-cal-hdr">' + d + '</div>'
+  })
+  for (var i = 0; i < startOffset; i++) html += '<div class="ag-cal-cell ag-cal-empty"></div>'
+  for (var day = 1; day <= daysInMonth; day++) {
+    var isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year
+    var posts = byDay[day] || []
+    html += '<div class="ag-cal-cell' + (isToday ? ' ag-today' : '') + '">'
+    html += '<div class="ag-cal-daynum">' + day + '</div>'
+    posts.slice(0, 3).forEach(function(r) {
+      var net = (r.redes_seleccionadas || [])[0] || 'instagram'
+      var label = (r.texto_base || '').slice(0, 22) || '—'
+      html += '<div class="ag-pill ag-pill-' + net + '" onclick="agOpenPanel(\'' + r.id + '\')">' + esc(label) + '</div>'
+    })
+    if (posts.length > 3) {
+      html += '<div class="ag-pill-more" onclick="agOpenPanel(\'' + posts[3].id + '\')">+' + (posts.length - 3) + ' mais</div>'
+    }
+    html += '</div>'
+  }
+  html += '</div>'
+  el.innerHTML = html
+}
+
+function agRenderList() {
+  var el = document.getElementById('ag-list')
+  if (!el) return
+  var rows = agFilteredRows()
+  if (!rows.length) {
+    el.innerHTML = '<div class="bib-empty">Nenhum conteúdo encontrado.</div>'
+    return
+  }
+  var html = '<div class="ag-list-wrap"><table class="ag-list-table">'
+  html += '<thead><tr><th>Data</th><th>Hora</th><th>Redes</th><th>Texto base</th><th>Status</th><th></th></tr></thead><tbody>'
+  rows.forEach(function(r) {
+    var d = new Date(r.data_agendada || r.created_at)
+    var dateStr = d.toLocaleDateString('pt-PT', { day:'2-digit', month:'2-digit', year:'2-digit' })
+    var timeStr = r.data_agendada ? d.toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' }) : '—'
+    var nets = r.redes_seleccionadas || []
+    var netsHtml = nets.map(function(n) {
+      return '<span class="ag-net-badge">' + agNetIcon(n) + '</span>'
+    }).join('')
+    var status = agGetMainStatus(r)
+    html += '<tr onclick="agOpenPanel(\'' + r.id + '\')">'
+    html += '<td style="white-space:nowrap">' + esc(dateStr) + '</td>'
+    html += '<td style="white-space:nowrap">' + esc(timeStr) + '</td>'
+    html += '<td>' + netsHtml + '</td>'
+    html += '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(r.texto_base||'') + '">' + esc((r.texto_base||'').slice(0,55)) + '</td>'
+    html += '<td>' + agStatusBadge(status) + '</td>'
+    html += '<td><button class="ag-act-btn" onclick="event.stopPropagation();agOpenPanel(\'' + r.id + '\')">Ver →</button></td>'
+    html += '</tr>'
+  })
+  html += '</tbody></table></div>'
+  el.innerHTML = html
+}
+
+function agNetIcon(n) {
+  return { instagram:'📸', facebook:'👥', linkedin:'💼', youtube:'▶️' }[n] || n
+}
+
+function agStatusBadge(status) {
+  return {
+    rascunho: '<span class="ag-status ag-s-rascunho">🟡 Rascunho</span>',
+    agendado: '<span class="ag-status ag-s-agendado">🔵 Agendado</span>',
+    publicado: '<span class="ag-status ag-s-publicado">🟢 Publicado</span>',
+    erro:      '<span class="ag-status ag-s-erro">🔴 Erro</span>'
+  }[status] || '<span class="ag-status ag-s-rascunho">🟡 Rascunho</span>'
+}
+
+function agGetMainStatus(r) {
+  var order = ['erro','publicado','agendado','rascunho']
+  var nets = ['instagram','facebook','linkedin','youtube']
+  for (var i = 0; i < order.length; i++) {
+    if (nets.some(function(n) { return r['status_'+n] === order[i] })) return order[i]
+  }
+  return 'rascunho'
+}
+
+function agSetView(view) {
+  _agView = view
+  document.getElementById('ag-cal').style.display  = view === 'cal'  ? '' : 'none'
+  document.getElementById('ag-list').style.display = view === 'list' ? '' : 'none'
+  document.getElementById('ag-view-cal').className  = 'ag-view-btn' + (view === 'cal'  ? ' active' : '')
+  document.getElementById('ag-view-list').className = 'ag-view-btn' + (view === 'list' ? ' active' : '')
+  agRender()
+}
+
+function agSetFilter(val) {
+  _agFilter = val
+  document.querySelectorAll('.ag-filter-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-filter') === val)
+  })
+  agRender()
+}
+
+function agNavMonth(dir) {
+  _agDate = new Date(_agDate.getFullYear(), _agDate.getMonth() + dir, 1)
+  agRenderCal()
+}
+
+function agOpenPanel(id) {
+  var r = _agRows.find(function(x) { return x.id === id })
+  if (!r) return
+  _agPanelId = id
+  var nets = r.redes_seleccionadas || []
+  var d = r.data_agendada ? new Date(r.data_agendada) : null
+  var dateVal = d ? d.toISOString().slice(0, 16) : ''
+  var mainStatus = agGetMainStatus(r)
+  var isPublished = mainStatus === 'publicado'
+  var isRascunho  = agGetMainStatus(r) === 'rascunho'
+
+  var html = ''
+
+  // Date / time
+  html += '<div class="ag-panel-section">'
+  html += '<div class="ag-panel-label">Data de publicação</div>'
+  if (!isPublished) {
+    html += '<input type="datetime-local" class="ag-date-input" id="ag-edit-date" value="' + esc(dateVal) + '">'
+    html += '<button class="ag-sm-btn" onclick="agSaveDate(\'' + id + '\')">💾 Guardar data</button>'
+  } else {
+    html += '<p class="ag-panel-val">' + (d ? fmtDate(r.data_agendada) : '—') + '</p>'
+  }
+  html += '</div>'
+
+  // Networks & status
+  html += '<div class="ag-panel-section">'
+  html += '<div class="ag-panel-label">Redes e estado</div>'
+  nets.forEach(function(n) {
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+      + '<span style="font-size:.82rem">' + agNetIcon(n) + ' ' + n.charAt(0).toUpperCase() + n.slice(1) + '</span>'
+      + agStatusBadge(r['status_'+n] || 'rascunho')
+      + '</div>'
+  })
+  html += '</div>'
+
+  // Text preview
+  if (r.texto_base) {
+    html += '<div class="ag-panel-section">'
+    html += '<div class="ag-panel-label">Texto base</div>'
+    html += '<div class="ag-panel-text">' + esc((r.texto_base||'').slice(0, 400)) + (r.texto_base && r.texto_base.length > 400 ? '…' : '') + '</div>'
+    html += '</div>'
+  }
+
+  // Image preview
+  var imgUrl = r.imagem_gerada_url || (r.imagens_urls && r.imagens_urls[0])
+  if (imgUrl) {
+    html += '<div class="ag-panel-section">'
+    html += '<img src="' + esc(imgUrl) + '" style="width:100%;border-radius:8px;max-height:180px;object-fit:cover">'
+    html += '</div>'
+  }
+
+  // Actions
+  html += '<div class="ag-panel-actions">'
+  if (!isPublished) {
+    html += '<button class="cont-btn primary" style="font-size:.8rem;padding:7px 14px" onclick="agPublicarAgora(\'' + id + '\')">⚡ Publicar Agora</button>'
+  }
+  if (mainStatus === 'agendado') {
+    html += '<button class="cont-btn secondary" style="font-size:.8rem;padding:7px 14px" onclick="agCancelarAgendamento(\'' + id + '\')">↩ Cancelar Agend.</button>'
+  }
+  if (isRascunho) {
+    html += '<button class="cont-btn secondary" style="font-size:.8rem;padding:7px 14px;color:#dc2626;border-color:#dc2626" onclick="agApagar(\'' + id + '\')">🗑 Apagar</button>'
+  }
+  html += '</div>'
+
+  document.getElementById('ag-panel-content').innerHTML = html
+  document.getElementById('ag-panel').classList.add('open')
+  document.getElementById('ag-panel-overlay').classList.add('open')
+}
+
+function agClosePanel() {
+  document.getElementById('ag-panel').classList.remove('open')
+  document.getElementById('ag-panel-overlay').classList.remove('open')
+  _agPanelId = null
+}
+
+async function agSaveDate(id) {
+  var val = document.getElementById('ag-edit-date').value
+  if (!val) return
+  var iso = new Date(val).toISOString()
+  var upd = { data_agendada: iso }
+  var r = _agRows.find(function(x) { return x.id === id })
+  if (r) {
+    ;(r.redes_seleccionadas || []).forEach(function(n) { upd['status_'+n] = 'agendado' })
+  }
+  var { error } = await sb.from('conteudos_sociais').update(upd).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  await agLoad()
+  agClosePanel()
+}
+
+async function agCancelarAgendamento(id) {
+  if (!confirm('Cancelar agendamento? O conteúdo ficará como rascunho.')) return
+  var upd = { data_agendada: null }
+  ;['instagram','facebook','linkedin','youtube'].forEach(function(n) { upd['status_'+n] = 'rascunho' })
+  var { error } = await sb.from('conteudos_sociais').update(upd).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  await agLoad()
+  agClosePanel()
+}
+
+async function agPublicarAgora(id) {
+  if (!confirm('Publicar este conteúdo imediatamente via n8n?')) return
+  var r = _agRows.find(function(x) { return x.id === id })
+  if (!r) return
+  try {
+    var wBody = { id: r.id, data_agendada: new Date().toISOString(), redes: r.redes_seleccionadas || [] }
+    ;(r.redes_seleccionadas || []).forEach(function(n) {
+      if (r['conteudo_'+n]) wBody['conteudo_'+n] = r['conteudo_'+n]
+      if (r['hashtags_'+n]) wBody['hashtags_'+n] = r['hashtags_'+n]
+    })
+    await fetch(N8N_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(wBody) })
+    var upd = {}
+    ;['instagram','facebook','linkedin','youtube'].forEach(function(n) { upd['status_'+n] = 'publicado' })
+    await sb.from('conteudos_sociais').update(upd).eq('id', id)
+    await agLoad()
+    agClosePanel()
+  } catch(e) { alert('Erro ao publicar: ' + e.message) }
+}
+
+async function agApagar(id) {
+  if (!confirm('Apagar este conteúdo definitivamente? Esta acção não pode ser desfeita.')) return
+  var { error } = await sb.from('conteudos_sociais').delete().eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  _agRows = _agRows.filter(function(x) { return x.id !== id })
+  agRenderMetrics()
+  agRender()
+  agClosePanel()
+}
+
+function agSetupRealtime() {
+  if (_agChannel) { try { sb.removeChannel(_agChannel) } catch(e) {} }
+  _agChannel = sb.channel('ag-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'conteudos_sociais' }, function() {
+      agLoad()
+    })
+    .subscribe()
 }
 
 // ── Biblioteca de Imagens ─────────────────────────────────────────────────────
