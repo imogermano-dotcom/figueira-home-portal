@@ -458,9 +458,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ag-view-btn{padding:6px 14px;border:none;background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;color:#666;transition:all .2s;border-right:1px solid #d1d5db}
 .ag-view-btn:last-child{border-right:none}
 .ag-view-btn.active{background:#1a3c5e;color:#fff}
-.ag-filters{display:flex;gap:6px;flex-wrap:wrap}
+.ag-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .ag-filter-btn{padding:5px 12px;border:1.5px solid #d1d5db;border-radius:20px;background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:#666;transition:all .2s}
 .ag-filter-btn:hover,.ag-filter-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.ag-cat-sel{padding:5px 10px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.78rem;font-family:inherit;outline:none;color:#666;background:#fff;cursor:pointer;max-width:200px}
+.ag-cat-sel:focus{border-color:#1a3c5e;color:#1a3c5e}
+.cont-cat-sel{width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;background:#fff;cursor:pointer;transition:border-color .2s;color:#374151}
+.cont-cat-sel:focus{border-color:#2d6a9f}
 .ag-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e5e7eb;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb}
 .ag-cal-hdr{background:#f0f4f8;padding:8px 4px;text-align:center;font-size:.72rem;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.3px}
 .ag-cal-cell{background:#fff;min-height:90px;padding:5px;position:relative}
@@ -657,6 +661,19 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             </div>
           </div>
 
+          <!-- 2b. CATEGORIA -->
+          <div class="cont-field">
+            <label class="cont-label">Categoria</label>
+            <select class="cont-cat-sel" id="cont-categoria" onchange="contSetCategoria(this.value)">
+              <option value="">— Sem categoria —</option>
+              <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
+              <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
+              <option value="recrutamento">👥 Conteúdos de Recrutamento</option>
+              <option value="clientes_vendedores">🏷️ Conteúdos para Clientes Vendedores</option>
+              <option value="clientes_compradores">🔑 Conteúdos para Clientes Compradores</option>
+            </select>
+          </div>
+
           <!-- 3. TEXTO BASE -->
           <div id="fonte-texto-area">
             <div class="noticia-indicator" id="noticia-indicator" style="display:none">
@@ -847,6 +864,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <option value="publicado">Publicado</option>
               <option value="erro">Erro</option>
             </select>
+            <select class="hist-select" id="hist-filter-cat" onchange="histRender()">
+              <option value="">Todas as categorias</option>
+              <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
+              <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
+              <option value="recrutamento">👥 Recrutamento</option>
+              <option value="clientes_vendedores">🏷️ Clientes Vendedores</option>
+              <option value="clientes_compradores">🔑 Clientes Compradores</option>
+            </select>
           </div>
           <div class="hist-table-wrap">
             <table class="hist-table">
@@ -884,6 +909,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button class="ag-filter-btn" data-filter="agendado" onclick="agSetFilter('agendado')">🔵 Agendados</button>
           <button class="ag-filter-btn" data-filter="publicado" onclick="agSetFilter('publicado')">🟢 Publicados</button>
           <button class="ag-filter-btn" data-filter="rascunho" onclick="agSetFilter('rascunho')">🟡 Rascunhos</button>
+          <select class="ag-cat-sel" id="ag-filter-cat" onchange="agSetCatFilter(this.value)">
+            <option value="">Todas as categorias</option>
+            <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
+            <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
+            <option value="recrutamento">👥 Recrutamento</option>
+            <option value="clientes_vendedores">🏷️ Clientes Vendedores</option>
+            <option value="clientes_compradores">🔑 Clientes Compradores</option>
+          </select>
         </div>
       </div>
       <div id="ag-cal"><div class="bib-empty">A carregar...</div></div>
@@ -923,10 +956,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           </select>
           <select class="bib-select" id="bib-filter-cat" onchange="bibSetFilter('categoria', this.value)">
             <option value="">Todas as categorias</option>
-            <option value="Imóvel">Imóvel</option>
-            <option value="Pessoas">Pessoas</option>
-            <option value="Mercado">Mercado</option>
-            <option value="Genérico">Genérico</option>
+            <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
+            <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
+            <option value="recrutamento">👥 Recrutamento</option>
+            <option value="clientes_vendedores">🏷️ Clientes Vendedores</option>
+            <option value="clientes_compradores">🔑 Clientes Compradores</option>
           </select>
         </div>
         <div class="bib-grid" id="bib-grid">
@@ -959,10 +993,12 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div class="bib-form-row">
         <label class="bib-form-label">Categoria</label>
         <select class="bib-form-input" id="bib-upload-cat">
-          <option>Genérico</option>
-          <option>Imóvel</option>
-          <option>Pessoas</option>
-          <option>Mercado</option>
+          <option value="">— Sem categoria —</option>
+          <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
+          <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
+          <option value="recrutamento">👥 Conteúdos de Recrutamento</option>
+          <option value="clientes_vendedores">🏷️ Conteúdos para Clientes Vendedores</option>
+          <option value="clientes_compradores">🔑 Conteúdos para Clientes Compradores</option>
         </select>
       </div>
       <div class="bib-form-row">
@@ -1436,6 +1472,22 @@ var _slidesCompostos = []    // URLs dos slides compostos por Canvas API
 var EDGE_GERAR      = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
 var EDGE_IMAGEM     = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-imagem'
 var EDGE_ENRIQUECER = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/enriquecer-noticia'
+
+var CATEGORIAS = [
+  { id: 'noticias_imoveis',     label: '🏠 Notícias do Imobiliário' },
+  { id: 'noticias_figueira',    label: '🏖️ Notícias da Figueira' },
+  { id: 'recrutamento',         label: '👥 Conteúdos de Recrutamento' },
+  { id: 'clientes_vendedores',  label: '🏷️ Conteúdos para Clientes Vendedores' },
+  { id: 'clientes_compradores', label: '🔑 Conteúdos para Clientes Compradores' }
+]
+
+// Map news panel category (from notícias DB) → content category id
+var NEWS_CAT_MAP = { imoveis: 'noticias_imoveis', figueira: 'noticias_figueira' }
+
+function catLabel(id) {
+  var c = CATEGORIAS.find(function(x) { return x.id === id })
+  return c ? c.label : (id || '')
+}
 var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
 
 var REDE_CFG = {
@@ -1454,6 +1506,7 @@ var _vidBibFormato  = null   // 'vertical_9_16' | 'horizontal_16_9'
 var _noticiaShortCode = null
 var _noticiaCategoria = null
 var _noticiaRow = null
+var _contCategoria    = null  // content category id (CATEGORIAS)
 var _newsCat = 'figueira'
 var _newsDias = 7
 var _newsEnriq = {}  // shortCode → { conteudo, pontos, fontes } | 'loading' | 'error'
@@ -1670,6 +1723,11 @@ function noticiaUsar() {
   _noticiaShortCode = row.short_code
   _noticiaCategoria = _newsCat
   _noticiaRow = row
+  // Auto-map news category → content category
+  var mappedCat = NEWS_CAT_MAP[_newsCat] || null
+  _contCategoria = mappedCat
+  var catSel = document.getElementById('cont-categoria')
+  if (catSel) catSel.value = mappedCat || ''
   // Populate text
   var ta = document.getElementById('cont-texto')
   if (ta) ta.value = (row.titulo || '') + '\n\n' + (row.resumo || '')
@@ -1761,6 +1819,11 @@ function noticiaUsarEnriquecido(shortCode, event) {
   _noticiaShortCode = row.short_code
   _noticiaCategoria = _newsCat
   _noticiaRow = row
+  // Auto-map news category → content category
+  var mappedCat2 = NEWS_CAT_MAP[_newsCat] || null
+  _contCategoria = mappedCat2
+  var catSel2 = document.getElementById('cont-categoria')
+  if (catSel2) catSel2.value = mappedCat2 || ''
   var taBase = document.getElementById('cont-texto')
   if (taBase) taBase.value = conteudo
   var isPerm = row.imagem_url && row.imagem_url.indexOf('supabase.co/storage') !== -1
@@ -1787,6 +1850,8 @@ function noticiaUsarOriginal(shortCode, event) {
 
 function noticiaLimpar() {
   _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
+  _contCategoria = null
+  var catSel = document.getElementById('cont-categoria'); if (catSel) catSel.value = ''
   document.getElementById('noticia-indicator').style.display = 'none'
 }
 
@@ -2556,6 +2621,10 @@ function contGetRedes() {
   })
 }
 
+function contSetCategoria(val) {
+  _contCategoria = val || null
+}
+
 async function contGerar() {
   console.log('[gerar] início — formato:', _igFormato)
   var texto = document.getElementById('cont-texto').value.trim()
@@ -2578,7 +2647,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
@@ -2998,6 +3067,7 @@ async function contGuardar(agendar) {
   payload['noticia_short_code'] = _noticiaShortCode || null
   payload['noticia_categoria'] = _noticiaCategoria || null
   payload['perfil_conteudo'] = _perfilConteudo || null
+  payload['categoria'] = _contCategoria || null
   redes.forEach(function(r) {
     var d = _contGerado[r]; if (!d) return
     var isYt = r === 'youtube'
@@ -3072,8 +3142,10 @@ async function contGuardar(agendar) {
     document.getElementById('cont-results').style.display = 'none'
     _contGerado = null
     imgReset()
-    // Reset notícia state
+    // Reset notícia + categoria state
     _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
+    _contCategoria = null
+    var catSel = document.getElementById('cont-categoria'); if (catSel) catSel.value = ''
     var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
     fonteSet('manual')
     // Reset video state
@@ -3103,7 +3175,7 @@ async function contGuardarVideo(agendar) {
       video_url:            _vidBibUrl,
       thumbnail_url:        _vidBibThumb || null,
       titulo:               (document.getElementById('cont-texto').value || '').trim().slice(0, 100) || null,
-      categoria:            _noticiaCategoria || null,
+      categoria:            _contCategoria || null,
       texto_base:           (document.getElementById('cont-texto').value || '').trim() || null,
       caption_instagram:    ig ? (document.getElementById('main-instagram') || {}).value || (ig.caption || '') : null,
       hashtags_instagram:   ig ? (document.getElementById('hash-instagram') || {}).value || (ig.hashtags || '') : null,
@@ -3130,6 +3202,8 @@ async function contGuardarVideo(agendar) {
     _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null; _vidBibFormato = null
     bibVideoResetRedes()
     _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
+    _contCategoria = null
+    var catSel = document.getElementById('cont-categoria'); if (catSel) catSel.value = ''
     var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
     fonteSet('manual')
     var aiWrap = document.getElementById('ai-img-wrap')
@@ -3150,9 +3224,11 @@ async function histLoad() {
 }
 
 function histRender() {
-  var rede = document.getElementById('hist-filter-rede').value
+  var rede   = document.getElementById('hist-filter-rede').value
   var status = document.getElementById('hist-filter-status').value
+  var cat    = (document.getElementById('hist-filter-cat') || {}).value || ''
   var rows = _histRows.filter(function(r) {
+    if (cat && r.categoria !== cat) return false
     if (rede) {
       if (!r.redes_seleccionadas || !r.redes_seleccionadas.includes(rede)) return false
       if (status && r['status_'+rede] !== status) return false
@@ -3225,7 +3301,8 @@ function histModalClose() {
 // ── Agendamento Editorial ─────────────────────────────────────────────────────
 var _agRows = []
 var _agView = 'cal'
-var _agFilter = ''
+var _agFilter    = ''
+var _agCatFilter = ''
 var _agDate = new Date()
 var _agPanelId = null
 var _agPrevCarIdx = 0
@@ -3296,11 +3373,17 @@ function agRenderMetrics() {
 }
 
 function agFilteredRows() {
-  if (!_agFilter) return _agRows
   return _agRows.filter(function(r) {
+    if (_agCatFilter && r.categoria !== _agCatFilter) return false
+    if (!_agFilter) return true
     var nets = ['instagram','facebook','linkedin','youtube']
     return nets.some(function(n) { return r['status_'+n] === _agFilter })
   })
+}
+
+function agSetCatFilter(val) {
+  _agCatFilter = val || ''
+  agRender()
 }
 
 function agRenderCal() {
@@ -4100,7 +4183,7 @@ function bibOpenUpload() {
   document.getElementById('bib-upload-previews').innerHTML = ''
   document.getElementById('bib-upload-desc').value = ''
   document.getElementById('bib-upload-msg').textContent = ''
-  document.getElementById('bib-upload-cat').value = 'Genérico'
+  document.getElementById('bib-upload-cat').value = ''
   document.getElementById('bib-upload-modal').classList.add('open')
 }
 
@@ -4360,18 +4443,17 @@ async function bibCaptureAndUploadThumb(file, userId, idx) {
   }
 }
 
-async function bibSaveIaImage(url, prompt, categoriaNoticia) {
+async function bibSaveIaImage(url, prompt, _unused) {
   try {
     var { data: { user } } = await sb.auth.getUser()
     if (!user) return
     var dimMap = { A: [1024, 1024], B: [1536, 1024], C: [1024, 1536] }
     var dims = dimMap[_templateSlide] || [1024, 1024]
     var tags = ['ia', 'gerada']
-    if (categoriaNoticia) tags.push(categoriaNoticia)
     await sb.from('biblioteca_imagens').insert({
       user_id:   user.id,
       url:       url,
-      categoria: 'Gerada por IA',
+      categoria: _contCategoria || null,
       descricao: prompt || null,
       tags:      tags,
       origem:    'ia',
