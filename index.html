@@ -302,6 +302,21 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .badge-parcial{display:inline-flex;align-items:center;gap:3px;background:#fefce8;color:#b45309;font-size:.64rem;font-weight:700;padding:2px 6px;border-radius:10px;border:1px solid #fde68a}
 .noticia-usar-row{padding:8px 12px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .noticia-indicator{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;font-size:.82rem;color:#1a3c5e;margin-top:8px}
+.noticia-enriq-btn{font-size:.69rem;padding:2px 8px;border:1.5px solid #2d6a9f;color:#2d6a9f;background:#fff;border-radius:20px;cursor:pointer;font-weight:600;transition:all .2s;white-space:nowrap;flex-shrink:0;line-height:1.5}
+.noticia-enriq-btn:hover{background:#2d6a9f;color:#fff}
+.noticia-enriq-btn.loading{opacity:.6;cursor:not-allowed}
+.noticia-enriq-btn.done{border-color:#7c3aed;color:#7c3aed}
+.noticia-enriq-btn.done:hover{background:#7c3aed;color:#fff}
+.noticia-enriq-panel{background:#f8faff;border:1.5px solid #bfdbfe;border-radius:0 0 8px 8px;padding:12px;display:flex;flex-direction:column;gap:8px;margin-top:-4px}
+.noticia-enriq-ta{width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:.78rem;font-family:inherit;resize:vertical;outline:none;line-height:1.65;min-height:120px;transition:border-color .2s;background:#fff}
+.noticia-enriq-ta:focus{border-color:#2d6a9f}
+.noticia-enriq-pontos{display:flex;flex-wrap:wrap;gap:5px}
+.noticia-enriq-ponto{font-size:.69rem;padding:3px 9px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-weight:600;cursor:pointer;border:1px solid #bfdbfe;transition:background .15s;line-height:1.5}
+.noticia-enriq-ponto:hover{background:#bfdbfe}
+.noticia-enriq-fontes{display:flex;flex-wrap:wrap;gap:8px}
+.noticia-enriq-fonte{font-size:.68rem;color:#6b7280;text-decoration:none;border-bottom:1px dotted #9ca3af;word-break:break-all}
+.noticia-enriq-fonte:hover{color:#2d6a9f;border-bottom-color:#2d6a9f}
+.noticia-enriq-btns{display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;border-top:1px solid #dbeafe}
 .noticia-indicator-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crop-canvas-wrap{position:relative;display:flex;justify-content:center}
 #crop-canvas{border-radius:8px;cursor:grab;display:block;border:1px solid #e0e6f0;touch-action:none}
@@ -1418,8 +1433,9 @@ var _cropState      = { panX: 0, panY: 0, scale: 1.0 }
 var _cropDrag       = null
 var _aiImgPrompt    = ''
 var _slidesCompostos = []    // URLs dos slides compostos por Canvas API
-var EDGE_GERAR  = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
-var EDGE_IMAGEM = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-imagem'
+var EDGE_GERAR      = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
+var EDGE_IMAGEM     = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-imagem'
+var EDGE_ENRIQUECER = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/enriquecer-noticia'
 var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
 
 var REDE_CFG = {
@@ -1440,6 +1456,7 @@ var _noticiaCategoria = null
 var _noticiaRow = null
 var _newsCat = 'figueira'
 var _newsDias = 7
+var _newsEnriq = {}  // shortCode → { conteudo, pontos, fontes } | 'loading' | 'error'
 var _newsShowAll = false
 var _newsSelected = null
 var _newsRows = []
@@ -1472,7 +1489,7 @@ function fonteSet(mode) {
 
 // ── Notícias ─────────────────────────────────────────────────────────────────
 function noticiaSetCat(cat) {
-  _newsCat = cat; _newsSelected = null
+  _newsCat = cat; _newsSelected = null; _newsEnriq = {}
   ;['figueira','imoveis','ia'].forEach(function(c) {
     var el = document.getElementById('ncat-' + c)
     if (el) el.className = 'noticia-cat-btn' + (c === cat ? ' active' : '')
@@ -1580,21 +1597,59 @@ function noticiaRenderCards() {
   }
   listEl.innerHTML = filtered.map(function(r) {
     var status = noticiaGetStatus(r.short_code)
-    var isPerm = r.imagem_url && r.imagem_url.indexOf('supabase.co/storage') !== -1
+    var sc = r.short_code
     var imgHtml = r.imagem_url
       ? '<img class="noticia-card-img" src="' + r.imagem_url + '" onerror="this.style.display=\'none\'" alt="" loading="lazy">'
       : '<div class="noticia-card-img" style="display:flex;align-items:center;justify-content:center;font-size:1.4rem">📰</div>'
     var badges = status === 'full' ? '<span class="badge-publicada">✓ Publicada</span>'
                : status === 'partial' ? '<span class="badge-parcial">◑ Parcial</span>' : ''
     var likes = r.likes ? ' · ❤️ ' + r.likes : ''
-    var isSel = r.short_code === _newsSelected
-    return '<div class="noticia-card' + (isSel ? ' selected' : '') + '" onclick="noticiaSelect(\'' + r.short_code + '\')">'
+    var isSel = sc === _newsSelected
+    var enriq = _newsEnriq[sc]
+    var enriqBtnTxt = enriq === 'loading' ? '⏳…' : (enriq && enriq !== 'error') ? '✨ Enriquecido' : '🔍 Enriquecer'
+    var enriqBtnCls = 'noticia-enriq-btn' + (enriq === 'loading' ? ' loading' : '') + (enriq && enriq !== 'error' && enriq !== 'loading' ? ' done' : '')
+
+    // Card HTML
+    var cardHtml = '<div class="noticia-card' + (isSel ? ' selected' : '') + '" onclick="noticiaSelect(\'' + sc + '\')" style="border-radius:' + (enriq && enriq !== 'error' ? '8px 8px 0 0' : '8px') + '">'
       + imgHtml
       + '<div class="noticia-card-body">'
-      + '<div class="noticia-card-title">' + (r.titulo || '') + '</div>'
-      + '<div class="noticia-card-meta">' + (r.fonte || '') + ' · ' + noticiaFormatDate(r.data_post) + likes + '</div>'
-      + (badges ? '<div class="noticia-card-badges">' + badges + '</div>' : '')
+      + '<div class="noticia-card-title">' + esc(r.titulo || '') + '</div>'
+      + '<div class="noticia-card-meta">' + esc(r.fonte || '') + ' · ' + noticiaFormatDate(r.data_post) + likes + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-top:3px">'
+      + (badges ? '<div class="noticia-card-badges">' + badges + '</div>' : '<div></div>')
+      + '<button class="' + enriqBtnCls + '" onclick="noticiaEnriquecer(\'' + sc + '\',event)"' + (enriq === 'loading' ? ' disabled' : '') + '>' + enriqBtnTxt + '</button>'
+      + '</div>'
       + '</div></div>'
+
+    // Enrichment panel
+    var panelHtml = ''
+    if (enriq === 'loading') {
+      panelHtml = '<div class="noticia-enriq-panel"><div style="text-align:center;color:#6b7280;font-size:.8rem;padding:6px 0">⏳ A pesquisar mais informação sobre este tema…</div></div>'
+    } else if (enriq === 'error') {
+      panelHtml = '<div class="noticia-enriq-panel" style="background:#fff5f5;border-color:#fca5a5">'
+        + '<div style="display:flex;align-items:center;gap:8px"><span style="color:#dc2626;font-size:.78rem">❌ Erro ao enriquecer.</span>'
+        + '<button class="noticia-enriq-btn" style="border-color:#dc2626;color:#dc2626" onclick="delete _newsEnriq[\'' + sc + '\'];noticiaEnriquecer(\'' + sc + '\',event)">Tentar novamente</button></div>'
+        + '</div>'
+    } else if (enriq && typeof enriq === 'object') {
+      var pontosHtml = (enriq.pontos || []).map(function(p, i) {
+        return '<button class="noticia-enriq-ponto" onclick="noticiaEnriqAddPonto(\'' + sc + '\',' + i + ',event)">' + esc(p) + '</button>'
+      }).join('')
+      var fontesHtml = (enriq.fontes || []).filter(Boolean).map(function(f) {
+        var label = f.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]
+        return '<a class="noticia-enriq-fonte" href="' + esc(f) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + esc(label) + '</a>'
+      }).join('')
+      panelHtml = '<div class="noticia-enriq-panel">'
+        + '<div style="font-size:.74rem;font-weight:700;color:#1a3c5e;margin-bottom:6px">✨ Conteúdo Enriquecido <span style="font-weight:400;color:#6b7280">(editável antes de usar)</span></div>'
+        + '<textarea class="noticia-enriq-ta" data-enriq-sc="' + sc + '" oninput="noticiaEnriqEdit(\'' + sc + '\',this.value)" onclick="event.stopPropagation()">' + esc(enriq.conteudo || '') + '</textarea>'
+        + (pontosHtml ? '<div><div style="font-size:.71rem;color:#6b7280;margin-bottom:4px">💡 <strong>Pontos-chave</strong> <span style="font-weight:400">(clica para adicionar ao texto)</span>:</div><div class="noticia-enriq-pontos">' + pontosHtml + '</div></div>' : '')
+        + (fontesHtml ? '<div><div style="font-size:.71rem;color:#9ca3af;margin-bottom:3px">🔗 Fontes consultadas:</div><div class="noticia-enriq-fontes">' + fontesHtml + '</div></div>' : '')
+        + '<div class="noticia-enriq-btns">'
+        + '<button class="cont-btn primary" onclick="noticiaUsarEnriquecido(\'' + sc + '\',event)" style="font-size:.78rem;padding:5px 14px">✅ Usar enriquecido</button>'
+        + '<button class="cont-btn secondary" onclick="noticiaUsarOriginal(\'' + sc + '\',event)" style="font-size:.78rem;padding:5px 14px">↩️ Usar original</button>'
+        + '</div></div>'
+    }
+
+    return '<div style="margin-bottom:' + (panelHtml ? '10px' : '6px') + '">' + cardHtml + panelHtml + '</div>'
   }).join('')
 }
 
@@ -1634,6 +1689,100 @@ function noticiaUsar() {
   document.getElementById('noticia-indicator').style.display = ''
   document.getElementById('fonte-texto-area').style.display = ''
   document.getElementById('fonte-noticia-panel').style.display = 'none'
+}
+
+async function noticiaEnriquecer(shortCode, event) {
+  event.stopPropagation()
+  var enriq = _newsEnriq[shortCode]
+  // If already done (not error), toggle: remove to collapse; if error, retry
+  if (enriq && enriq !== 'error' && enriq !== 'loading') {
+    delete _newsEnriq[shortCode]
+    noticiaRenderCards()
+    return
+  }
+  if (enriq === 'loading') return
+  _newsEnriq[shortCode] = 'loading'
+  // Also select this card
+  _newsSelected = shortCode
+  var lbl = document.getElementById('noticia-sel-label')
+  var selRow = _newsRows.find(function(r) { return r.short_code === shortCode })
+  if (lbl && selRow) lbl.textContent = '"' + (selRow.titulo || '').slice(0, 55) + (selRow.titulo.length > 55 ? '…' : '') + '"'
+  var btn = document.getElementById('noticia-usar-btn')
+  if (btn) btn.disabled = false
+  noticiaRenderCards()
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    var row = _newsRows.find(function(r) { return r.short_code === shortCode })
+    if (!row) throw new Error('Notícia não encontrada')
+    var resp = await fetch(EDGE_ENRIQUECER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ titulo: row.titulo, resumo: row.resumo || '', categoria: _newsCat })
+    })
+    var data = await resp.json()
+    if (!resp.ok || !data.conteudo_enriquecido) throw new Error(data.error || 'Resposta inválida')
+    _newsEnriq[shortCode] = {
+      conteudo: data.conteudo_enriquecido,
+      pontos:   data.pontos_chave || [],
+      fontes:   data.fontes || []
+    }
+  } catch(e) {
+    console.error('[enriquecer]', e)
+    _newsEnriq[shortCode] = 'error'
+  }
+  noticiaRenderCards()
+}
+
+function noticiaEnriqEdit(shortCode, val) {
+  var enriq = _newsEnriq[shortCode]
+  if (enriq && typeof enriq === 'object') enriq.conteudo = val
+}
+
+function noticiaEnriqAddPonto(shortCode, idx, event) {
+  event.stopPropagation()
+  var enriq = _newsEnriq[shortCode]
+  if (!enriq || typeof enriq !== 'object') return
+  var ponto = enriq.pontos[idx]
+  if (!ponto) return
+  enriq.conteudo = (enriq.conteudo || '').replace(/\s+$/, '') + '\n\n• ' + ponto
+  var ta = document.querySelector('.noticia-enriq-ta[data-enriq-sc="' + shortCode + '"]')
+  if (ta) ta.value = enriq.conteudo
+}
+
+function noticiaUsarEnriquecido(shortCode, event) {
+  if (event) event.stopPropagation()
+  var enriq = _newsEnriq[shortCode]
+  if (!enriq || typeof enriq !== 'object') return
+  var row = _newsRows.find(function(r) { return r.short_code === shortCode })
+  if (!row) return
+  // Read live textarea value (user may have edited it)
+  var ta = document.querySelector('.noticia-enriq-ta[data-enriq-sc="' + shortCode + '"]')
+  var conteudo = ta ? ta.value : enriq.conteudo
+  _noticiaShortCode = row.short_code
+  _noticiaCategoria = _newsCat
+  _noticiaRow = row
+  var taBase = document.getElementById('cont-texto')
+  if (taBase) taBase.value = conteudo
+  var isPerm = row.imagem_url && row.imagem_url.indexOf('supabase.co/storage') !== -1
+  if (isPerm) {
+    _aiImgFinal = row.imagem_url
+    if (!_imgUrls.length) _imgUrls = [row.imagem_url]
+    var thumb = document.getElementById('ai-img-thumb')
+    if (thumb) thumb.src = row.imagem_url
+    aiImgSetState('result')
+    imgCheckInstagram()
+  }
+  var indTxt = document.getElementById('noticia-indicator-text')
+  if (indTxt) indTxt.textContent = '✨ ' + (row.titulo || '').slice(0, 60) + ' [enriquecido]'
+  document.getElementById('noticia-indicator').style.display = ''
+  document.getElementById('fonte-texto-area').style.display = ''
+  document.getElementById('fonte-noticia-panel').style.display = 'none'
+}
+
+function noticiaUsarOriginal(shortCode, event) {
+  if (event) event.stopPropagation()
+  _newsSelected = shortCode
+  noticiaUsar()
 }
 
 function noticiaLimpar() {
