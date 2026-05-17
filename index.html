@@ -277,6 +277,23 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .prev-ig-cdot.on{background:#3897f0;width:14px;border-radius:3px}
 /* LinkedIn preview — 4:3 image */
 .prev-li-img-wrap{aspect-ratio:4/3;overflow:hidden}
+/* AI Image generation */
+.ai-img-box{border:1.5px solid #e0e6f0;border-radius:10px;padding:14px;background:#fafbff;margin-bottom:8px}
+.ai-img-status{display:flex;align-items:center;gap:8px;font-size:.85rem;color:#6b7280}
+.ai-img-hint{font-size:.82rem;color:#9ca3af;display:flex;align-items:center;gap:6px}
+.ai-img-spinner{width:15px;height:15px;border:2px solid #e0e6f0;border-top-color:#2d6a9f;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.ai-img-preview-row{display:flex;gap:14px;align-items:flex-start}
+.ai-img-thumb{width:120px;height:120px;border-radius:8px;object-fit:cover;border:1.5px solid #e0e6f0;flex-shrink:0;background:#e8eef6}
+.ai-img-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.ai-prompt-lbl{font-size:.72rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.ai-prompt-ta{width:100%;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.78rem;font-family:inherit;resize:vertical;outline:none;min-height:56px;line-height:1.4}
+.ai-prompt-ta:focus{border-color:#2d6a9f}
+.ai-img-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ai-regen-btn{padding:5px 12px;border:1.5px solid #2d6a9f;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#2d6a9f;transition:all .2s}
+.ai-regen-btn:hover{background:#2d6a9f;color:#fff}
+.ai-regen-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-img-badge{font-size:.7rem;background:#e8f0fb;color:#2d6a9f;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
+.ai-img-or{text-align:center;font-size:.74rem;color:#9ca3af;margin:8px 0;letter-spacing:.3px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -362,7 +379,31 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
           </div>
           <div class="cont-field">
-            <label class="cont-label">Imagens <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(1–10 imagens · JPG, PNG, WebP · max 10MB cada)</span></label>
+            <label class="cont-label">Imagem</label>
+            <!-- AI Image -->
+            <div class="ai-img-box" id="ai-img-box">
+              <div id="ai-img-initial">
+                <div class="ai-img-hint">🤖 <span>Imagem gerada automaticamente com IA ao criar o conteúdo</span></div>
+              </div>
+              <div id="ai-img-loading" style="display:none">
+                <div class="ai-img-status"><div class="ai-img-spinner"></div><span>A criar imagem com IA...</span></div>
+              </div>
+              <div id="ai-img-result" style="display:none">
+                <div class="ai-img-preview-row">
+                  <img class="ai-img-thumb" id="ai-img-thumb" src="" alt="Imagem gerada por IA">
+                  <div class="ai-img-meta">
+                    <span class="ai-prompt-lbl">Prompt da imagem (editável)</span>
+                    <textarea class="ai-prompt-ta" id="ai-img-prompt-ta" rows="3" placeholder="Descreve a imagem..."></textarea>
+                    <div class="ai-img-actions">
+                      <button class="ai-regen-btn" id="ai-regen-btn" onclick="aiImgRegenerate()">🔄 Regenerar</button>
+                      <span class="ai-img-badge">🤖 Criado com IA</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="ai-img-or">— ou faz upload de imagem própria —</p>
+            <!-- Manual upload -->
             <input type="file" id="img-file-input" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="imgOnFileInput(this)">
             <div class="img-upload-zone" id="img-upload-zone"
               onclick="imgZoneClick(event)"
@@ -864,7 +905,11 @@ var _contGerado = null
 var _histRows = []
 var _imgFiles = []   // File objects pendentes
 var _imgUrls  = []   // URLs públicos já carregados
-var EDGE_GERAR = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
+var _aiImgUrl    = null   // URL Supabase da imagem IA (antes de overlay)
+var _aiImgFinal  = null   // URL final após overlay logo
+var _aiImgPrompt = ''
+var EDGE_GERAR  = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
+var EDGE_IMAGEM = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-imagem'
 var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
 
 var REDE_CFG = {
@@ -1026,6 +1071,137 @@ function imgReset() {
   document.getElementById('img-progress-wrap').style.display = 'none'
   document.getElementById('img-progress-text').textContent = ''
   document.getElementById('img-warn-instagram').style.display = 'none'
+  aiImgReset()
+}
+
+// ── AI Image generation ───────────────────────────────────────────────────────
+function aiImgSetState(state) {
+  var els = { initial: 'ai-img-initial', loading: 'ai-img-loading', result: 'ai-img-result' }
+  Object.keys(els).forEach(function(k) {
+    var el = document.getElementById(els[k])
+    if (el) el.style.display = k === state ? '' : 'none'
+  })
+}
+
+async function aiImgGerar(textoBase, session) {
+  aiImgSetState('loading')
+  try {
+    var r = await fetch(EDGE_IMAGEM, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ prompt_tema: textoBase })
+    })
+    var data = await r.json()
+    if (!r.ok || !data.success) throw new Error(data.error || 'Erro ao gerar imagem')
+
+    _aiImgUrl    = data.url
+    _aiImgPrompt = data.prompt
+    document.getElementById('ai-img-prompt-ta').value = data.prompt
+
+    // Canvas overlay with logo, then re-upload
+    var finalUrl = await aiImgOverlayAndUpload(data.url, session)
+    _aiImgFinal = finalUrl
+
+    document.getElementById('ai-img-thumb').src = finalUrl
+    aiImgSetState('result')
+
+    // Make it available as first image if no manual uploads
+    if (!_imgUrls.length) _imgUrls = [finalUrl]
+  } catch(e) {
+    console.warn('aiImgGerar error:', e.message)
+    aiImgSetState('initial')
+    // Non-fatal — text content is still shown
+  }
+}
+
+async function aiImgRegenerate() {
+  var btn = document.getElementById('ai-regen-btn')
+  btn.disabled = true
+  var prompt = document.getElementById('ai-img-prompt-ta').value.trim()
+  if (!prompt) { btn.disabled = false; return }
+  aiImgSetState('loading')
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    var r = await fetch(EDGE_IMAGEM, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ prompt_override: prompt })
+    })
+    var data = await r.json()
+    if (!r.ok || !data.success) throw new Error(data.error || 'Erro ao regenerar imagem')
+
+    _aiImgUrl    = data.url
+    _aiImgPrompt = prompt
+
+    var finalUrl = await aiImgOverlayAndUpload(data.url, session)
+    _aiImgFinal = finalUrl
+    document.getElementById('ai-img-thumb').src = finalUrl
+
+    // Update _imgUrls if it only contained the previous AI image
+    if (_imgUrls.length === 0 || (_imgUrls.length === 1 && _imgUrls[0] !== finalUrl)) {
+      _imgUrls = [finalUrl]
+    }
+    aiImgSetState('result')
+  } catch(e) {
+    alert('Erro ao regenerar: ' + e.message)
+    aiImgSetState('result')
+  }
+  btn.disabled = false
+}
+
+function aiImgOverlayAndUpload(supabaseUrl, session) {
+  return new Promise(function(resolve) {
+    var canvas = document.createElement('canvas')
+    canvas.width = 1024; canvas.height = 1024
+    var ctx = canvas.getContext('2d')
+
+    var img = new Image()
+    img.crossOrigin = 'anonymous'
+
+    img.onerror = function() { resolve(supabaseUrl) }  // CORS failed — use original
+
+    img.onload = function() {
+      ctx.drawImage(img, 0, 0, 1024, 1024)
+
+      var logo = new Image()
+      logo.crossOrigin = 'anonymous'
+
+      var uploadCanvas = function() {
+        canvas.toBlob(async function(blob) {
+          if (!blob) { resolve(supabaseUrl); return }
+          var path = session.user.id + '/ai_final/' + Date.now() + '.jpg'
+          var { error } = await sb.storage.from('conteudos-imagens').upload(path, blob, {
+            contentType: 'image/jpeg', upsert: true
+          })
+          if (error) { resolve(supabaseUrl); return }
+          var { data: pub } = sb.storage.from('conteudos-imagens').getPublicUrl(path)
+          resolve(pub.publicUrl)
+        }, 'image/jpeg', 0.92)
+      }
+
+      logo.onload = function() {
+        var lw = Math.round(1024 * 0.16)  // 16% of canvas width
+        var margin = 18
+        ctx.globalAlpha = 0.88
+        ctx.drawImage(logo, 1024 - lw - margin, 1024 - lw - margin, lw, lw)
+        ctx.globalAlpha = 1
+        uploadCanvas()
+      }
+      logo.onerror = function() { uploadCanvas() }  // No logo — upload without it
+      logo.src = '/logo-figueirahome.png'
+    }
+
+    img.src = supabaseUrl
+  })
+}
+
+function aiImgReset() {
+  _aiImgUrl = null; _aiImgFinal = null; _aiImgPrompt = ''
+  var ta = document.getElementById('ai-img-prompt-ta')
+  if (ta) ta.value = ''
+  var thumb = document.getElementById('ai-img-thumb')
+  if (thumb) thumb.src = ''
+  aiImgSetState('initial')
 }
 
 // ── Conteúdo Social ───────────────────────────────────────────────────────────
@@ -1053,8 +1229,9 @@ async function contGerar() {
   var btn = document.getElementById('cont-gerar-btn')
   btn.disabled = true
   document.getElementById('cont-results').style.display = 'none'
+  aiImgReset()
   try {
-    // Upload images first
+    // Upload manual images first (if any)
     if (_imgFiles.length > 0 && _imgUrls.length < _imgFiles.length) {
       btn.textContent = '⏫ A carregar imagens...'
       await imgUploadAll()
@@ -1071,7 +1248,11 @@ async function contGerar() {
     _contGerado = data.conteudo
     contRenderCards(redes)
     document.getElementById('cont-results').style.display = ''
+    // Generate AI image (non-blocking on text result — runs after cards are shown)
+    btn.textContent = '🖼️ A criar imagem com IA...'
+    await aiImgGerar(texto, session)
   } catch(e) {
+    aiImgSetState('initial')
     alert('Erro ao gerar: ' + e.message)
   }
   btn.disabled = false; btn.textContent = '✨ Gerar Conteúdo'
@@ -1397,6 +1578,10 @@ async function contGuardar(agendar) {
     redes_seleccionadas: redes,
     data_agendada: agendar && data ? new Date(data).toISOString() : null,
     imagens_urls: _imgUrls.length ? _imgUrls : []
+  }
+  if (_aiImgFinal) {
+    payload['imagem_gerada_url'] = _aiImgFinal
+    payload['prompt_imagem'] = (document.getElementById('ai-img-prompt-ta').value || _aiImgPrompt).trim() || null
   }
   redes.forEach(function(r) {
     var d = _contGerado[r]; if (!d) return
