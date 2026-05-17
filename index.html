@@ -415,6 +415,18 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .bib-up-prog-bar{height:8px;background:#2d6a9f;border-radius:4px;width:0;transition:width .3s}
 .bib-up-prog-lbl{font-size:.74rem;color:#6b7280;text-align:center;margin-top:4px}
 .bib-pick-video-badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.72);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:5px}
+.bib-fmt-v{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#dbeafe;color:#1d4ed8;pointer-events:none}
+.bib-fmt-h{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#dcfce7;color:#15803d;pointer-events:none}
+.bib-fmt-info{margin-top:10px;padding:10px 12px;border-radius:8px;background:#f0f5ff;border:1px solid #dbeafe}
+.bib-fmt-info-row{font-size:.74rem;font-weight:700;color:#1a3c5e;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bib-fmt-redes{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.bib-fmt-rede{font-size:.69rem;padding:2px 8px;border-radius:8px;background:#e8f0fb;color:#2d6a9f;font-weight:600}
+.bib-fmt-warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;font-size:.75rem;padding:8px 12px;border-radius:8px;margin-top:8px;line-height:1.5}
+.bib-fmt-select{font-size:.78rem;padding:3px 8px;border:1.5px solid #d1d5db;border-radius:6px;outline:none;font-family:inherit;cursor:pointer;background:#fff}
+.cont-rede-disabled{opacity:.35;cursor:not-allowed}
+.cont-rede-disabled input{pointer-events:none}
+.cont-rede-tip{position:relative;display:inline-flex}
+.cont-rede-tip[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a3c5e;color:#fff;font-size:.69rem;padding:4px 9px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 /* Agendamento */
 #page-agendamento main{flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%}
 .ag-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
@@ -770,11 +782,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <!-- 6. REDES SOCIAIS -->
           <div class="cont-field">
             <label class="cont-label">Redes sociais</label>
-            <div class="cont-redes">
-              <label class="cont-rede-cb"><input type="checkbox" id="cb-instagram" checked> 📸 Instagram</label>
-              <label class="cont-rede-cb"><input type="checkbox" id="cb-facebook" checked> 👥 Facebook</label>
-              <label class="cont-rede-cb"><input type="checkbox" id="cb-linkedin" checked> 💼 LinkedIn</label>
-              <label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked> ▶️ YouTube</label>
+            <div class="cont-redes" id="cont-redes-wrap">
+              <span class="cont-rede-tip" id="tip-instagram"><label class="cont-rede-cb"><input type="checkbox" id="cb-instagram" checked> 📸 Instagram</label></span>
+              <span class="cont-rede-tip" id="tip-facebook"><label class="cont-rede-cb"><input type="checkbox" id="cb-facebook" checked> 👥 Facebook</label></span>
+              <span class="cont-rede-tip" id="tip-linkedin"><label class="cont-rede-cb"><input type="checkbox" id="cb-linkedin" checked> 💼 LinkedIn</label></span>
+              <span class="cont-rede-tip" id="tip-youtube"><label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked> ▶️ YouTube</label></span>
             </div>
           </div>
 
@@ -924,6 +936,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <div style="font-size:.76rem;color:#9ca3af;margin-top:4px">📸 JPG, PNG, WEBP · máx. 10MB &nbsp;|&nbsp; 🎬 MP4, MOV, AVI · máx. 500MB</div>
       </div>
       <div class="bib-upload-previews" id="bib-upload-previews"></div>
+      <div id="bib-vid-format-info" style="display:none"></div>
       <div class="bib-up-prog" id="bib-up-prog">
         <div class="bib-up-prog-bar" id="bib-up-prog-bar"></div>
         <div class="bib-up-prog-lbl" id="bib-up-prog-lbl"></div>
@@ -1421,6 +1434,7 @@ var _isVideoPost    = false  // true quando um vídeo da biblioteca está selecc
 var _vidBibId       = null   // id do registo em biblioteca_imagens
 var _vidBibUrl      = null   // url do vídeo
 var _vidBibThumb    = null   // thumbnail url
+var _vidBibFormato  = null   // 'vertical_9_16' | 'horizontal_16_9'
 var _noticiaShortCode = null
 var _noticiaCategoria = null
 var _noticiaRow = null
@@ -2415,7 +2429,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
@@ -2964,7 +2978,8 @@ async function contGuardarVideo(agendar) {
     document.getElementById('cont-results').style.display = 'none'
     _contGerado = null
     imgReset()
-    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null
+    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null; _vidBibFormato = null
+    bibVideoResetRedes()
     _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
     var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
     fonteSet('manual')
@@ -3735,9 +3750,13 @@ function bibRender() {
       var mediaHtml = thumbSrc
         ? '<img src="' + esc(thumbSrc) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
         : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.4rem;background:#1a1a2e">🎬</div>'
+      var fmtBadgeTxt = r.formato_video === 'vertical_9_16' ? '📱 Vertical'
+        : r.formato_video === 'horizontal_16_9' ? '🖥️ Horizontal' : '🎬 Vídeo'
+      var fmtBadgeBg = r.formato_video === 'vertical_9_16' ? 'background:#1d4ed8'
+        : r.formato_video === 'horizontal_16_9' ? 'background:#15803d' : 'background:rgba(0,0,0,.72)'
       return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')" style="background:#1a1a2e">'
         + mediaHtml
-        + '<span class="bib-video-badge">🎬 Vídeo</span>'
+        + '<span class="bib-video-badge" style="' + fmtBadgeBg + '">' + fmtBadgeTxt + '</span>'
         + durBadge
         + '<div class="bib-item-overlay">'
         + badge
@@ -3842,12 +3861,50 @@ function bibUseInPost(id) {
   showTab('conteudos')
 }
 
+function bibVideoResetRedes() {
+  // Re-enable all network checkboxes and remove tooltips
+  ;['instagram','facebook','linkedin','youtube'].forEach(function(rede) {
+    var cb = document.getElementById('cb-' + rede)
+    var tip = document.getElementById('tip-' + rede)
+    var lbl = tip && tip.querySelector('label')
+    if (cb) { cb.checked = true; cb.disabled = false }
+    if (lbl) lbl.className = 'cont-rede-cb'
+    if (tip) tip.removeAttribute('data-tip')
+  })
+}
+
 function bibUseVideoInPost(r) {
   // Set video state on the generator
   _isVideoPost = true
   _vidBibId = r.id
   _vidBibUrl = r.url
   _vidBibThumb = r.thumbnail_url || null
+  _vidBibFormato = r.formato_video || null
+
+  // Configure network checkboxes based on video format
+  var ativas = _vidBibFormato === 'vertical_9_16' ? ['instagram','facebook','youtube']
+    : _vidBibFormato === 'horizontal_16_9' ? ['youtube']
+    : ['instagram','facebook','linkedin','youtube']
+  var tooltip = 'Incompatível com este formato de vídeo'
+  ;['instagram','facebook','linkedin','youtube'].forEach(function(rede) {
+    var cb = document.getElementById('cb-' + rede)
+    var tip = document.getElementById('tip-' + rede)
+    var lbl = tip && tip.querySelector('label')
+    var ativa = ativas.indexOf(rede) !== -1
+    if (cb) { cb.checked = ativa; cb.disabled = !ativa }
+    if (lbl) lbl.className = 'cont-rede-cb' + (!ativa ? ' cont-rede-disabled' : '')
+    if (tip) {
+      if (!ativa) tip.setAttribute('data-tip', tooltip)
+      else tip.removeAttribute('data-tip')
+    }
+  })
+
+  // Build format badge for video preview
+  var fmtLabel = _vidBibFormato === 'vertical_9_16' ? '📱 Vertical 9:16'
+    : _vidBibFormato === 'horizontal_16_9' ? '🖥️ Horizontal 16:9' : ''
+  var fmtBadge = fmtLabel
+    ? '<span style="background:rgba(255,255,255,.18);color:#fff;font-size:.69rem;font-weight:700;padding:2px 8px;border-radius:8px;margin-left:6px">' + fmtLabel + '</span>'
+    : ''
 
   // Show generator tab
   showTab('conteudos')
@@ -3857,8 +3914,8 @@ function bibUseVideoInPost(r) {
   if (aiWrap) {
     aiWrap.innerHTML = '<div style="position:relative;border-radius:12px;overflow:hidden;background:#000">'
       + '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;max-height:260px;display:block"></video>'
-      + '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:8px">🎬 Vídeo da Biblioteca</div>'
-      + '<button class="cont-btn secondary" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:.72rem" onclick="_isVideoPost=false;_vidBibUrl=null;aiImgSetState(\'idle\');document.getElementById(\'ai-img-wrap\').innerHTML=\'\'">✕ Remover</button>'
+      + '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:8px;display:flex;align-items:center">🎬 Vídeo da Biblioteca' + fmtBadge + '</div>'
+      + '<button class="cont-btn secondary" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:.72rem" onclick="_isVideoPost=false;_vidBibId=null;_vidBibUrl=null;_vidBibThumb=null;_vidBibFormato=null;bibVideoResetRedes();aiImgSetState(\'idle\');document.getElementById(\'ai-img-wrap\').innerHTML=\'\'">✕ Remover</button>'
       + '</div>'
   }
 
@@ -3901,6 +3958,8 @@ function bibOpenUpload() {
 function bibCloseUpload() {
   document.getElementById('bib-upload-modal').classList.remove('open')
   _bibUploadFiles = []
+  var fmtDiv = document.getElementById('bib-vid-format-info')
+  if (fmtDiv) { fmtDiv.style.display = 'none'; fmtDiv.innerHTML = '' }
 }
 
 function bibOnFileInput(input) {
@@ -3922,14 +3981,71 @@ function bibOnDrop(e) {
   bibRenderUploadPreviews()
 }
 
-function bibRenderUploadPreviews() {
+async function bibRenderUploadPreviews() {
   var wrap = document.getElementById('bib-upload-previews')
+  var fmtDiv = document.getElementById('bib-vid-format-info')
   wrap.innerHTML = _bibUploadFiles.map(function(f) {
     if (f.type.startsWith('video/')) {
       return '<div style="width:72px;height:72px;border-radius:6px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1.5px solid #e0e6f0;flex-shrink:0">🎬</div>'
     }
     return '<img class="bib-upload-thumb" src="' + URL.createObjectURL(f) + '" alt="">'
   }).join('')
+  if (fmtDiv) {
+    var vidFile = _bibUploadFiles.find(function(f) { return f.type.startsWith('video/') })
+    if (vidFile) {
+      fmtDiv.innerHTML = '<div style="font-size:.74rem;color:#6b7280;padding:8px 0">⏳ A detectar formato…</div>'
+      fmtDiv.style.display = 'block'
+      var meta = await bibGetVideoMeta(vidFile)
+      fmtDiv.innerHTML = bibBuildFmtHtml(meta)
+    } else {
+      fmtDiv.style.display = 'none'
+      fmtDiv.innerHTML = ''
+    }
+  }
+}
+
+var BIB_FMT_REDES = {
+  vertical_9_16:   ['📸 Instagram Reels', '👥 Facebook Reels', '▶️ YouTube Shorts', '🎵 TikTok'],
+  horizontal_16_9: ['▶️ YouTube']
+}
+
+function bibBuildFmtHtml(meta) {
+  var fmt = meta.formato
+  if (!fmt) return '<div class="bib-fmt-warn">⚠️ Não foi possível detectar o formato do vídeo.</div>'
+  var isV = fmt === 'vertical_9_16'
+  var label = isV ? '📱 Vertical 9:16' : '🖥️ Horizontal 16:9'
+  var cls   = isV ? 'bib-fmt-v' : 'bib-fmt-h'
+  var redes = BIB_FMT_REDES[fmt] || []
+  var idealRes = isV ? '1080×1920' : '1920×1080'
+  var warn = ''
+  if (!meta.isIdeal) {
+    warn = '<div class="bib-fmt-warn">⚠️ Este vídeo não está no formato ideal. Recomendamos '
+      + idealRes + ' (' + (isV ? 'vertical' : 'horizontal') + ').'
+      + (meta.resolucao ? ' Resolução actual: ' + meta.resolucao + '.' : '') + '</div>'
+  }
+  return '<div class="bib-fmt-info">'
+    + '<div class="bib-fmt-info-row">Formato detectado: <span class="' + cls + '">' + label + '</span>'
+    + '&nbsp;<select class="bib-fmt-select" id="bib-fmt-override" onchange="bibFmtOverride(this.value)">'
+    + '<option value="vertical_9_16"' + (isV ? ' selected' : '') + '>📱 Vertical 9:16</option>'
+    + '<option value="horizontal_16_9"' + (!isV ? ' selected' : '') + '>🖥️ Horizontal 16:9</option>'
+    + '</select></div>'
+    + '<div class="bib-fmt-redes" id="bib-fmt-redes-list">'
+    + redes.map(function(r) { return '<span class="bib-fmt-rede">' + r + '</span>' }).join('') + '</div>'
+    + warn + '</div>'
+}
+
+function bibFmtOverride(val) {
+  var redes = BIB_FMT_REDES[val] || []
+  var redeDiv = document.getElementById('bib-fmt-redes-list')
+  if (redeDiv) redeDiv.innerHTML = redes.map(function(r) { return '<span class="bib-fmt-rede">' + r + '</span>' }).join('')
+  // Update label badge
+  var fmtDiv = document.getElementById('bib-vid-format-info')
+  if (!fmtDiv) return
+  var badge = fmtDiv.querySelector('.bib-fmt-v, .bib-fmt-h')
+  if (badge) {
+    badge.className = val === 'vertical_9_16' ? 'bib-fmt-v' : 'bib-fmt-h'
+    badge.textContent = val === 'vertical_9_16' ? '📱 Vertical 9:16' : '🖥️ Horizontal 16:9'
+  }
 }
 
 async function bibUploadSubmit() {
@@ -3961,8 +4077,10 @@ async function bibUploadSubmit() {
       // Capture thumbnail
       var thumbUrl = await bibCaptureAndUploadThumb(f, user.id, i)
 
-      // Detect metadata
+      // Detect metadata (use already-shown override if available, else detect fresh)
       var vidMeta = await bibGetVideoMeta(f)
+      var fmtOverride = (document.getElementById('bib-fmt-override') || {}).value || null
+      var formatoFinal = fmtOverride || vidMeta.formato || null
 
       var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
         user_id:           user.id,
@@ -3974,7 +4092,7 @@ async function bibUploadSubmit() {
         tipo:              'video',
         duracao_segundos:  vidMeta.duracao || null,
         resolucao:         vidMeta.resolucao || null,
-        formato_video:     vidMeta.formato || null,
+        formato_video:     formatoFinal,
         tamanho_bytes:     f.size
       })
       if (!dbErr) ok++
@@ -4038,16 +4156,21 @@ function bibGetVideoMeta(file) {
     var url = URL.createObjectURL(file)
     video.preload = 'metadata'
     video.onloadedmetadata = function() {
+      var w = video.videoWidth, h = video.videoHeight
       var duracao = Math.round(video.duration) || null
-      var resolucao = (video.videoWidth && video.videoHeight)
-        ? video.videoWidth + 'x' + video.videoHeight : null
-      var formato = null
-      if (video.videoHeight && video.videoWidth) {
-        formato = video.videoHeight > video.videoWidth ? 'vertical' : 'horizontal'
-        if (formato === 'vertical' && video.videoHeight >= 1080) formato = 'reel'
+      var resolucao = (w && h) ? w + 'x' + h : null
+      var formato = null, isIdeal = false
+      if (w && h) {
+        if (h > w) {
+          formato = 'vertical_9_16'
+          isIdeal = Math.abs(w / h - 9 / 16) < 0.05
+        } else {
+          formato = 'horizontal_16_9'
+          isIdeal = Math.abs(w / h - 16 / 9) < 0.05
+        }
       }
       URL.revokeObjectURL(url)
-      resolve({ duracao: duracao, resolucao: resolucao, formato: formato })
+      resolve({ duracao: duracao, resolucao: resolucao, formato: formato, isIdeal: isIdeal, w: w, h: h })
     }
     video.onerror = function() { URL.revokeObjectURL(url); resolve({}) }
     video.src = url
