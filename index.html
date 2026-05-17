@@ -1809,8 +1809,8 @@ async function aiImgGerar(textoBase, session) {
     aiImgSetState('result')
     imgCheckInstagram()
 
-    // Save to biblioteca in background
-    bibSaveIaImage(finalUrl, data.prompt || _aiImgPrompt)
+    // Save to biblioteca in background (fire and forget)
+    bibSaveIaImage(finalUrl, data.prompt || _aiImgPrompt, _noticiaCategoria)
 
     // Make it available as first image if no manual uploads
     if (!_imgUrls.length) _imgUrls = [finalUrl]
@@ -1856,6 +1856,9 @@ async function aiImgRegenerate() {
     var finalUrl = await aiImgOverlayAndUpload(data.imagem_url, session)
     _aiImgFinal = finalUrl
     document.getElementById('ai-img-thumb').src = finalUrl
+
+    // Save to biblioteca in background (fire and forget)
+    bibSaveIaImage(finalUrl, prompt, _noticiaCategoria)
 
     // Update _imgUrls if it only contained the previous AI image
     if (_imgUrls.length === 0 || (_imgUrls.length === 1 && _imgUrls[0] !== finalUrl)) {
@@ -2310,6 +2313,29 @@ async function carrosselComporTodos(session) {
   if (prevEl && prevEl.classList.contains('open')) {
     prevEl.innerHTML = prevBuildHtml('instagram')
   }
+
+  // Save composed slides to biblioteca in background (fire and forget)
+  ;(async function() {
+    try {
+      var { data: { user } } = await sb.auth.getUser()
+      if (!user) return
+      var textoBase = (document.getElementById('cont-texto').value || '').trim()
+      for (var _si = 0; _si < _slidesCompostos.length; _si++) {
+        var _slideUrl = _slidesCompostos[_si]
+        if (!_slideUrl) continue
+        await sb.from('biblioteca_imagens').insert({
+          user_id:   user.id,
+          url:       _slideUrl,
+          categoria: 'Slides',
+          descricao: 'Slide carrossel — ' + textoBase.slice(0, 80),
+          tags:      ['slide', 'carrossel', 'instagram'],
+          origem:    'ia',
+          largura:   1080,
+          altura:    1080
+        })
+      }
+    } catch(e) { console.warn('[biblioteca] slides save error', e) }
+  })()
 }
 
 async function carrosselRecompor() {
@@ -3691,16 +3717,26 @@ async function bibUploadSubmit() {
   }, 1200)
 }
 
-async function bibSaveIaImage(url, prompt) {
+async function bibSaveIaImage(url, prompt, categoriaNoticia) {
   try {
     var { data: { user } } = await sb.auth.getUser()
     if (!user) return
+    var dimMap = { A: [1024, 1024], B: [1536, 1024], C: [1024, 1536] }
+    var dims = dimMap[_templateSlide] || [1024, 1024]
+    var tags = ['ia', 'gerada']
+    if (categoriaNoticia) tags.push(categoriaNoticia)
     await sb.from('biblioteca_imagens').insert({
-      user_id: user.id, url: url, categoria: 'Genérico',
-      origem: 'ia', prompt_ia: prompt || null,
-      tags: ['ia', 'gerada']
+      user_id:   user.id,
+      url:       url,
+      categoria: 'Gerada por IA',
+      descricao: prompt || null,
+      tags:      tags,
+      origem:    'ia',
+      prompt_ia: prompt || null,
+      largura:   dims[0],
+      altura:    dims[1]
     })
-  } catch(e) { console.warn('bibSaveIaImage error', e) }
+  } catch(e) { console.warn('[biblioteca] bibSaveIaImage error', e) }
 }
 
 // ── Biblioteca Pick Modal ─────────────────────────────────────────────────────
