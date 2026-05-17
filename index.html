@@ -404,63 +404,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .bib-pick-item img{width:100%;height:100%;object-fit:cover}
 .bib-pick-empty{text-align:center;padding:32px;color:#9ca3af;font-size:.85rem;grid-column:1/-1}
 .bib-pick-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;flex-shrink:0;border-top:1px solid #f0f0f0;margin-top:12px}
-/* Vídeos */
-#page-videos main{flex:1;padding:24px;max-width:1040px;margin:0 auto;width:100%}
-.vid-subnav{display:flex;gap:8px;margin-bottom:20px}
-.vid-subnav-btn{padding:8px 18px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.82rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
-.vid-subnav-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
-.vid-subview{display:none}.vid-subview.active{display:block}
-.vid-upload-zone{border:2px dashed #d1d5db;border-radius:14px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa}
-.vid-upload-zone:hover,.vid-upload-zone.drag-over{border-color:#2d6a9f;background:#f0f5ff}
-.vid-upload-zone p{margin:8px 0;font-size:.85rem;color:#6b7280}
-.vid-preview-wrap{border-radius:12px;overflow:hidden;background:#000;max-height:320px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
-.vid-preview-wrap video{max-width:100%;max-height:320px;display:block}
-.vid-meta-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.vid-meta-badge{font-size:.72rem;font-weight:600;background:#e8f0fb;color:#2d6a9f;padding:3px 10px;border-radius:10px}
-.vid-progress-wrap{margin:12px 0;display:none}
-.vid-progress-wrap.show{display:block}
-.vid-progress-bar-bg{background:#e5e7eb;border-radius:6px;height:10px;overflow:hidden}
-.vid-progress-bar{background:#2d6a9f;height:10px;border-radius:6px;width:0;transition:width .3s}
-.vid-progress-label{font-size:.75rem;color:#6b7280;margin-top:4px;text-align:center}
-.vid-section-title{font-size:.78rem;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
-.vid-form-row{margin-bottom:12px}
-.vid-form-label{display:block;font-size:.75rem;font-weight:600;color:#4b5563;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
-.vid-form-input{width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:inherit;outline:none;box-sizing:border-box}
-.vid-form-input:focus{border-color:#2d6a9f}
-.vid-text-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.vid-tab-btn{padding:6px 14px;border:1.5px solid #d1d5db;border-radius:16px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
-.vid-tab-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
-.vid-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
-@media(max-width:640px){.vid-grid{grid-template-columns:1fr}}
-.vid-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .1s;border:2px solid transparent}
-.vid-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.13);transform:translateY(-1px);border-color:#2d6a9f}
-.vid-card-thumb{position:relative;aspect-ratio:16/9;background:#1a1a2e;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.vid-card-thumb img{width:100%;height:100%;object-fit:cover}
-.vid-card-thumb-ph{font-size:2.5rem}
-.vid-card-dur{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.72);color:#fff;font-size:.68rem;font-weight:600;padding:2px 7px;border-radius:6px}
-.vid-card-body{padding:10px 12px}
-.vid-card-title{font-size:.85rem;font-weight:700;color:#1a3c5e;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vid-card-cat{font-size:.72rem;color:#6b7280}
-.vid-card-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid #f0f0f0;gap:6px}
-.vid-s-rascunho{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#f3f4f6;color:#6b7280}
-.vid-s-agendado{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#dbeafe;color:#1d4ed8}
-.vid-s-publicado{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#dcfce7;color:#15803d}
-.vid-card-del-btn{padding:3px 9px;border:1.5px solid #fca5a5;border-radius:6px;font-size:.7rem;font-weight:600;cursor:pointer;background:#fff;color:#dc2626;transition:all .15s}
-.vid-card-del-btn:hover{background:#fef2f2}
-.vid-panel-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100}
-.vid-panel-overlay.open{display:block}
-.vid-panel{position:fixed;right:0;top:0;bottom:0;width:420px;background:#fff;z-index:101;box-shadow:-4px 0 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .25s}
-.vid-panel-overlay.open .vid-panel{transform:translateX(0)}
-.vid-panel-header{padding:16px 20px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.vid-panel-header h3{font-size:.92rem;font-weight:700;color:#1a3c5e;margin:0}
-.vid-panel-close{background:none;border:none;font-size:1.1rem;cursor:pointer;color:#9ca3af;padding:4px}
-.vid-panel-body{flex:1;overflow-y:auto;padding:16px 20px}
-.vid-panel-thumb{width:100%;aspect-ratio:16/9;border-radius:10px;object-fit:cover;background:#1a1a2e;display:block;margin-bottom:14px}
-.vid-panel-field{margin-bottom:14px}
-.vid-panel-lbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;margin-bottom:4px;display:block}
-.vid-panel-val{font-size:.85rem;color:#1a3c5e;background:#f9fafb;border-radius:8px;padding:8px 12px;white-space:pre-wrap;word-break:break-word}
-.vid-panel-foot{padding:14px 20px;border-top:1px solid #eef0f3;display:flex;gap:8px;flex-shrink:0}
-.vid-empty{text-align:center;padding:48px;color:#9ca3af;font-size:.9rem;grid-column:1/-1}
+/* Biblioteca — vídeo support */
+.bib-tipo-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.bib-tipo-btn{padding:5px 16px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
+.bib-tipo-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.bib-video-badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.72);color:#fff;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:8px;pointer-events:none}
+.bib-video-dur{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.72);color:#fff;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:8px;pointer-events:none}
+.bib-up-prog{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin-top:8px;display:none}
+.bib-up-prog.show{display:block}
+.bib-up-prog-bar{height:8px;background:#2d6a9f;border-radius:4px;width:0;transition:width .3s}
+.bib-up-prog-lbl{font-size:.74rem;color:#6b7280;text-align:center;margin-top:4px}
+.bib-pick-video-badge{position:absolute;top:4px;left:4px;background:rgba(0,0,0,.72);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:5px}
 /* Agendamento */
 #page-agendamento main{flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%}
 .ag-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
@@ -576,7 +530,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-kpi" style="display:none" onclick="showTab('kpi')">📊 KPI Dashboard</button>
     <button class="pnav-btn" id="tab-conteudos" onclick="showTab('conteudos')">✨ Conteúdo Social</button>
     <button class="pnav-btn" id="tab-agendamento" onclick="showTab('agendamento')">📅 Agendamento</button>
-    <button class="pnav-btn" id="tab-videos" onclick="showTab('videos')">🎬 Vídeos</button>
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
   </nav>
@@ -921,164 +874,18 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <div id="ag-panel-content"></div>
   </div>
 
-  <!-- Vídeos -->
-  <div class="portal-page" id="page-videos">
-    <main>
-      <div class="cont-box">
-        <div class="vid-subnav">
-          <button class="vid-subnav-btn active" id="vid-subnav-novo" onclick="vidShowView('novo')">➕ Novo Vídeo</button>
-          <button class="vid-subnav-btn" id="vid-subnav-historico" onclick="vidShowView('historico')">📋 Histórico</button>
-        </div>
-
-        <!-- SUB-VIEW: Novo Vídeo -->
-        <div class="vid-subview active" id="vid-view-novo">
-          <div id="vid-upload-zone" class="vid-upload-zone"
-            ondragover="vidOnDragOver(event)" ondragleave="vidOnDragLeave(event)" ondrop="vidOnDrop(event)"
-            onclick="document.getElementById('vid-file-input').click()">
-            <div style="font-size:2.2rem">🎬</div>
-            <p><strong>Arrasta um vídeo aqui</strong> ou clica para seleccionar</p>
-            <p>MP4, MOV, AVI · Máx. 500 MB</p>
-            <input type="file" id="vid-file-input" accept="video/*" style="display:none" onchange="vidOnFile(this.files[0])">
-          </div>
-
-          <div id="vid-preview-wrap" class="vid-preview-wrap" style="display:none;margin-top:12px">
-            <video id="vid-preview-el" controls playsinline style="max-width:100%;max-height:320px"></video>
-          </div>
-          <div id="vid-meta-badges" class="vid-meta-badges"></div>
-
-          <div id="vid-progress-wrap" class="vid-progress-wrap">
-            <div class="vid-progress-bar-bg"><div id="vid-progress-bar" class="vid-progress-bar"></div></div>
-            <div id="vid-progress-label" class="vid-progress-label">A carregar… 0%</div>
-          </div>
-
-          <div id="vid-form" style="display:none">
-            <div class="vid-form-row">
-              <label class="vid-form-label">Título do vídeo</label>
-              <input class="vid-form-input" id="vid-titulo" placeholder="Título descritivo do vídeo">
-            </div>
-            <div class="vid-form-row">
-              <label class="vid-form-label">Categoria</label>
-              <select class="vid-form-input" id="vid-categoria">
-                <option value="imoveis">Imóveis</option>
-                <option value="figueira">Figueira da Foz</option>
-                <option value="ia">IA &amp; Tecnologia</option>
-                <option value="generico">Genérico</option>
-              </select>
-            </div>
-
-            <div class="vid-section-title">Tom do Conteúdo</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-              <button class="perfil-btn active" id="vid-perfil-polemico"    onclick="vidSetPerfil('polemico')">🔥 Polémico</button>
-              <button class="perfil-btn"        id="vid-perfil-informativo" onclick="vidSetPerfil('informativo')">💡 Informativo</button>
-              <button class="perfil-btn"        id="vid-perfil-humanizado"  onclick="vidSetPerfil('humanizado')">🤝 Humanizado</button>
-              <button class="perfil-btn"        id="vid-perfil-educativo"   onclick="vidSetPerfil('educativo')">🎯 Educativo</button>
-              <button class="perfil-btn"        id="vid-perfil-urgencia"    onclick="vidSetPerfil('urgencia')">⚡ Urgência</button>
-            </div>
-
-            <div class="vid-form-row">
-              <label class="vid-form-label">Texto base / descrição do vídeo</label>
-              <textarea class="vid-form-input" id="vid-texto-base" rows="3" placeholder="Descreve o conteúdo do vídeo para gerar legendas…"></textarea>
-            </div>
-
-            <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
-              <button class="cont-btn primary" id="vid-gerar-btn" onclick="vidGerarTextos()">✨ Gerar Textos com IA</button>
-              <span id="vid-gerar-spinner" style="display:none;font-size:.82rem;color:#6b7280">A gerar…</span>
-            </div>
-
-            <div id="vid-textos-wrap" style="display:none">
-              <div class="vid-section-title">Textos por Rede Social</div>
-              <div class="vid-text-tabs">
-                <button class="vid-tab-btn active" onclick="vidShowTextTab('instagram')">📸 Instagram</button>
-                <button class="vid-tab-btn"        onclick="vidShowTextTab('facebook')">📘 Facebook</button>
-                <button class="vid-tab-btn"        onclick="vidShowTextTab('linkedin')">💼 LinkedIn</button>
-                <button class="vid-tab-btn"        onclick="vidShowTextTab('youtube')">▶️ YouTube</button>
-              </div>
-              <div id="vid-text-instagram">
-                <div class="vid-form-row"><label class="vid-form-label">Caption Instagram</label>
-                <textarea class="vid-form-input" id="vid-caption-instagram" rows="4"></textarea></div>
-                <div class="vid-form-row"><label class="vid-form-label">Hashtags</label>
-                <textarea class="vid-form-input" id="vid-hashtags-instagram" rows="2"></textarea></div>
-              </div>
-              <div id="vid-text-facebook" style="display:none">
-                <div class="vid-form-row"><label class="vid-form-label">Caption Facebook</label>
-                <textarea class="vid-form-input" id="vid-caption-facebook" rows="4"></textarea></div>
-              </div>
-              <div id="vid-text-linkedin" style="display:none">
-                <div class="vid-form-row"><label class="vid-form-label">Caption LinkedIn</label>
-                <textarea class="vid-form-input" id="vid-caption-linkedin" rows="4"></textarea></div>
-              </div>
-              <div id="vid-text-youtube" style="display:none">
-                <div class="vid-form-row"><label class="vid-form-label">Título YouTube</label>
-                <input class="vid-form-input" id="vid-titulo-youtube"></div>
-                <div class="vid-form-row"><label class="vid-form-label">Descrição YouTube</label>
-                <textarea class="vid-form-input" id="vid-descricao-youtube" rows="4"></textarea></div>
-                <div class="vid-form-row"><label class="vid-form-label">Hashtags YouTube</label>
-                <textarea class="vid-form-input" id="vid-hashtags-youtube" rows="2"></textarea></div>
-              </div>
-            </div>
-
-            <div class="vid-section-title">Publicar em</div>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px">
-              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-instagram" value="instagram" checked> 📸 Instagram</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-facebook"  value="facebook"  checked> 📘 Facebook</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-linkedin"  value="linkedin"> 💼 LinkedIn</label>
-              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-youtube"   value="youtube"> ▶️ YouTube</label>
-            </div>
-            <div class="vid-form-row">
-              <label class="vid-form-label">Data de agendamento <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(opcional)</span></label>
-              <input type="datetime-local" class="vid-form-input" id="vid-data-agenda">
-            </div>
-
-            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-              <button class="cont-btn primary" id="vid-guardar-btn" onclick="vidGuardar()">💾 Guardar</button>
-              <button class="cont-btn secondary" onclick="vidResetForm()">🔄 Limpar</button>
-            </div>
-            <div id="vid-save-msg" style="margin-top:8px;font-size:.82rem;color:#16a34a;display:none"></div>
-          </div>
-        </div>
-
-        <!-- SUB-VIEW: Histórico -->
-        <div class="vid-subview" id="vid-view-historico">
-          <div class="bib-filters">
-            <select class="bib-select" id="vid-filter-cat" onchange="vidSetFilter()">
-              <option value="">Todas as categorias</option>
-              <option value="imoveis">Imóveis</option>
-              <option value="figueira">Figueira</option>
-              <option value="ia">IA</option>
-              <option value="generico">Genérico</option>
-            </select>
-            <select class="bib-select" id="vid-filter-status" onchange="vidSetFilter()">
-              <option value="">Todos os estados</option>
-              <option value="rascunho">Rascunho</option>
-              <option value="agendado">Agendado</option>
-              <option value="publicado">Publicado</option>
-            </select>
-          </div>
-          <div id="vid-grid" class="vid-grid"></div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Vídeos — painel lateral -->
-  <div class="vid-panel-overlay" id="vid-panel-overlay" onclick="vidClosePanel()">
-    <div class="vid-panel" onclick="event.stopPropagation()">
-      <div class="vid-panel-header">
-        <h3>🎬 Detalhe do Vídeo</h3>
-        <button class="vid-panel-close" onclick="vidClosePanel()">✕</button>
-      </div>
-      <div class="vid-panel-body" id="vid-panel-body"></div>
-      <div class="vid-panel-foot" id="vid-panel-foot"></div>
-    </div>
-  </div>
-
   <!-- Biblioteca de Imagens -->
   <div class="portal-page" id="page-biblioteca">
     <main>
       <div class="cont-box">
         <div class="bib-header">
-          <h2>🖼️ Biblioteca de Imagens</h2>
+          <h2>🖼️ Biblioteca de Média</h2>
           <button class="cont-btn primary" style="padding:8px 16px;font-size:.82rem" onclick="bibOpenUpload()">⬆️ Fazer Upload</button>
+        </div>
+        <div class="bib-tipo-toggle">
+          <button class="bib-tipo-btn active" onclick="bibSetTipo('')">Todos</button>
+          <button class="bib-tipo-btn" onclick="bibSetTipo('imagem')">📸 Fotos</button>
+          <button class="bib-tipo-btn" onclick="bibSetTipo('video')">🎬 Vídeos</button>
         </div>
         <div class="bib-filters">
           <input type="text" class="bib-search" id="bib-search" placeholder="Pesquisar..." oninput="bibSearch(this.value)">
@@ -1105,18 +912,22 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   <!-- Upload modal -->
   <div class="bib-upload-modal" id="bib-upload-modal" onclick="if(event.target===this)bibCloseUpload()">
     <div class="bib-upload-box">
-      <h3>⬆️ Adicionar Imagens à Biblioteca</h3>
-      <input type="file" id="bib-file-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none" onchange="bibOnFileInput(this)">
+      <h3>⬆️ Adicionar à Biblioteca</h3>
+      <input type="file" id="bib-file-input" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/x-msvideo,video/*" multiple style="display:none" onchange="bibOnFileInput(this)">
       <div class="bib-upload-zone" id="bib-upload-zone"
         onclick="document.getElementById('bib-file-input').click()"
         ondragover="event.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="event.preventDefault();this.classList.remove('drag-over');bibOnDrop(event)">
         <div style="font-size:2rem;margin-bottom:8px">📁</div>
-        <div style="font-size:.88rem;font-weight:600;color:#4b5563">Clica ou arrasta imagens</div>
-        <div style="font-size:.76rem;color:#9ca3af;margin-top:4px">JPG, PNG, WEBP · máx. 10MB</div>
+        <div style="font-size:.88rem;font-weight:600;color:#4b5563">Clica ou arrasta ficheiros</div>
+        <div style="font-size:.76rem;color:#9ca3af;margin-top:4px">📸 JPG, PNG, WEBP · máx. 10MB &nbsp;|&nbsp; 🎬 MP4, MOV, AVI · máx. 500MB</div>
       </div>
       <div class="bib-upload-previews" id="bib-upload-previews"></div>
+      <div class="bib-up-prog" id="bib-up-prog">
+        <div class="bib-up-prog-bar" id="bib-up-prog-bar"></div>
+        <div class="bib-up-prog-lbl" id="bib-up-prog-lbl"></div>
+      </div>
       <div class="bib-form-row">
         <label class="bib-form-label">Categoria</label>
         <select class="bib-form-input" id="bib-upload-cat">
@@ -1128,7 +939,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       </div>
       <div class="bib-form-row">
         <label class="bib-form-label">Descrição (opcional)</label>
-        <input type="text" class="bib-form-input" id="bib-upload-desc" placeholder="Ex: Vista da praia, Sala T3...">
+        <input type="text" class="bib-form-input" id="bib-upload-desc" placeholder="Ex: Vista da praia, Sala T3, Reel institucional...">
       </div>
       <div style="display:flex;gap:10px;margin-top:16px">
         <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
@@ -1143,9 +954,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <div class="bib-pick-box">
       <h3>📷 Escolher da Biblioteca</h3>
       <div class="bib-pick-filters">
-        <input type="text" class="bib-search" style="max-width:200px" id="bib-pick-search" placeholder="Pesquisar..." oninput="bibLoadPick()">
+        <input type="text" class="bib-search" style="max-width:160px" id="bib-pick-search" placeholder="Pesquisar..." oninput="bibLoadPick()">
+        <select class="bib-select" id="bib-pick-tipo" onchange="bibLoadPick()">
+          <option value="">📸+🎬 Todos</option>
+          <option value="imagem">📸 Fotos</option>
+          <option value="video">🎬 Vídeos</option>
+        </select>
         <select class="bib-select" id="bib-pick-origem" onchange="bibLoadPick()">
-          <option value="">Todas</option>
+          <option value="">Todas as origens</option>
           <option value="upload">Upload</option>
           <option value="ia">IA</option>
         </select>
@@ -1157,7 +973,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <span id="bib-pick-count" style="font-size:.8rem;color:#9ca3af">—</span>
         <div style="display:flex;gap:8px">
           <button class="cont-btn secondary" onclick="bibClosePickModal()">Cancelar</button>
-          <button class="cont-btn primary" id="bib-pick-use-btn" onclick="bibPickConfirm()" disabled>Usar esta imagem</button>
+          <button class="cont-btn primary" id="bib-pick-use-btn" onclick="bibPickConfirm()" disabled>Usar ficheiro →</button>
         </div>
       </div>
     </div>
@@ -1247,7 +1063,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','videos','biblioteca','config'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','config'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -1258,7 +1074,6 @@ function showTab(name) {
     document.getElementById('kpi-frame').src = '/dashboard.html'
   }
   if (name === 'agendamento') agInit()
-  if (name === 'videos') vidInit()
   if (name === 'biblioteca') bibLoad()
 }
 
@@ -1602,6 +1417,10 @@ var REDE_CFG = {
 }
 var _fonteMode = 'manual'
 var _perfilConteudo = 'polemico'
+var _isVideoPost    = false  // true quando um vídeo da biblioteca está seleccionado
+var _vidBibId       = null   // id do registo em biblioteca_imagens
+var _vidBibUrl      = null   // url do vídeo
+var _vidBibThumb    = null   // thumbnail url
 var _noticiaShortCode = null
 var _noticiaCategoria = null
 var _noticiaRow = null
@@ -2596,7 +2415,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
@@ -2994,6 +2813,11 @@ function countWords(s) {
 
 async function contGuardar(agendar) {
   if (!_contGerado) return
+  // If a video from biblioteca is selected, save to videos_sociais instead
+  if (_isVideoPost && _vidBibUrl) {
+    await contGuardarVideo(agendar)
+    return
+  }
   var redes = contGetRedes()
   var data = document.getElementById('cont-data').value
   if (agendar && !data) { alert('Define uma data de agendamento para agendar.'); return }
@@ -3089,8 +2913,65 @@ async function contGuardar(agendar) {
     _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
     var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
     fonteSet('manual')
+    // Reset video state
+    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null
+    var aiWrap = document.getElementById('ai-img-wrap')
+    if (aiWrap) aiWrap.innerHTML = ''
   } catch(e) {
     alert('Erro ao guardar: ' + e.message)
+  }
+  savBtn.disabled = false
+  savBtn.textContent = agendar ? '📅 Guardar e Agendar' : '💾 Guardar Rascunho'
+}
+
+async function contGuardarVideo(agendar) {
+  var redes = contGetRedes()
+  var dataVal = document.getElementById('cont-data').value
+  if (agendar && !dataVal) { alert('Define uma data de agendamento para agendar.'); return }
+  var status = agendar && dataVal ? 'agendado' : 'rascunho'
+  var savBtn = agendar ? document.getElementById('cont-agendar-btn') : document.getElementById('cont-rascunho-btn')
+  savBtn.disabled = true; savBtn.textContent = '⏳ A guardar...'
+  try {
+    var ig = _contGerado && _contGerado.instagram
+    var fb = _contGerado && _contGerado.facebook
+    var li = _contGerado && _contGerado.linkedin
+    var yt = _contGerado && _contGerado.youtube
+    var payload = {
+      video_url:            _vidBibUrl,
+      thumbnail_url:        _vidBibThumb || null,
+      titulo:               (document.getElementById('cont-texto').value || '').trim().slice(0, 100) || null,
+      categoria:            _noticiaCategoria || null,
+      texto_base:           (document.getElementById('cont-texto').value || '').trim() || null,
+      caption_instagram:    ig ? (document.getElementById('main-instagram') || {}).value || (ig.caption || '') : null,
+      hashtags_instagram:   ig ? (document.getElementById('hash-instagram') || {}).value || (ig.hashtags || '') : null,
+      caption_facebook:     fb ? (document.getElementById('main-facebook') || {}).value || (fb.caption || '') : null,
+      caption_linkedin:     li ? (document.getElementById('main-linkedin') || {}).value || (li.caption || '') : null,
+      titulo_youtube:       yt ? (document.getElementById('main-youtube') || {}).value || (yt.description || '') : null,
+      descricao_youtube:    yt ? (document.getElementById('script-youtube') || {}).value || '' : null,
+      hashtags_youtube:     yt ? (document.getElementById('hash-youtube') || {}).value || '' : null,
+      redes_seleccionadas:  redes,
+      data_agendada:        agendar && dataVal ? new Date(dataVal).toISOString() : null,
+      noticia_short_code:   _noticiaShortCode || null,
+      noticia_categoria:    _noticiaCategoria || null,
+      conteudo_social_id:   null
+    }
+    redes.forEach(function(r) { payload['status_' + r] = status })
+    var { error } = await sb.from('videos_sociais').insert(payload)
+    if (error) throw error
+    alert(agendar ? '✅ Vídeo agendado!' : '✅ Rascunho de vídeo guardado!')
+    document.getElementById('cont-texto').value = ''
+    document.getElementById('cont-data').value = ''
+    document.getElementById('cont-results').style.display = 'none'
+    _contGerado = null
+    imgReset()
+    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null
+    _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
+    var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
+    fonteSet('manual')
+    var aiWrap = document.getElementById('ai-img-wrap')
+    if (aiWrap) aiWrap.innerHTML = ''
+  } catch(e) {
+    alert('Erro ao guardar vídeo: ' + e.message)
   }
   savBtn.disabled = false
   savBtn.textContent = agendar ? '📅 Guardar e Agendar' : '💾 Guardar Rascunho'
@@ -3199,9 +3080,17 @@ function agInit() {
 }
 
 async function agLoad() {
-  var { data, error } = await sb.from('conteudos_sociais')
-    .select('*').order('created_at', { ascending: false }).limit(500)
-  _agRows = error ? [] : (data || [])
+  var [res1, res2] = await Promise.all([
+    sb.from('conteudos_sociais').select('*').order('created_at', { ascending: false }).limit(500),
+    sb.from('videos_sociais').select('*').order('created_at', { ascending: false }).limit(200)
+  ])
+  var imgRows = res1.error ? [] : (res1.data || [])
+  var vidRows = (res2.data || []).map(function(r) { return Object.assign({}, r, { _tipo: 'video' }) })
+  _agRows = imgRows.concat(vidRows).sort(function(a, b) {
+    var da = new Date(a.data_agendada || a.created_at)
+    var db = new Date(b.data_agendada || b.created_at)
+    return db - da
+  })
   agRenderMetrics()
   agRender()
 }
@@ -3284,7 +3173,7 @@ function agRenderCal() {
     html += '<div class="ag-cal-daynum">' + day + '</div>'
     posts.slice(0, 3).forEach(function(r) {
       var net = (r.redes_seleccionadas || [])[0] || 'instagram'
-      var label = (r.texto_base || '').slice(0, 22) || '—'
+      var label = (r._tipo === 'video' ? '🎬 ' : '') + (r.texto_base || r.titulo || '').slice(0, 20) || '—'
       html += '<div class="ag-pill ag-pill-' + net + '" onclick="agOpenPanel(\'' + r.id + '\')">' + esc(label) + '</div>'
     })
     if (posts.length > 3) {
@@ -3319,7 +3208,8 @@ function agRenderList() {
     html += '<td style="white-space:nowrap">' + esc(dateStr) + '</td>'
     html += '<td style="white-space:nowrap">' + esc(timeStr) + '</td>'
     html += '<td>' + netsHtml + '</td>'
-    html += '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(r.texto_base||'') + '">' + esc((r.texto_base||'').slice(0,55)) + '</td>'
+    var vidBadge = r._tipo === 'video' ? '<span style="font-size:.68rem;background:#1a1a2e;color:#fff;padding:1px 6px;border-radius:6px;margin-right:4px">🎬</span>' : ''
+    html += '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(r.texto_base||r.titulo||'') + '">' + vidBadge + esc((r.texto_base||r.titulo||'').slice(0,55)) + '</td>'
     html += '<td>' + agStatusBadge(status) + '</td>'
     html += '<td><button class="ag-act-btn" onclick="event.stopPropagation();agOpenPanel(\'' + r.id + '\')">Ver →</button></td>'
     html += '</tr>'
@@ -3376,6 +3266,11 @@ function agOpenPanel(id) {
   var r = _agRows.find(function(x) { return x.id === id })
   if (!r) return
   _agPanelId = id
+  // For video rows, show simplified panel
+  if (r._tipo === 'video') {
+    agOpenVideoPanel(r)
+    return
+  }
   var nets = r.redes_seleccionadas || []
   var d = r.data_agendada ? new Date(r.data_agendada) : null
   var dateVal = d ? d.toISOString().slice(0, 16) : ''
@@ -3434,6 +3329,54 @@ function agClosePanel() {
   document.getElementById('ag-panel').classList.remove('open')
   document.getElementById('ag-panel-overlay').classList.remove('open')
   _agPanelId = null
+}
+
+function agOpenVideoPanel(r) {
+  var d = r.data_agendada ? new Date(r.data_agendada) : null
+  var status = agGetMainStatus(r)
+  var nets = r.redes_seleccionadas || []
+
+  var html = '<div class="ag-panel-section">'
+  html += '<div style="font-size:.72rem;font-weight:700;color:#6b7280;margin-bottom:6px">🎬 POST DE VÍDEO</div>'
+  if (r.thumbnail_url) {
+    html += '<img src="' + esc(r.thumbnail_url) + '" style="width:100%;border-radius:8px;aspect-ratio:16/9;object-fit:cover;margin-bottom:10px">'
+  }
+  html += '<div class="ag-panel-label">Título</div>'
+  html += '<p class="ag-panel-val">' + esc(r.titulo || r.texto_base || '—') + '</p>'
+  html += '</div>'
+  html += '<div class="ag-panel-section">'
+  html += '<div class="ag-panel-label">Data de publicação</div>'
+  html += '<p class="ag-panel-val">' + (d ? fmtDate(r.data_agendada) : '—') + '</p>'
+  html += '</div>'
+  html += '<div class="ag-panel-section">'
+  html += '<div class="ag-panel-label">Redes e estado</div>'
+  nets.forEach(function(n) {
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+      + '<span style="font-size:.82rem">' + agNetIcon(n) + ' ' + n.charAt(0).toUpperCase() + n.slice(1) + '</span>'
+      + agStatusBadge(r['status_' + n] || 'rascunho') + '</div>'
+  })
+  html += '</div>'
+  if (r.caption_instagram) {
+    html += '<div class="ag-panel-section"><div class="ag-panel-label">Caption Instagram</div><p class="ag-panel-val" style="white-space:pre-wrap;font-size:.82rem">' + esc(r.caption_instagram) + '</p></div>'
+  }
+  if (r.video_url) {
+    html += '<div class="ag-panel-section"><a href="' + esc(r.video_url) + '" target="_blank" class="cont-btn primary" style="display:block;text-align:center;text-decoration:none;padding:8px;font-size:.82rem">▶️ Ver Vídeo Original</a></div>'
+  }
+  html += agPanelStatusBtns(r.id, status, r._tipo)
+
+  document.getElementById('ag-panel-content').innerHTML = html
+  document.getElementById('ag-panel').classList.add('open')
+  document.getElementById('ag-panel-overlay').classList.add('open')
+}
+
+function agPanelStatusBtns(id, status, tipo) {
+  var html = '<div class="ag-panel-section" style="display:flex;gap:8px;flex-wrap:wrap">'
+  if (status !== 'publicado') {
+    html += '<button class="ag-sm-btn" onclick="agMarcarPublicado(\'' + id + '\',\'' + (tipo||'') + '\')">🟢 Marcar como publicado</button>'
+  }
+  html += '<button class="ag-sm-btn" style="color:#dc2626;border-color:#fca5a5" onclick="agApagar(\'' + id + '\',\'' + (tipo||'') + '\')">🗑 Apagar</button>'
+  html += '</div>'
+  return html
 }
 
 function agEditar(id) {
@@ -3713,9 +3656,21 @@ async function agPublicarAgora(id) {
   } catch(e) { alert('Erro ao publicar: ' + e.message) }
 }
 
-async function agApagar(id) {
+async function agMarcarPublicado(id, tipo) {
+  var tabela = tipo === 'video' ? 'videos_sociais' : 'conteudos_sociais'
+  var nets = ['instagram','facebook','linkedin','youtube']
+  var upd = {}
+  nets.forEach(function(n) { upd['status_' + n] = 'publicado' })
+  var { error } = await sb.from(tabela).update(upd).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  agLoad()
+  agClosePanel()
+}
+
+async function agApagar(id, tipo) {
   if (!confirm('Apagar este conteúdo definitivamente? Esta acção não pode ser desfeita.')) return
-  var { error } = await sb.from('conteudos_sociais').delete().eq('id', id)
+  var tabela = tipo === 'video' ? 'videos_sociais' : 'conteudos_sociais'
+  var { error } = await sb.from(tabela).delete().eq('id', id)
   if (error) { alert('Erro: ' + error.message); return }
   _agRows = _agRows.filter(function(x) { return x.id !== id })
   agRenderMetrics()
@@ -3734,7 +3689,7 @@ function agSetupRealtime() {
 
 // ── Biblioteca de Imagens ─────────────────────────────────────────────────────
 var _bibRows = []
-var _bibFilter = { origem: '', categoria: '', search: '' }
+var _bibFilter = { origem: '', categoria: '', search: '', tipo: '' }
 var _bibUploadFiles = []
 var _bibPickSelected = null
 
@@ -3751,6 +3706,8 @@ async function bibLoad() {
 
 function bibRender() {
   var rows = _bibRows.filter(function(r) {
+    var tipo = r.tipo || 'imagem'
+    if (_bibFilter.tipo && tipo !== _bibFilter.tipo) return false
     if (_bibFilter.origem === 'ia' && r.origem !== 'ia') return false
     if (_bibFilter.origem === 'upload' && r.origem !== 'upload') return false
     if (_bibFilter.categoria && r.categoria !== _bibFilter.categoria) return false
@@ -3764,13 +3721,33 @@ function bibRender() {
   var grid = document.getElementById('bib-grid')
   if (!grid) return
   if (!rows.length) {
-    grid.innerHTML = '<div class="bib-empty">Nenhuma imagem encontrada.</div>'
+    grid.innerHTML = '<div class="bib-empty">Nenhum item encontrado.</div>'
     return
   }
   grid.innerHTML = rows.map(function(r) {
+    var tipo = r.tipo || 'imagem'
     var badge = r.origem === 'ia'
       ? '<span class="bib-item-badge bib-badge-ia">🤖 IA</span>'
       : '<span class="bib-item-badge bib-badge-upload">📁 Upload</span>'
+    if (tipo === 'video') {
+      var durBadge = r.duracao_segundos ? '<span class="bib-video-dur">' + bibFmtDur(r.duracao_segundos) + '</span>' : ''
+      var thumbSrc = r.thumbnail_url || ''
+      var mediaHtml = thumbSrc
+        ? '<img src="' + esc(thumbSrc) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.4rem;background:#1a1a2e">🎬</div>'
+      return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')" style="background:#1a1a2e">'
+        + mediaHtml
+        + '<span class="bib-video-badge">🎬 Vídeo</span>'
+        + durBadge
+        + '<div class="bib-item-overlay">'
+        + badge
+        + '<div class="bib-item-actions">'
+        + '<button class="bib-action-btn" onclick="event.stopPropagation();bibUseInPost(\'' + r.id + '\')">✅ Usar</button>'
+        + '<button class="bib-action-btn" onclick="event.stopPropagation();bibDownload(\'' + r.id + '\')">⬇</button>'
+        + '<button class="bib-action-btn" style="color:#dc2626" onclick="event.stopPropagation();bibDelete(\'' + r.id + '\')">🗑</button>'
+        + '</div></div>'
+        + '</div>'
+    }
     return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')">'
       + '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
       + '<div class="bib-item-overlay">'
@@ -3782,6 +3759,20 @@ function bibRender() {
       + '</div></div>'
       + '</div>'
   }).join('')
+}
+
+function bibFmtDur(secs) {
+  if (!secs) return ''
+  var m = Math.floor(secs / 60), s = secs % 60
+  return m + ':' + (s < 10 ? '0' : '') + s
+}
+
+function bibSetTipo(val) {
+  _bibFilter.tipo = val
+  document.querySelectorAll('.bib-tipo-btn').forEach(function(b) {
+    b.className = 'bib-tipo-btn' + (b.textContent.includes(val === '' ? 'Todos' : val === 'imagem' ? 'Fotos' : 'Vídeos') ? ' active' : '')
+  })
+  bibRender()
 }
 
 function bibSetFilter(key, val) {
@@ -3802,16 +3793,22 @@ function bibSearch(val) {
 function bibOpenModal(id) {
   var r = _bibRows.find(function(x) { return x.id === id })
   if (!r) return
+  var tipo = r.tipo || 'imagem'
   var date = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-PT') : ''
-  var info = [
+  var meta = [
     r.categoria ? '📂 ' + r.categoria : '',
     r.origem === 'ia' ? '🤖 Gerada por IA' : '📁 Upload',
     date ? '📅 ' + date : '',
+    tipo === 'video' && r.duracao_segundos ? '⏱ ' + bibFmtDur(r.duracao_segundos) : '',
+    tipo === 'video' && r.resolucao ? '📐 ' + r.resolucao : '',
     r.descricao || ''
   ].filter(Boolean).join(' · ')
+  var mediaHtml = tipo === 'video'
+    ? '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;border-radius:10px;max-height:340px;background:#000"></video>'
+    : '<img src="' + esc(r.url) + '" style="width:100%;border-radius:10px;max-height:360px;object-fit:contain;background:#f0f2f5">'
   var html = '<div style="display:flex;flex-direction:column;gap:14px">'
-    + '<img src="' + esc(r.url) + '" style="width:100%;border-radius:10px;max-height:360px;object-fit:contain;background:#f0f2f5">'
-    + (info ? '<p style="font-size:.8rem;color:#6b7280">' + esc(info) + '</p>' : '')
+    + mediaHtml
+    + (meta ? '<p style="font-size:.8rem;color:#6b7280">' + esc(meta) + '</p>' : '')
     + (r.prompt_ia ? '<p style="font-size:.76rem;color:#6b7280;background:#f9fafb;border-left:3px solid #d1d5db;padding:7px 10px;border-radius:0 6px 6px 0">' + esc(r.prompt_ia) + '</p>' : '')
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
     + '<button class="cont-btn primary" onclick="bibUseInPost(\'' + r.id + '\');bibModalClose()">✅ Usar no Gerador</button>'
@@ -3830,6 +3827,10 @@ function bibModalClose() {
 function bibUseInPost(id) {
   var r = _bibRows.find(function(x) { return x.id === id })
   if (!r) return
+  if ((r.tipo || 'imagem') === 'video') {
+    bibUseVideoInPost(r)
+    return
+  }
   _aiImgFinal = r.url
   if (!_imgUrls.length) _imgUrls = [r.url]
   var thumb = document.getElementById('ai-img-thumb')
@@ -3839,6 +3840,35 @@ function bibUseInPost(id) {
   aiImgSetState('result')
   imgCheckInstagram()
   showTab('conteudos')
+}
+
+function bibUseVideoInPost(r) {
+  // Set video state on the generator
+  _isVideoPost = true
+  _vidBibId = r.id
+  _vidBibUrl = r.url
+  _vidBibThumb = r.thumbnail_url || null
+
+  // Show generator tab
+  showTab('conteudos')
+
+  // Update image area to show video preview
+  var aiWrap = document.getElementById('ai-img-wrap')
+  if (aiWrap) {
+    aiWrap.innerHTML = '<div style="position:relative;border-radius:12px;overflow:hidden;background:#000">'
+      + '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;max-height:260px;display:block"></video>'
+      + '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:8px">🎬 Vídeo da Biblioteca</div>'
+      + '<button class="cont-btn secondary" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:.72rem" onclick="_isVideoPost=false;_vidBibUrl=null;aiImgSetState(\'idle\');document.getElementById(\'ai-img-wrap\').innerHTML=\'\'">✕ Remover</button>'
+      + '</div>'
+  }
+
+  // Pre-fill texto-base with descricao if exists
+  var tb = document.getElementById('cont-texto')
+  if (tb && !tb.value && r.descricao) tb.value = r.descricao
+
+  // Update fonte indicator
+  var ni = document.getElementById('noticia-indicator')
+  if (ni) ni.style.display = 'none'
 }
 
 function bibDownload(id) {
@@ -3874,50 +3904,97 @@ function bibCloseUpload() {
 }
 
 function bibOnFileInput(input) {
-  var files = Array.from(input.files).filter(function(f) { return f.size <= 10 * 1024 * 1024 })
-  _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 20)
+  var files = Array.from(input.files).filter(function(f) {
+    if (f.type.startsWith('video/')) return f.size <= 500 * 1024 * 1024
+    return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024
+  })
+  _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 10)
   bibRenderUploadPreviews()
   input.value = ''
 }
 
 function bibOnDrop(e) {
-  var files = Array.from(e.dataTransfer.files).filter(function(f) { return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024 })
-  _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 20)
+  var files = Array.from(e.dataTransfer.files).filter(function(f) {
+    if (f.type.startsWith('video/')) return f.size <= 500 * 1024 * 1024
+    return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024
+  })
+  _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 10)
   bibRenderUploadPreviews()
 }
 
 function bibRenderUploadPreviews() {
   var wrap = document.getElementById('bib-upload-previews')
   wrap.innerHTML = _bibUploadFiles.map(function(f) {
+    if (f.type.startsWith('video/')) {
+      return '<div style="width:72px;height:72px;border-radius:6px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1.5px solid #e0e6f0;flex-shrink:0">🎬</div>'
+    }
     return '<img class="bib-upload-thumb" src="' + URL.createObjectURL(f) + '" alt="">'
   }).join('')
 }
 
 async function bibUploadSubmit() {
-  if (!_bibUploadFiles.length) { alert('Selecciona pelo menos uma imagem.'); return }
+  if (!_bibUploadFiles.length) { alert('Selecciona pelo menos um ficheiro.'); return }
   var btn = document.getElementById('bib-upload-btn')
   var msg = document.getElementById('bib-upload-msg')
+  var prog = document.getElementById('bib-up-prog')
+  var progBar = document.getElementById('bib-up-prog-bar')
+  var progLbl = document.getElementById('bib-up-prog-lbl')
   btn.disabled = true; btn.textContent = '⏳ A guardar...'
   var { data: { user } } = await sb.auth.getUser()
   var cat = document.getElementById('bib-upload-cat').value
   var desc = document.getElementById('bib-upload-desc').value.trim()
   var ok = 0
+
   for (var i = 0; i < _bibUploadFiles.length; i++) {
     var f = _bibUploadFiles[i]
-    var ext = f.name.split('.').pop() || 'jpg'
-    var path = user.id + '/' + Date.now() + '_' + i + '.' + ext
+    var isVid = f.type.startsWith('video/')
+    var ext = f.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')
     msg.textContent = 'A carregar ' + (i + 1) + ' de ' + _bibUploadFiles.length + '...'
-    var { error: upErr } = await sb.storage.from('biblioteca-imagens').upload(path, f, { upsert: true })
-    if (upErr) { console.warn('bib upload error', upErr); continue }
-    var { data: pub } = sb.storage.from('biblioteca-imagens').getPublicUrl(path)
-    var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
-      user_id: user.id, url: pub.publicUrl, categoria: cat,
-      descricao: desc || null, origem: 'upload',
-      tamanho_bytes: f.size
-    })
-    if (!dbErr) ok++
+
+    if (isVid) {
+      // Video: XHR upload with progress to videos-conteudos bucket
+      prog.classList.add('show')
+      var vidPath = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
+      var vidUrl = await bibUploadVideoXHR(f, vidPath, progBar, progLbl)
+      if (!vidUrl) { console.warn('bib video upload failed'); continue }
+
+      // Capture thumbnail
+      var thumbUrl = await bibCaptureAndUploadThumb(f, user.id, i)
+
+      // Detect metadata
+      var vidMeta = await bibGetVideoMeta(f)
+
+      var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
+        user_id:           user.id,
+        url:               vidUrl,
+        thumbnail_url:     thumbUrl || null,
+        categoria:         cat,
+        descricao:         desc || null,
+        origem:            'upload',
+        tipo:              'video',
+        duracao_segundos:  vidMeta.duracao || null,
+        resolucao:         vidMeta.resolucao || null,
+        formato_video:     vidMeta.formato || null,
+        tamanho_bytes:     f.size
+      })
+      if (!dbErr) ok++
+      prog.classList.remove('show')
+    } else {
+      // Image: existing logic
+      var path = user.id + '/' + Date.now() + '_' + i + '.' + ext
+      var { error: upErr } = await sb.storage.from('biblioteca-imagens').upload(path, f, { upsert: true })
+      if (upErr) { console.warn('bib upload error', upErr); continue }
+      var { data: pub } = sb.storage.from('biblioteca-imagens').getPublicUrl(path)
+      var { error: dbErr2 } = await sb.from('biblioteca_imagens').insert({
+        user_id: user.id, url: pub.publicUrl, categoria: cat,
+        descricao: desc || null, origem: 'upload', tipo: 'imagem',
+        tamanho_bytes: f.size
+      })
+      if (!dbErr2) ok++
+    }
   }
-  msg.textContent = ok + ' imagem(ns) guardada(s) com sucesso.'
+
+  msg.textContent = ok + ' ficheiro(s) guardado(s) com sucesso.'
   btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'
   _bibUploadFiles = []
   document.getElementById('bib-upload-previews').innerHTML = ''
@@ -3925,6 +4002,90 @@ async function bibUploadSubmit() {
     document.getElementById('bib-upload-modal').classList.remove('open')
     bibLoad()
   }, 1200)
+}
+
+function bibUploadVideoXHR(file, path, progBar, progLbl) {
+  return new Promise(function(resolve) {
+    var uploadUrl = DOORSTEP_URL + '/storage/v1/object/videos-conteudos/' + path
+    var xhr = new XMLHttpRequest()
+    xhr.open('POST', uploadUrl, true)
+    xhr.setRequestHeader('Authorization', 'Bearer ' + DOORSTEP_ANON)
+    xhr.setRequestHeader('x-upsert', 'true')
+    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
+    xhr.upload.onprogress = function(e) {
+      if (e.lengthComputable) {
+        var pct = Math.round(e.loaded / e.total * 100)
+        if (progBar) progBar.style.width = pct + '%'
+        if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + pct + '%'
+      }
+    }
+    xhr.onload = function() {
+      if (xhr.status === 200 || xhr.status === 201) {
+        resolve(DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path)
+      } else {
+        console.warn('video xhr upload failed', xhr.status, xhr.responseText.slice(0, 120))
+        resolve(null)
+      }
+    }
+    xhr.onerror = function() { resolve(null) }
+    xhr.send(file)
+  })
+}
+
+function bibGetVideoMeta(file) {
+  return new Promise(function(resolve) {
+    var video = document.createElement('video')
+    var url = URL.createObjectURL(file)
+    video.preload = 'metadata'
+    video.onloadedmetadata = function() {
+      var duracao = Math.round(video.duration) || null
+      var resolucao = (video.videoWidth && video.videoHeight)
+        ? video.videoWidth + 'x' + video.videoHeight : null
+      var formato = null
+      if (video.videoHeight && video.videoWidth) {
+        formato = video.videoHeight > video.videoWidth ? 'vertical' : 'horizontal'
+        if (formato === 'vertical' && video.videoHeight >= 1080) formato = 'reel'
+      }
+      URL.revokeObjectURL(url)
+      resolve({ duracao: duracao, resolucao: resolucao, formato: formato })
+    }
+    video.onerror = function() { URL.revokeObjectURL(url); resolve({}) }
+    video.src = url
+  })
+}
+
+async function bibCaptureAndUploadThumb(file, userId, idx) {
+  try {
+    var blob = await new Promise(function(resolve) {
+      var video = document.createElement('video')
+      var url = URL.createObjectURL(file)
+      video.preload = 'metadata'
+      video.muted = true
+      video.onloadedmetadata = function() {
+        video.currentTime = Math.min(1, video.duration)
+      }
+      video.onseeked = function() {
+        try {
+          var canvas = document.createElement('canvas')
+          canvas.width  = video.videoWidth  || 1280
+          canvas.height = video.videoHeight || 720
+          canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height)
+          canvas.toBlob(function(b) { URL.revokeObjectURL(url); resolve(b) }, 'image/jpeg', 0.82)
+        } catch(e) { URL.revokeObjectURL(url); resolve(null) }
+      }
+      video.onerror = function() { URL.revokeObjectURL(url); resolve(null) }
+      video.src = url
+    })
+    if (!blob) return null
+    var thumbPath = userId + '/thumb_' + Date.now() + '_' + idx + '.jpg'
+    var { error } = await sb.storage.from('conteudos-imagens').upload(thumbPath, blob, { contentType: 'image/jpeg', upsert: true })
+    if (error) throw error
+    var { data } = sb.storage.from('conteudos-imagens').getPublicUrl(thumbPath)
+    return data.publicUrl
+  } catch(e) {
+    console.warn('[bibThumb]', e)
+    return null
+  }
 }
 
 async function bibSaveIaImage(url, prompt, categoriaNoticia) {
@@ -3974,22 +4135,32 @@ async function bibLoadPick() {
   if (!user) return
   var search = (document.getElementById('bib-pick-search').value || '').toLowerCase().trim()
   var origem = document.getElementById('bib-pick-origem').value
+  var tipo   = (document.getElementById('bib-pick-tipo') || {}).value || ''
   var query = sb.from('biblioteca_imagens').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(300)
   if (origem === 'ia') query = query.eq('origem', 'ia')
   else if (origem === 'upload') query = query.eq('origem', 'upload')
+  if (tipo) query = query.eq('tipo', tipo)
   var { data } = await query
   _bibPickRows = (data || []).filter(function(r) {
     if (!search) return true
     return ((r.descricao || '') + ' ' + (r.categoria || '') + ' ' + (r.tags || []).join(' ')).toLowerCase().includes(search)
   })
-  document.getElementById('bib-pick-count').textContent = _bibPickRows.length + ' imagem(ns)'
-  if (!_bibPickRows.length) {
-    grid.innerHTML = '<div class="bib-pick-empty">Nenhuma imagem encontrada.</div>'
+  var n = _bibPickRows.length
+  document.getElementById('bib-pick-count').textContent = n + ' item(ns)'
+  if (!n) {
+    grid.innerHTML = '<div class="bib-pick-empty">Nenhum item encontrado.</div>'
     return
   }
   grid.innerHTML = _bibPickRows.map(function(r) {
-    return '<div class="bib-pick-item" id="bib-pick-' + r.id + '" onclick="bibPickSelect(\'' + r.id + '\')">'
-      + '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
+    var isVid = (r.tipo || 'imagem') === 'video'
+    var mediaHtml = isVid
+      ? (r.thumbnail_url
+          ? '<img src="' + esc(r.thumbnail_url) + '" alt="" loading="lazy">'
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#1a1a2e">🎬</div>')
+      : '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
+    var vidBadge = isVid ? '<span class="bib-pick-video-badge">🎬</span>' : ''
+    return '<div class="bib-pick-item" id="bib-pick-' + r.id + '" style="position:relative" onclick="bibPickSelect(\'' + r.id + '\')">'
+      + mediaHtml + vidBadge
       + '</div>'
   }).join('')
 }
@@ -4010,6 +4181,10 @@ function bibPickConfirm() {
   var r = _bibPickRows.find(function(x) { return x.id === _bibPickSelected })
   if (!r) return
   bibClosePickModal()
+  if ((r.tipo || 'imagem') === 'video') {
+    bibUseVideoInPost(r)
+    return
+  }
   _cropSettings = null
   cropOpen(r.url, r)
 }
@@ -4146,464 +4321,6 @@ function cropCancel() {
   document.getElementById('crop-panel').style.display = 'none'
   _cropBibImg = null; _cropBibRow = null
   _cropUpHandler(); _cropTouchEndHandler()
-}
-
-// ── Vídeos ───────────────────────────────────────────────────────────────────
-var _vidRows = []
-var _vidFile = null
-var _vidThumbBlob = null
-var _vidMeta = {}
-var _vidPerfil = 'polemico'
-var _vidUploadedUrl = null
-var _vidThumbUrl = null
-var _vidFilterCat = ''
-var _vidFilterStatus = ''
-var _vidCurrentTextTab = 'instagram'
-var _vidInitDone = false
-
-function vidInit() {
-  if (!_vidInitDone) { _vidInitDone = true }
-  vidLoadHistorico()
-}
-
-function vidShowView(view) {
-  ['novo','historico'].forEach(function(v) {
-    var sv = document.getElementById('vid-view-' + v)
-    var sb = document.getElementById('vid-subnav-' + v)
-    if (sv) sv.className = 'vid-subview' + (v === view ? ' active' : '')
-    if (sb) sb.className = 'vid-subnav-btn' + (v === view ? ' active' : '')
-  })
-  if (view === 'historico') vidLoadHistorico()
-}
-
-function vidSetPerfil(perfil) {
-  _vidPerfil = perfil
-  var ids = ['polemico','informativo','humanizado','educativo','urgencia']
-  ids.forEach(function(p) {
-    var el = document.getElementById('vid-perfil-' + p)
-    if (el) el.className = 'perfil-btn' + (p === perfil ? ' active' : '')
-  })
-}
-
-function vidOnDragOver(e) {
-  e.preventDefault()
-  document.getElementById('vid-upload-zone').classList.add('drag-over')
-}
-
-function vidOnDragLeave(e) {
-  document.getElementById('vid-upload-zone').classList.remove('drag-over')
-}
-
-function vidOnDrop(e) {
-  e.preventDefault()
-  document.getElementById('vid-upload-zone').classList.remove('drag-over')
-  var files = e.dataTransfer && e.dataTransfer.files
-  if (files && files[0]) vidOnFile(files[0])
-}
-
-function vidOnFile(file) {
-  if (!file || !file.type.startsWith('video/')) {
-    alert('Por favor selecciona um ficheiro de vídeo válido.')
-    return
-  }
-  if (file.size > 500 * 1024 * 1024) {
-    alert('O vídeo excede o limite de 500 MB.')
-    return
-  }
-  _vidFile = file
-  _vidUploadedUrl = null
-  _vidThumbUrl = null
-  _vidThumbBlob = null
-
-  // Show preview
-  var previewWrap = document.getElementById('vid-preview-wrap')
-  var videoEl = document.getElementById('vid-preview-el')
-  var objUrl = URL.createObjectURL(file)
-  videoEl.src = objUrl
-  previewWrap.style.display = 'flex'
-
-  // Capture metadata + thumbnail when video is loadedmetadata
-  videoEl.onloadedmetadata = function() {
-    _vidMeta = {
-      duracao: Math.round(videoEl.duration),
-      resolucao: videoEl.videoWidth + 'x' + videoEl.videoHeight,
-      tamanho: file.size,
-      formato: file.type.split('/')[1] || file.name.split('.').pop()
-    }
-    var badges = document.getElementById('vid-meta-badges')
-    badges.innerHTML =
-      '<span class="vid-meta-badge">⏱ ' + vidFmtDuration(_vidMeta.duracao) + '</span>' +
-      '<span class="vid-meta-badge">📐 ' + _vidMeta.resolucao + '</span>' +
-      '<span class="vid-meta-badge">💾 ' + vidFmtSize(_vidMeta.tamanho) + '</span>' +
-      '<span class="vid-meta-badge">🎞 ' + _vidMeta.formato.toUpperCase() + '</span>'
-
-    // Pre-fill youtube title with filename (without extension)
-    var nomeSemExt = file.name.replace(/\.[^.]+$/, '')
-    var yt = document.getElementById('vid-titulo-youtube')
-    if (yt && !yt.value) yt.value = nomeSemExt
-    var tt = document.getElementById('vid-titulo')
-    if (tt && !tt.value) tt.value = nomeSemExt
-
-    // Seek to 1s for thumbnail
-    videoEl.currentTime = Math.min(1, videoEl.duration)
-  }
-
-  videoEl.onseeked = function() {
-    vidCaptureThumbnail(videoEl)
-  }
-
-  // Show form
-  document.getElementById('vid-form').style.display = 'block'
-  document.getElementById('vid-upload-zone').style.display = 'none'
-}
-
-function vidCaptureThumbnail(videoEl) {
-  try {
-    var canvas = document.createElement('canvas')
-    canvas.width  = videoEl.videoWidth  || 1280
-    canvas.height = videoEl.videoHeight || 720
-    var ctx = canvas.getContext('2d')
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
-    canvas.toBlob(function(blob) {
-      if (blob) _vidThumbBlob = blob
-    }, 'image/jpeg', 0.85)
-  } catch(e) {
-    console.warn('[vid] thumbnail capture error', e)
-  }
-}
-
-function vidFmtDuration(secs) {
-  if (!secs) return '0:00'
-  var m = Math.floor(secs / 60), s = secs % 60
-  return m + ':' + (s < 10 ? '0' : '') + s
-}
-
-function vidFmtSize(bytes) {
-  if (!bytes) return '—'
-  if (bytes > 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB'
-  return (bytes / 1024).toFixed(0) + ' KB'
-}
-
-async function vidGerarTextos() {
-  var textoBase = (document.getElementById('vid-texto-base').value || '').trim()
-  if (!textoBase) { alert('Escreve uma descrição do vídeo antes de gerar textos.'); return }
-
-  document.getElementById('vid-gerar-btn').disabled = true
-  document.getElementById('vid-gerar-spinner').style.display = 'inline'
-
-  try {
-    var session = (await sb.auth.getSession()).data.session
-    if (!session) throw new Error('Sem sessão')
-
-    var categoria = document.getElementById('vid-categoria').value || 'generico'
-    var resp = await fetch(DOORSTEP_URL + '/functions/v1/gerar-conteudo', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + session.access_token
-      },
-      body: JSON.stringify({
-        texto: textoBase,
-        categoria: categoria,
-        perfil_conteudo: _vidPerfil,
-        redes: ['instagram','facebook','linkedin','youtube']
-      })
-    })
-    if (!resp.ok) throw new Error('Erro ' + resp.status)
-    var data = await resp.json()
-
-    // Fill text fields
-    if (data.instagram) {
-      document.getElementById('vid-caption-instagram').value = data.instagram.caption || ''
-      document.getElementById('vid-hashtags-instagram').value = data.instagram.hashtags || ''
-    }
-    if (data.facebook)  document.getElementById('vid-caption-facebook').value  = data.facebook.caption  || ''
-    if (data.linkedin)  document.getElementById('vid-caption-linkedin').value  = data.linkedin.caption  || ''
-    if (data.youtube) {
-      document.getElementById('vid-titulo-youtube').value     = data.youtube.titulo  || ''
-      document.getElementById('vid-descricao-youtube').value  = data.youtube.descricao || ''
-      document.getElementById('vid-hashtags-youtube').value   = data.youtube.hashtags  || ''
-    }
-    document.getElementById('vid-textos-wrap').style.display = 'block'
-    vidShowTextTab(_vidCurrentTextTab)
-  } catch(e) {
-    alert('Erro ao gerar textos: ' + e.message)
-  } finally {
-    document.getElementById('vid-gerar-btn').disabled = false
-    document.getElementById('vid-gerar-spinner').style.display = 'none'
-  }
-}
-
-function vidShowTextTab(tab) {
-  _vidCurrentTextTab = tab
-  var tabs = ['instagram','facebook','linkedin','youtube']
-  tabs.forEach(function(t) {
-    var el = document.getElementById('vid-text-' + t)
-    if (el) el.style.display = t === tab ? 'block' : 'none'
-  })
-  // Update tab buttons
-  var btns = document.querySelectorAll('#page-videos .vid-tab-btn')
-  var labels = { instagram: '📸 Instagram', facebook: '📘 Facebook', linkedin: '💼 LinkedIn', youtube: '▶️ YouTube' }
-  btns.forEach(function(b, i) {
-    b.className = 'vid-tab-btn' + (tabs[i] === tab ? ' active' : '')
-  })
-}
-
-async function vidGuardar() {
-  if (!_vidFile && !_vidUploadedUrl) { alert('Selecciona um vídeo primeiro.'); return }
-  var btn = document.getElementById('vid-guardar-btn')
-  btn.disabled = true
-  btn.textContent = '⏳ A guardar…'
-
-  try {
-    // Upload video if not yet uploaded
-    if (!_vidUploadedUrl) {
-      _vidUploadedUrl = await vidUploadVideo(_vidFile)
-    }
-    // Upload thumbnail
-    if (_vidThumbBlob && !_vidThumbUrl) {
-      _vidThumbUrl = await vidUploadThumb(_vidThumbBlob)
-    }
-
-    // Build redes array
-    var redes = []
-    ;['instagram','facebook','linkedin','youtube'].forEach(function(r) {
-      var cb = document.getElementById('vid-cb-' + r)
-      if (cb && cb.checked) redes.push(r)
-    })
-
-    var dataAgenda = document.getElementById('vid-data-agenda').value
-    var payload = {
-      video_url:           _vidUploadedUrl,
-      thumbnail_url:       _vidThumbUrl || null,
-      duracao_segundos:    _vidMeta.duracao || null,
-      tamanho_bytes:       _vidMeta.tamanho || null,
-      formato:             _vidMeta.formato || null,
-      resolucao:           _vidMeta.resolucao || null,
-      titulo:              (document.getElementById('vid-titulo').value || '').trim() || null,
-      categoria:           document.getElementById('vid-categoria').value || null,
-      texto_base:          (document.getElementById('vid-texto-base').value || '').trim() || null,
-      caption_instagram:   (document.getElementById('vid-caption-instagram').value || '').trim() || null,
-      caption_facebook:    (document.getElementById('vid-caption-facebook').value || '').trim() || null,
-      caption_linkedin:    (document.getElementById('vid-caption-linkedin').value || '').trim() || null,
-      titulo_youtube:      (document.getElementById('vid-titulo-youtube').value || '').trim() || null,
-      descricao_youtube:   (document.getElementById('vid-descricao-youtube').value || '').trim() || null,
-      hashtags_instagram:  (document.getElementById('vid-hashtags-instagram').value || '').trim() || null,
-      hashtags_youtube:    (document.getElementById('vid-hashtags-youtube').value || '').trim() || null,
-      redes_seleccionadas: redes,
-      data_agendada:       dataAgenda ? new Date(dataAgenda).toISOString() : null
-    }
-
-    var { error } = await sb.from('videos_sociais').insert(payload)
-    if (error) throw error
-
-    var msg = document.getElementById('vid-save-msg')
-    msg.textContent = '✅ Vídeo guardado com sucesso!'
-    msg.style.display = 'block'
-    setTimeout(function() { msg.style.display = 'none' }, 3000)
-
-    // Hide progress
-    vidSetProgress(0, '')
-    document.getElementById('vid-progress-wrap').classList.remove('show')
-
-  } catch(e) {
-    alert('Erro ao guardar: ' + e.message)
-  } finally {
-    btn.disabled = false
-    btn.textContent = '💾 Guardar'
-  }
-}
-
-function vidUploadVideo(file) {
-  return new Promise(function(resolve, reject) {
-    var ext = file.name.split('.').pop() || 'mp4'
-    var path = 'videos/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext
-    var uploadUrl = DOORSTEP_URL + '/storage/v1/object/videos-conteudos/' + path
-
-    var xhr = new XMLHttpRequest()
-    xhr.open('POST', uploadUrl, true)
-    xhr.setRequestHeader('Authorization', 'Bearer ' + DOORSTEP_ANON)
-    xhr.setRequestHeader('x-upsert', 'true')
-    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
-
-    var progressWrap = document.getElementById('vid-progress-wrap')
-    progressWrap.classList.add('show')
-
-    xhr.upload.onprogress = function(e) {
-      if (e.lengthComputable) {
-        var pct = Math.round(e.loaded / e.total * 100)
-        vidSetProgress(pct, 'A carregar… ' + pct + '%')
-      }
-    }
-
-    xhr.onload = function() {
-      if (xhr.status === 200 || xhr.status === 201) {
-        vidSetProgress(100, 'Upload concluído ✓')
-        var publicUrl = DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
-        resolve(publicUrl)
-      } else {
-        reject(new Error('Upload falhou: ' + xhr.status + ' ' + xhr.responseText.slice(0, 120)))
-      }
-    }
-
-    xhr.onerror = function() { reject(new Error('Erro de rede no upload')) }
-    xhr.send(file)
-  })
-}
-
-async function vidUploadThumb(blob) {
-  try {
-    var path = 'thumbs/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg'
-    var { error } = await sb.storage.from('videos-conteudos').upload(path, blob, {
-      contentType: 'image/jpeg', upsert: true
-    })
-    if (error) throw error
-    var { data } = sb.storage.from('videos-conteudos').getPublicUrl(path)
-    return data.publicUrl
-  } catch(e) {
-    console.warn('[vid] thumb upload error', e)
-    return null
-  }
-}
-
-function vidSetProgress(pct, label) {
-  var bar = document.getElementById('vid-progress-bar')
-  var lbl = document.getElementById('vid-progress-label')
-  if (bar) bar.style.width = pct + '%'
-  if (lbl) lbl.textContent = label
-}
-
-function vidResetForm() {
-  _vidFile = null; _vidThumbBlob = null; _vidMeta = {}
-  _vidUploadedUrl = null; _vidThumbUrl = null
-
-  var videoEl = document.getElementById('vid-preview-el')
-  if (videoEl) { videoEl.src = ''; videoEl.onloadedmetadata = null; videoEl.onseeked = null }
-  document.getElementById('vid-preview-wrap').style.display = 'none'
-  document.getElementById('vid-meta-badges').innerHTML = ''
-  document.getElementById('vid-form').style.display = 'none'
-  document.getElementById('vid-upload-zone').style.display = 'block'
-  document.getElementById('vid-textos-wrap').style.display = 'none'
-  document.getElementById('vid-progress-wrap').classList.remove('show')
-  document.getElementById('vid-save-msg').style.display = 'none'
-  ;['vid-titulo','vid-texto-base','vid-caption-instagram','vid-hashtags-instagram',
-    'vid-caption-facebook','vid-caption-linkedin','vid-titulo-youtube',
-    'vid-descricao-youtube','vid-hashtags-youtube'].forEach(function(id) {
-    var el = document.getElementById(id)
-    if (el) el.value = ''
-  })
-  document.getElementById('vid-file-input').value = ''
-  vidSetPerfil('polemico')
-}
-
-async function vidLoadHistorico() {
-  var { data: { user } } = await sb.auth.getUser()
-  if (!user) return
-  var { data, error } = await sb.from('videos_sociais')
-    .select('*').order('created_at', { ascending: false }).limit(100)
-  if (!error) {
-    _vidRows = data || []
-    vidRenderHistorico()
-  }
-}
-
-function vidGetFilteredRows() {
-  var cat    = (document.getElementById('vid-filter-cat')    || {}).value || ''
-  var status = (document.getElementById('vid-filter-status') || {}).value || ''
-  return _vidRows.filter(function(r) {
-    if (cat && r.categoria !== cat) return false
-    if (status) {
-      var st = r.status_instagram || 'rascunho'
-      if (st !== status) return false
-    }
-    return true
-  })
-}
-
-function vidRenderHistorico() {
-  var grid = document.getElementById('vid-grid')
-  if (!grid) return
-  var rows = vidGetFilteredRows()
-  if (!rows.length) {
-    grid.innerHTML = '<div class="vid-empty">Nenhum vídeo encontrado.</div>'
-    return
-  }
-  grid.innerHTML = rows.map(function(r) {
-    var dur = r.duracao_segundos ? vidFmtDuration(r.duracao_segundos) : ''
-    var thumbHtml = r.thumbnail_url
-      ? '<img src="' + r.thumbnail_url + '" alt="thumb" loading="lazy">'
-      : '<div class="vid-card-thumb-ph">🎬</div>'
-    var durBadge = dur ? '<span class="vid-card-dur">' + dur + '</span>' : ''
-    var status = r.status_instagram || 'rascunho'
-    var statusCls = 'vid-s-' + status
-    var titulo = r.titulo || r.video_url.split('/').pop().slice(0,40) || '(sem título)'
-    var cat = r.categoria || '—'
-    return '<div class="vid-card" onclick="vidOpenPanel(\'' + r.id + '\')">' +
-      '<div class="vid-card-thumb">' + thumbHtml + durBadge + '</div>' +
-      '<div class="vid-card-body"><div class="vid-card-title">' + titulo + '</div>' +
-      '<div class="vid-card-cat">' + cat + '</div></div>' +
-      '<div class="vid-card-foot"><span class="' + statusCls + '">' + status + '</span>' +
-      '<button class="vid-card-del-btn" onclick="event.stopPropagation();vidApagar(\'' + r.id + '\')">🗑</button></div>' +
-      '</div>'
-  }).join('')
-}
-
-function vidSetFilter() {
-  vidRenderHistorico()
-}
-
-function vidOpenPanel(id) {
-  var r = _vidRows.find(function(x) { return x.id === id })
-  if (!r) return
-  var body = document.getElementById('vid-panel-body')
-  var foot = document.getElementById('vid-panel-foot')
-
-  var thumbHtml = r.thumbnail_url
-    ? '<img class="vid-panel-thumb" src="' + r.thumbnail_url + '" alt="thumb">'
-    : '<div style="width:100%;aspect-ratio:16/9;background:#1a1a2e;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:14px">🎬</div>'
-
-  function fld(lbl, val) {
-    if (!val) return ''
-    return '<div class="vid-panel-field"><span class="vid-panel-lbl">' + lbl + '</span>' +
-           '<div class="vid-panel-val">' + val + '</div></div>'
-  }
-
-  var dur = r.duracao_segundos ? vidFmtDuration(r.duracao_segundos) : null
-  var meta = [dur, r.resolucao, r.formato ? r.formato.toUpperCase() : null, r.tamanho_bytes ? vidFmtSize(r.tamanho_bytes) : null].filter(Boolean).join(' · ')
-
-  body.innerHTML = thumbHtml +
-    fld('Título', r.titulo) +
-    fld('Categoria', r.categoria) +
-    (meta ? fld('Metadados', meta) : '') +
-    fld('Texto base', r.texto_base) +
-    fld('Caption Instagram', r.caption_instagram) +
-    fld('Hashtags Instagram', r.hashtags_instagram) +
-    fld('Caption Facebook', r.caption_facebook) +
-    fld('Caption LinkedIn', r.caption_linkedin) +
-    fld('Título YouTube', r.titulo_youtube) +
-    fld('Descrição YouTube', r.descricao_youtube) +
-    fld('Redes', (r.redes_seleccionadas || []).join(', ')) +
-    fld('Estado', r.status_instagram || 'rascunho') +
-    fld('Agendado para', r.data_agendada ? new Date(r.data_agendada).toLocaleString('pt-PT') : null) +
-    fld('Criado em', new Date(r.created_at).toLocaleString('pt-PT'))
-
-  foot.innerHTML = '<a class="cont-btn primary" style="text-decoration:none;padding:8px 18px;font-size:.82rem" href="' + r.video_url + '" target="_blank">▶️ Ver Vídeo</a>' +
-    '<button class="cont-btn secondary" style="padding:8px 14px;font-size:.82rem;color:#dc2626;border-color:#fca5a5" onclick="vidApagar(\'' + r.id + '\')">🗑 Eliminar</button>'
-
-  document.getElementById('vid-panel-overlay').classList.add('open')
-}
-
-function vidClosePanel() {
-  document.getElementById('vid-panel-overlay').classList.remove('open')
-}
-
-async function vidApagar(id) {
-  if (!confirm('Eliminar este vídeo? Esta acção não pode ser desfeita.')) return
-  var { error } = await sb.from('videos_sociais').delete().eq('id', id)
-  if (error) { alert('Erro ao eliminar: ' + error.message); return }
-  _vidRows = _vidRows.filter(function(x) { return x.id !== id })
-  vidClosePanel()
-  vidRenderHistorico()
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
