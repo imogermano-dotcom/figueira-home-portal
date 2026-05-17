@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Figueira Home</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
@@ -4737,57 +4738,63 @@ async function bibUploadSubmit() {
 }
 
 async function bibUploadVideoSDK(file, path, progBar, progLbl) {
-  // Log bucket config for diagnostics
-  try {
-    var { data: bucketInfo } = await sb.storage.getBucket('videos-conteudos')
-    console.log('[bucket config]', bucketInfo)
-  } catch(e) { console.warn('[bucket config] erro ao ler', e) }
+  // TUS resumable upload via tus-js-client — bypasses Cloudflare 100 MB request limit
+  // by splitting the file into 6 MB chunks sent as separate requests.
+  var { data: { session } } = await sb.auth.getSession()
+  if (!session) { console.warn('[tus] sem sessão'); return null }
 
-  // Animate progress bar (SDK does not expose byte-level progress)
-  var animFrame = null
-  var fakePct = 0
-  function animProg() {
-    // Fast to 85%, then crawl while awaiting server confirmation
-    var step = fakePct < 85 ? 0.6 : 0.03
-    fakePct = Math.min(fakePct + step, 95)
-    if (progBar) progBar.style.width = Math.round(fakePct) + '%'
-    if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + Math.round(fakePct) + '%'
-    animFrame = requestAnimationFrame(animProg)
-  }
-  animFrame = requestAnimationFrame(animProg)
+  var TUS_ENDPOINT = DOORSTEP_URL + '/storage/v1/upload/resumable'
+  var publicUrl    = DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
 
-  try {
-    // Supabase Storage SDK — handles chunked/TUS upload for large files automatically.
-    // duplex: 'half' is required in some browsers for streaming fetch request bodies.
-    var { data, error } = await sb.storage
-      .from('videos-conteudos')
-      .upload(path, file, {
-        contentType: file.type || 'video/mp4',
-        upsert:      true,
-        duplex:      'half'
-      })
+  return new Promise(function(resolve) {
+    var upload = new tus.Upload(file, {
+      endpoint:   TUS_ENDPOINT,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: {
+        authorization:  'Bearer ' + session.access_token,
+        'x-upsert':     'true'
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName:   'videos-conteudos',
+        objectName:   path,
+        contentType:  file.type || 'video/mp4',
+        cacheControl: '3600'
+      },
+      chunkSize: 6 * 1024 * 1024,  // 6 MB por chunk
 
-    cancelAnimationFrame(animFrame)
+      onError: function(err) {
+        console.warn('[tus] erro', err)
+        if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+        if (progLbl) progLbl.textContent = '✗ ' + (err.message || 'upload falhou')
+        resolve(null)
+      },
 
-    if (error) {
-      console.warn('[bibUploadVideoSDK] erro', error)
-      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-      if (progLbl) progLbl.textContent = '✗ ' + (error.message || 'upload falhou')
-      return null
-    }
+      onProgress: function(uploaded, total) {
+        var pct = total > 0 ? Math.round(uploaded / total * 100) : 0
+        if (progBar) progBar.style.width = pct + '%'
+        if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + pct + '%'
+        console.log('[tus] progresso', pct + '%', Math.round(uploaded/1024/1024) + 'MB / ' + Math.round(total/1024/1024) + 'MB')
+      },
 
-    if (progBar) progBar.style.width = '100%'
-    if (progLbl) progLbl.textContent = '100%'
+      onSuccess: function() {
+        if (progBar) progBar.style.width = '100%'
+        if (progLbl) progLbl.textContent = '100%'
+        console.log('[tus] upload completo', publicUrl)
+        resolve(publicUrl)
+      }
+    })
 
-    var { data: urlData } = sb.storage.from('videos-conteudos').getPublicUrl(path)
-    console.log('[bibUploadVideoSDK] ok', urlData.publicUrl)
-    return urlData.publicUrl
-
-  } catch(e) {
-    cancelAnimationFrame(animFrame)
-    console.warn('[bibUploadVideoSDK] excepção', e)
-    return null
-  }
+    // Retomar upload anterior se existir (recover from dropped connection)
+    upload.findPreviousUploads().then(function(prev) {
+      if (prev.length) {
+        console.log('[tus] a retomar upload anterior', prev[0])
+        upload.resumeFromPreviousUpload(prev[0])
+      }
+      upload.start()
+    })
+  })
 }
 
 function bibGetVideoMeta(file) {
