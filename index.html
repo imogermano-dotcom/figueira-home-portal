@@ -256,6 +256,10 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .fonte-btn{padding:7px 18px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.83rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
 .fonte-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
 .fonte-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.perfil-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.perfil-btn{padding:6px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
+.perfil-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
+.perfil-btn.active{background:#e55a2b;color:#fff;border-color:#e55a2b}
 .ig-fmt-row{display:none;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .ig-fmt-row.show{display:flex}
 .ig-fmt-lbl{font-size:.78rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px}
@@ -595,7 +599,19 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             </div>
           </div>
 
-          <!-- 2. TEXTO BASE -->
+          <!-- 2. TOM DO CONTEÚDO -->
+          <div class="cont-field">
+            <label class="cont-label">Tom do Conteúdo</label>
+            <div class="perfil-row">
+              <button class="perfil-btn active" id="perfil-polemico"    onclick="perfilSet('polemico')">🔥 Polémico</button>
+              <button class="perfil-btn"         id="perfil-informativo" onclick="perfilSet('informativo')">💡 Informativo</button>
+              <button class="perfil-btn"         id="perfil-humanizado"  onclick="perfilSet('humanizado')">🤝 Humanizado</button>
+              <button class="perfil-btn"         id="perfil-educativo"   onclick="perfilSet('educativo')">🎯 Educativo</button>
+              <button class="perfil-btn"         id="perfil-urgencia"    onclick="perfilSet('urgencia')">⚡ Urgência</button>
+            </div>
+          </div>
+
+          <!-- 3. TEXTO BASE -->
           <div id="fonte-texto-area">
             <div class="noticia-indicator" id="noticia-indicator" style="display:none">
               📰 <span class="noticia-indicator-text" id="noticia-indicator-text"></span>
@@ -1367,6 +1383,7 @@ var REDE_CFG = {
   youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
 }
 var _fonteMode = 'manual'
+var _perfilConteudo = 'polemico'
 var _noticiaShortCode = null
 var _noticiaCategoria = null
 var _noticiaRow = null
@@ -1382,6 +1399,15 @@ var NOTICIAS_FONTES = {
   figueira: ['Casino da Figueira', 'Diário As Beiras', 'Diário de Coimbra', 'Figueira da Foz', 'Figueira na Hora'],
   imoveis: ['ECO Economia', 'Imovirtual', 'negocios.pt'],
   ia: ['Canaltech', 'Google DeepMind', 'OpenAI', 'Pplware', 'TecMundo', 'thebriefoficial']
+}
+
+function perfilSet(perfil) {
+  _perfilConteudo = perfil
+  var ids = ['polemico','informativo','humanizado','educativo','urgencia']
+  ids.forEach(function(p) {
+    var el = document.getElementById('perfil-' + p)
+    if (el) el.className = 'perfil-btn' + (p === perfil ? ' active' : '')
+  })
 }
 
 function fonteSet(mode) {
@@ -2326,7 +2352,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
@@ -2740,6 +2766,7 @@ async function contGuardar(agendar) {
   }
   payload['noticia_short_code'] = _noticiaShortCode || null
   payload['noticia_categoria'] = _noticiaCategoria || null
+  payload['perfil_conteudo'] = _perfilConteudo || null
   redes.forEach(function(r) {
     var d = _contGerado[r]; if (!d) return
     var isYt = r === 'youtube'
