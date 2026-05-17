@@ -4482,33 +4482,46 @@ async function bibUploadSubmit() {
   var progBar = document.getElementById('bib-up-prog-bar')
   var progLbl = document.getElementById('bib-up-prog-lbl')
   btn.disabled = true; btn.textContent = '⏳ A guardar...'
-  var { data: { user } } = await sb.auth.getUser()
+
+  var { data: { session } } = await sb.auth.getSession()
+  var user = session && session.user
+  if (!user) { btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'; return }
+  var accessToken = session.access_token
+
   var cat = document.getElementById('bib-upload-cat').value
   var desc = document.getElementById('bib-upload-desc').value.trim()
   var ok = 0
+  var errors = []
 
   for (var i = 0; i < _bibUploadFiles.length; i++) {
     var f = _bibUploadFiles[i]
     var isVid = f.type.startsWith('video/')
     var ext = f.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')
     msg.textContent = 'A carregar ' + (i + 1) + ' de ' + _bibUploadFiles.length + '...'
+    console.log('[upload] início', f.name, f.size, f.type)
 
     if (isVid) {
-      // Video: XHR upload with progress to videos-conteudos bucket
+      // Video: XHR upload with progress, using authenticated session token
       prog.classList.add('show')
       var vidPath = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
-      var vidUrl = await bibUploadVideoXHR(f, vidPath, progBar, progLbl)
-      if (!vidUrl) { console.warn('bib video upload failed'); continue }
+      var vidUrl = await bibUploadVideoXHR(f, vidPath, progBar, progLbl, accessToken)
+      console.log('[upload] storage result', { vidUrl, hadError: !vidUrl })
+      if (!vidUrl) {
+        errors.push(f.name + ': falha no upload para storage')
+        prog.classList.remove('show')
+        continue
+      }
 
       // Capture thumbnail
       var thumbUrl = await bibCaptureAndUploadThumb(f, user.id, i)
+      console.log('[upload] thumbnail capturado', thumbUrl ? 'ok' : 'falhou')
 
       // Detect metadata (use already-shown override if available, else detect fresh)
       var vidMeta = await bibGetVideoMeta(f)
       var fmtOverride = (document.getElementById('bib-fmt-override') || {}).value || null
       var formatoFinal = fmtOverride || vidMeta.formato || null
 
-      var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
+      var insertPayload = {
         user_id:           user.id,
         url:               vidUrl,
         thumbnail_url:     thumbUrl || null,
@@ -4520,40 +4533,57 @@ async function bibUploadSubmit() {
         resolucao:         vidMeta.resolucao || null,
         formato_video:     formatoFinal,
         tamanho_bytes:     f.size
-      })
-      if (!dbErr) ok++
+      }
+      var { data: insertData, error: dbErr } = await sb.from('biblioteca_imagens').insert(insertPayload).select('id').single()
+      console.log('[upload] insert biblioteca', { insertData, insertError: dbErr })
+      if (dbErr) {
+        errors.push(f.name + ': erro ao guardar na BD — ' + dbErr.message)
+      } else {
+        ok++
+      }
       prog.classList.remove('show')
     } else {
-      // Image: existing logic
+      // Image
       var path = user.id + '/' + Date.now() + '_' + i + '.' + ext
       var { error: upErr } = await sb.storage.from('biblioteca-imagens').upload(path, f, { upsert: true })
-      if (upErr) { console.warn('bib upload error', upErr); continue }
+      console.log('[upload] storage result (imagem)', { path, upErr })
+      if (upErr) { errors.push(f.name + ': ' + upErr.message); continue }
       var { data: pub } = sb.storage.from('biblioteca-imagens').getPublicUrl(path)
       var { error: dbErr2 } = await sb.from('biblioteca_imagens').insert({
         user_id: user.id, url: pub.publicUrl, categoria: cat,
         descricao: desc || null, origem: 'upload', tipo: 'imagem',
         tamanho_bytes: f.size
       })
-      if (!dbErr2) ok++
+      console.log('[upload] insert biblioteca (imagem)', { dbErr2 })
+      if (dbErr2) { errors.push(f.name + ': ' + dbErr2.message) } else { ok++ }
     }
   }
 
-  msg.textContent = ok + ' ficheiro(s) guardado(s) com sucesso.'
+  if (errors.length) {
+    msg.style.color = '#dc2626'
+    msg.textContent = ok + ' guardado(s). Erros: ' + errors.join(' | ')
+    console.error('[upload] erros:', errors)
+  } else {
+    msg.style.color = '#10b981'
+    msg.textContent = ok + ' ficheiro(s) guardado(s) com sucesso.'
+  }
   btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'
   _bibUploadFiles = []
   document.getElementById('bib-upload-previews').innerHTML = ''
   setTimeout(function() {
+    msg.style.color = ''
     document.getElementById('bib-upload-modal').classList.remove('open')
     bibLoad()
-  }, 1200)
+  }, errors.length ? 3000 : 1200)
 }
 
-function bibUploadVideoXHR(file, path, progBar, progLbl) {
+function bibUploadVideoXHR(file, path, progBar, progLbl, accessToken) {
   return new Promise(function(resolve) {
     var uploadUrl = DOORSTEP_URL + '/storage/v1/object/videos-conteudos/' + path
     var xhr = new XMLHttpRequest()
     xhr.open('POST', uploadUrl, true)
-    xhr.setRequestHeader('Authorization', 'Bearer ' + DOORSTEP_ANON)
+    // Use authenticated session token (not anon key) so Storage RLS can verify user identity
+    xhr.setRequestHeader('Authorization', 'Bearer ' + (accessToken || DOORSTEP_ANON))
     xhr.setRequestHeader('x-upsert', 'true')
     xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
     xhr.upload.onprogress = function(e) {
@@ -4567,11 +4597,11 @@ function bibUploadVideoXHR(file, path, progBar, progLbl) {
       if (xhr.status === 200 || xhr.status === 201) {
         resolve(DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path)
       } else {
-        console.warn('video xhr upload failed', xhr.status, xhr.responseText.slice(0, 120))
+        console.warn('[bibUploadVideoXHR] falhou', xhr.status, xhr.responseText.slice(0, 200))
         resolve(null)
       }
     }
-    xhr.onerror = function() { resolve(null) }
+    xhr.onerror = function(e) { console.warn('[bibUploadVideoXHR] onerror', e); resolve(null) }
     xhr.send(file)
   })
 }
