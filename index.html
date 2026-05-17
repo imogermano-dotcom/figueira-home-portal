@@ -4547,22 +4547,59 @@ function bibCloseUpload() {
   if (fmtDiv) { fmtDiv.style.display = 'none'; fmtDiv.innerHTML = '' }
 }
 
+function _bibIsVideo(f) {
+  // Alguns browsers devolvem f.type vazio para ficheiros grandes — verificar extensão também
+  if (f.type.startsWith('video/')) return true
+  var ext = (f.name.split('.').pop() || '').toLowerCase()
+  return ['mp4','mov','avi','mkv','webm','m4v','wmv'].indexOf(ext) >= 0
+}
+
+function _bibIsImage(f) {
+  if (f.type.startsWith('image/')) return true
+  var ext = (f.name.split('.').pop() || '').toLowerCase()
+  return ['jpg','jpeg','png','webp','gif'].indexOf(ext) >= 0
+}
+
 function bibOnFileInput(input) {
+  var rejected = []
   var files = Array.from(input.files).filter(function(f) {
-    if (f.type.startsWith('video/')) return f.size <= 500 * 1024 * 1024
-    return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024
+    console.log('[bib] ficheiro seleccionado:', f.name, Math.round(f.size/1024/1024)+'MB', 'type='+f.type)
+    if (_bibIsVideo(f)) {
+      if (f.size > 500 * 1024 * 1024) { rejected.push(f.name + ' (vídeo > 500 MB)'); return false }
+      return true
+    }
+    if (_bibIsImage(f)) {
+      if (f.size > 10 * 1024 * 1024) { rejected.push(f.name + ' (imagem > 10 MB)'); return false }
+      return true
+    }
+    rejected.push(f.name + ' (tipo não suportado: ' + (f.type || 'desconhecido') + ')')
+    return false
   })
+  if (rejected.length) console.warn('[bib] ficheiros rejeitados:', rejected)
   _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 10)
+  console.log('[bib] _bibUploadFiles após selecção:', _bibUploadFiles.length, _bibUploadFiles.map(function(f){return f.name}))
   bibRenderUploadPreviews()
   input.value = ''
 }
 
 function bibOnDrop(e) {
+  var rejected = []
   var files = Array.from(e.dataTransfer.files).filter(function(f) {
-    if (f.type.startsWith('video/')) return f.size <= 500 * 1024 * 1024
-    return f.type.startsWith('image/') && f.size <= 10 * 1024 * 1024
+    console.log('[bib] ficheiro dropped:', f.name, Math.round(f.size/1024/1024)+'MB', 'type='+f.type)
+    if (_bibIsVideo(f)) {
+      if (f.size > 500 * 1024 * 1024) { rejected.push(f.name + ' (vídeo > 500 MB)'); return false }
+      return true
+    }
+    if (_bibIsImage(f)) {
+      if (f.size > 10 * 1024 * 1024) { rejected.push(f.name + ' (imagem > 10 MB)'); return false }
+      return true
+    }
+    rejected.push(f.name + ' (tipo não suportado: ' + (f.type || 'desconhecido') + ')')
+    return false
   })
+  if (rejected.length) console.warn('[bib] ficheiros rejeitados:', rejected)
   _bibUploadFiles = _bibUploadFiles.concat(files).slice(0, 10)
+  console.log('[bib] _bibUploadFiles após drop:', _bibUploadFiles.length, _bibUploadFiles.map(function(f){return f.name}))
   bibRenderUploadPreviews()
 }
 
@@ -4570,13 +4607,13 @@ async function bibRenderUploadPreviews() {
   var wrap = document.getElementById('bib-upload-previews')
   var fmtDiv = document.getElementById('bib-vid-format-info')
   wrap.innerHTML = _bibUploadFiles.map(function(f) {
-    if (f.type.startsWith('video/')) {
+    if (_bibIsVideo(f)) {
       return '<div style="width:72px;height:72px;border-radius:6px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1.5px solid #e0e6f0;flex-shrink:0">🎬</div>'
     }
     return '<img class="bib-upload-thumb" src="' + URL.createObjectURL(f) + '" alt="">'
   }).join('')
   if (fmtDiv) {
-    var vidFile = _bibUploadFiles.find(function(f) { return f.type.startsWith('video/') })
+    var vidFile = _bibUploadFiles.find(function(f) { return _bibIsVideo(f) })
     if (vidFile) {
       fmtDiv.innerHTML = '<div style="font-size:.74rem;color:#6b7280;padding:8px 0">⏳ A detectar formato…</div>'
       fmtDiv.style.display = 'block'
@@ -4665,7 +4702,7 @@ async function bibUploadSubmit() {
 
   for (var i = 0; i < _bibUploadFiles.length; i++) {
     var f = _bibUploadFiles[i]
-    var isVid = f.type.startsWith('video/')
+    var isVid = _bibIsVideo(f)  // usa extensão como fallback se f.type estiver vazio
     var ext = f.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')
     msg.textContent = 'A carregar ' + (i + 1) + ' de ' + _bibUploadFiles.length + '...'
     console.log('[debug] 6. ficheiro ' + (i+1) + '/' + _bibUploadFiles.length + ':', f.name, Math.round(f.size/1024/1024)+'MB', f.type, 'isVid='+isVid)
