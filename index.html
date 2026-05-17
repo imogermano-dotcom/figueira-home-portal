@@ -264,6 +264,16 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .tmpl-card svg{width:100%;display:block}
 .tmpl-card-label{text-align:center;font-size:.65rem;font-weight:600;color:#6b7280;padding:4px 4px 6px;line-height:1.3}
 .tmpl-card.active .tmpl-card-label{color:#1a3c5e}
+.crop-panel{border:1.5px solid #e0e6f0;border-radius:10px;padding:16px;background:#fafbff;margin-top:12px}
+.crop-panel h4{font-size:.85rem;font-weight:700;color:#1a3c5e;margin:0 0 10px}
+.crop-canvas-wrap{position:relative;display:flex;justify-content:center}
+#crop-canvas{border-radius:8px;cursor:grab;display:block;border:1px solid #e0e6f0;touch-action:none}
+#crop-canvas:active{cursor:grabbing}
+.crop-zoom-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.crop-zoom-row label{font-size:.72rem;color:#6b7280;white-space:nowrap}
+.crop-zoom-row input[type=range]{flex:1}
+.crop-zoom-row span{font-size:.72rem;color:#6b7280;min-width:36px;text-align:right}
+.crop-actions{display:flex;gap:8px;margin-top:10px}
 /* Slide editor */
 .slide-list{display:flex;flex-direction:column;gap:8px}
 .slide-item{display:flex;gap:8px;align-items:flex-start}
@@ -536,6 +546,25 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <!-- Crop editor (biblioteca images) -->
+            <div class="crop-panel" id="crop-panel" style="display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <h4>🖼️ Ajustar enquadramento</h4>
+                <button onclick="cropCancel()" style="background:none;border:none;cursor:pointer;font-size:1rem;color:#9ca3af;padding:0">✕</button>
+              </div>
+              <div class="crop-canvas-wrap">
+                <canvas id="crop-canvas" width="324" height="324"></canvas>
+              </div>
+              <div class="crop-zoom-row">
+                <label>Zoom</label>
+                <input type="range" id="crop-zoom" min="50" max="200" value="100" oninput="cropUpdateZoom(this.value)">
+                <span id="crop-zoom-val">100%</span>
+              </div>
+              <div class="crop-actions">
+                <button onclick="cropReset()" class="ai-regen-btn" style="flex:1">↺ Resetar</button>
+                <button onclick="cropApply()" class="cont-btn primary" style="flex:2;padding:7px 14px;font-size:.85rem">✓ Aplicar</button>
               </div>
             </div>
             <p class="ai-img-or">— ou faz upload de imagem própria —</p>
@@ -1218,6 +1247,11 @@ var _imgFiles = []   // File objects pendentes
 var _imgUrls  = []   // URLs públicos já carregados
 var _aiImgUrl       = null   // URL Supabase da imagem IA (antes de overlay)
 var _aiImgFinal     = null   // URL final após overlay logo
+var _cropSettings   = null   // {panX, panY, scale} — set by crop editor
+var _cropBibRow     = null   // biblioteca row being cropped
+var _cropBibImg     = null   // loaded Image for crop preview
+var _cropState      = { panX: 0, panY: 0, scale: 1.0 }
+var _cropDrag       = null
 var _aiImgPrompt    = ''
 var _slidesCompostos = []    // URLs dos slides compostos por Canvas API
 var EDGE_GERAR  = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
@@ -1418,12 +1452,13 @@ function aiImgSetState(state) {
 }
 
 async function aiImgGerar(textoBase, session) {
+  if (_templateSlide === 'D') return  // Template D: solid colour, no image
   aiImgSetState('loading')
   try {
     var r = await fetch(EDGE_IMAGEM, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: textoBase })
+      body: JSON.stringify({ texto_base: textoBase, template: _templateSlide })
     })
     var data = await r.json()
     if (!r.ok || data.error) throw new Error(data.error || 'Erro ao gerar imagem')
@@ -1452,6 +1487,10 @@ async function aiImgGerar(textoBase, session) {
 }
 
 async function aiImgGerarManual() {
+  if (_templateSlide === 'D') {
+    alert('O Template D usa fundo sólido — não gera imagem.')
+    return
+  }
   var texto = document.getElementById('cont-texto').value.trim()
   if (!texto) { alert('Introduz primeiro o texto base.'); return }
   var btn = document.getElementById('ai-gerar-manual-btn')
@@ -1550,6 +1589,9 @@ async function aiImgOverlayAndUpload(supabaseUrl, session) {
 function aiImgReset() {
   _aiImgUrl = null; _aiImgFinal = null; _aiImgPrompt = ''
   _slidesCompostos = []
+  _cropSettings = null; _cropBibRow = null; _cropBibImg = null
+  var panel = document.getElementById('crop-panel')
+  if (panel) panel.style.display = 'none'
   var ta = document.getElementById('ai-img-prompt-ta')
   if (ta) ta.value = ''
   var thumb = document.getElementById('ai-img-thumb')
@@ -1659,6 +1701,22 @@ function drawLogoBadgeCentered(ctx, logoImg, cx, cy, logoW, padding) {
   ctx.restore()
 }
 
+function drawBgImg(ctx, bgImg, S) {
+  if (!bgImg) { ctx.fillStyle = '#0f2944'; ctx.fillRect(0, 0, S, S); return }
+  if (_cropSettings) {
+    var coverSc = Math.max(S / bgImg.naturalWidth, S / bgImg.naturalHeight)
+    var totalSc = coverSc * _cropSettings.scale
+    var dW = bgImg.naturalWidth * totalSc
+    var dH = bgImg.naturalHeight * totalSc
+    var ratio = S / 324  // preview canvas is 324px
+    var dX = (S - dW) / 2 + _cropSettings.panX * ratio
+    var dY = (S - dH) / 2 + _cropSettings.panY * ratio
+    ctx.drawImage(bgImg, dX, dY, dW, dH)
+  } else {
+    ctx.drawImage(bgImg, 0, 0, S, S)
+  }
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
@@ -1739,8 +1797,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session, 
 
     // ── Template A — Texto sobre imagem ─────────────────────────────────
     if (tmpl === 'A') {
-      if (bgImg) ctx.drawImage(bgImg, 0, 0, S, S)
-      else { ctx.fillStyle = '#0f2944'; ctx.fillRect(0, 0, S, S) }
+      drawBgImg(ctx, bgImg, S)
 
       var gA = ctx.createRadialGradient(540, 540, 100, 540, 540, 760)
       gA.addColorStop(0, 'rgba(0,0,0,0.2)'); gA.addColorStop(1, 'rgba(0,0,0,0.75)')
@@ -1776,8 +1833,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session, 
 
     // ── Template B — Texto em baixo ────────────────────────────────────
     } else if (tmpl === 'B') {
-      if (bgImg) ctx.drawImage(bgImg, 0, 0, S, S)
-      else { ctx.fillStyle = '#1a3c5e'; ctx.fillRect(0, 0, S, S) }
+      drawBgImg(ctx, bgImg, S)
       ctx.fillStyle = '#0A3D62'; ctx.fillRect(0, 648, S, S - 648)
 
       ctx.save()
@@ -1809,8 +1865,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session, 
 
     // ── Template C — Texto à direita ───────────────────────────────────
     } else if (tmpl === 'C') {
-      if (bgImg) ctx.drawImage(bgImg, 0, 0, S, S)
-      else { ctx.fillStyle = '#1a3c5e'; ctx.fillRect(0, 0, S, S) }
+      drawBgImg(ctx, bgImg, S)
       ctx.fillStyle = '#0A3D62'; ctx.fillRect(540, 0, 540, S)
 
       ctx.save()
@@ -1850,7 +1905,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session, 
       var isDark = idx % 2 === 0
       ctx.fillStyle = isDark ? '#0A3D62' : '#F5C518'; ctx.fillRect(0, 0, S, S)
 
-      if (bgImg) { ctx.save(); ctx.globalAlpha = 0.07; ctx.drawImage(bgImg, 0, 0, S, S); ctx.restore() }
+      if (bgImg) { ctx.save(); ctx.globalAlpha = 0.07; drawBgImg(ctx, bgImg, S); ctx.restore() }
 
       ctx.save()
       ctx.textBaseline = 'alphabetic'
@@ -3129,14 +3184,142 @@ function bibPickConfirm() {
   var r = _bibPickRows.find(function(x) { return x.id === _bibPickSelected })
   if (!r) return
   bibClosePickModal()
-  _aiImgFinal = r.url
-  if (!_imgUrls.length) _imgUrls = [r.url]
-  var thumb = document.getElementById('ai-img-thumb')
-  if (thumb) thumb.src = r.url
-  var ta = document.getElementById('ai-img-prompt-ta')
-  if (ta) ta.value = r.prompt_ia || ''
+  _cropSettings = null
+  cropOpen(r.url, r)
+}
+
+// ── Crop editor ───────────────────────────────────────────────────────────────
+function cropOpen(url, row) {
+  _cropBibRow = row || null
+  _cropBibImg = null
+  _cropState = { panX: 0, panY: 0, scale: 1.0 }
+  var zoom = document.getElementById('crop-zoom')
+  if (zoom) zoom.value = 100
+  var zv = document.getElementById('crop-zoom-val')
+  if (zv) zv.textContent = '100%'
+  document.getElementById('crop-panel').style.display = ''
+
+  var img = new Image()
+  img.crossOrigin = 'anonymous'
+  img.onload = function() { _cropBibImg = img; cropRender() }
+  img.src = url
+
+  var canvas = document.getElementById('crop-canvas')
+  canvas.onmousedown = function(e) {
+    _cropDrag = { x: e.clientX, y: e.clientY, panX: _cropState.panX, panY: _cropState.panY }
+    e.preventDefault()
+    document.addEventListener('mousemove', _cropMoveHandler)
+    document.addEventListener('mouseup', _cropUpHandler)
+  }
+  canvas.ontouchstart = function(e) {
+    var t = e.touches[0]
+    _cropDrag = { x: t.clientX, y: t.clientY, panX: _cropState.panX, panY: _cropState.panY }
+    e.preventDefault()
+    document.addEventListener('touchmove', _cropTouchMoveHandler, { passive: false })
+    document.addEventListener('touchend', _cropTouchEndHandler)
+  }
+  cropRender()
+}
+
+function _cropMoveHandler(e) {
+  if (!_cropDrag) return
+  _cropState.panX = _cropDrag.panX + (e.clientX - _cropDrag.x)
+  _cropState.panY = _cropDrag.panY + (e.clientY - _cropDrag.y)
+  cropRender()
+}
+function _cropUpHandler() {
+  _cropDrag = null
+  document.removeEventListener('mousemove', _cropMoveHandler)
+  document.removeEventListener('mouseup', _cropUpHandler)
+}
+function _cropTouchMoveHandler(e) {
+  if (!_cropDrag) return
+  var t = e.touches[0]
+  _cropState.panX = _cropDrag.panX + (t.clientX - _cropDrag.x)
+  _cropState.panY = _cropDrag.panY + (t.clientY - _cropDrag.y)
+  e.preventDefault()
+  cropRender()
+}
+function _cropTouchEndHandler() {
+  _cropDrag = null
+  document.removeEventListener('touchmove', _cropTouchMoveHandler)
+  document.removeEventListener('touchend', _cropTouchEndHandler)
+}
+
+function cropRender() {
+  var canvas = document.getElementById('crop-canvas')
+  if (!canvas) return
+  var ctx = canvas.getContext('2d')
+  var W = canvas.width, H = canvas.height
+  ctx.clearRect(0, 0, W, H)
+
+  if (!_cropBibImg) {
+    ctx.fillStyle = '#e8eef6'; ctx.fillRect(0, 0, W, H)
+    ctx.fillStyle = '#9ca3af'; ctx.font = '13px Arial'
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText('A carregar...', W / 2, H / 2)
+    return
+  }
+  var img = _cropBibImg
+  var coverSc = Math.max(W / img.naturalWidth, H / img.naturalHeight)
+  var totalSc = coverSc * _cropState.scale
+  var dW = img.naturalWidth * totalSc
+  var dH = img.naturalHeight * totalSc
+  var dX = (W - dW) / 2 + _cropState.panX
+  var dY = (H - dH) / 2 + _cropState.panY
+  ctx.drawImage(img, dX, dY, dW, dH)
+
+  // Template frame guide
+  ctx.fillStyle = 'rgba(0,0,0,0.48)'
+  if (_templateSlide === 'B') {
+    var splitY = Math.round(H * 0.6)
+    ctx.fillRect(0, splitY, W, H - splitY)
+    ctx.save(); ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 2
+    ctx.beginPath(); ctx.moveTo(0, splitY); ctx.lineTo(W, splitY); ctx.stroke(); ctx.restore()
+  } else if (_templateSlide === 'C') {
+    var splitX = Math.round(W * 0.5)
+    ctx.fillRect(splitX, 0, W - splitX, H)
+    ctx.save(); ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 2
+    ctx.beginPath(); ctx.moveTo(splitX, 0); ctx.lineTo(splitX, H); ctx.stroke(); ctx.restore()
+  }
+}
+
+function cropUpdateZoom(val) {
+  _cropState.scale = val / 100
+  var zv = document.getElementById('crop-zoom-val')
+  if (zv) zv.textContent = val + '%'
+  cropRender()
+}
+
+function cropReset() {
+  _cropState = { panX: 0, panY: 0, scale: 1.0 }
+  var zoom = document.getElementById('crop-zoom')
+  if (zoom) zoom.value = 100
+  var zv = document.getElementById('crop-zoom-val')
+  if (zv) zv.textContent = '100%'
+  cropRender()
+}
+
+function cropApply() {
+  _cropSettings = { panX: _cropState.panX, panY: _cropState.panY, scale: _cropState.scale }
+  var url = _cropBibRow ? _cropBibRow.url : null
+  if (url) {
+    _aiImgFinal = url
+    if (!_imgUrls.length) _imgUrls = [url]
+    var thumb = document.getElementById('ai-img-thumb')
+    if (thumb) thumb.src = url
+    var ta = document.getElementById('ai-img-prompt-ta')
+    if (ta) ta.value = (_cropBibRow && _cropBibRow.prompt_ia) || ''
+  }
+  document.getElementById('crop-panel').style.display = 'none'
   aiImgSetState('result')
   imgCheckInstagram()
+}
+
+function cropCancel() {
+  document.getElementById('crop-panel').style.display = 'none'
+  _cropBibImg = null; _cropBibRow = null
+  _cropUpHandler(); _cropTouchEndHandler()
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
