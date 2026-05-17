@@ -257,6 +257,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ig-fmt-lbl{font-size:.78rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px}
 .ig-fmt-btn{padding:5px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
 .ig-fmt-btn.active{background:#c13584;color:#fff;border-color:#c13584}
+.tmpl-selector{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.tmpl-card{flex:1;min-width:90px;max-width:120px;border:2px solid #d1d5db;border-radius:10px;cursor:pointer;overflow:hidden;transition:all .2s;background:#fff}
+.tmpl-card:hover{border-color:#2d6a9f}
+.tmpl-card.active{border-color:#1a3c5e;box-shadow:0 0 0 3px rgba(26,60,94,.15)}
+.tmpl-card svg{width:100%;display:block}
+.tmpl-card-label{text-align:center;font-size:.65rem;font-weight:600;color:#6b7280;padding:4px 4px 6px;line-height:1.3}
+.tmpl-card.active .tmpl-card-label{color:#1a3c5e}
 /* Slide editor */
 .slide-list{display:flex;flex-direction:column;gap:8px}
 .slide-item{display:flex;gap:8px;align-items:flex-start}
@@ -567,6 +574,53 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <span class="ig-fmt-lbl">Formato Instagram:</span>
             <button class="ig-fmt-btn active" id="ig-fmt-unico" onclick="igSetFormato('unico')">Post Único</button>
             <button class="ig-fmt-btn" id="ig-fmt-carrossel" onclick="igSetFormato('carrossel')">🎠 Carrossel</button>
+          </div>
+          <!-- Template selector (visível só no modo Carrossel) -->
+          <div class="cont-field" id="tmpl-selector-row" style="display:none">
+            <label class="cont-label">Estilo dos slides</label>
+            <div class="tmpl-selector">
+              <div class="tmpl-card active" id="tmpl-A" onclick="tmplSet('A')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="80" height="80" fill="#7fa8c9"/><rect width="80" height="80" fill="rgba(0,0,0,0.38)"/>
+                  <line x1="12" y1="28" x2="68" y2="28" stroke="#F5C518" stroke-width="2.5"/>
+                  <rect x="10" y="32" width="60" height="7" rx="3" fill="white" opacity="0.9"/>
+                  <rect x="16" y="43" width="48" height="7" rx="3" fill="white" opacity="0.65"/>
+                  <rect x="56" y="68" width="20" height="7" rx="2" fill="#F5C518"/>
+                </svg>
+                <div class="tmpl-card-label">A — Sobre imagem</div>
+              </div>
+              <div class="tmpl-card" id="tmpl-B" onclick="tmplSet('B')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="80" height="80" fill="#7fa8c9"/>
+                  <rect y="48" width="80" height="32" fill="#0A3D62"/>
+                  <line x1="0" y1="48" x2="80" y2="48" stroke="#F5C518" stroke-width="3"/>
+                  <rect x="10" y="54" width="60" height="7" rx="3" fill="white" opacity="0.9"/>
+                  <rect x="18" y="65" width="44" height="6" rx="3" fill="white" opacity="0.55"/>
+                </svg>
+                <div class="tmpl-card-label">B — Texto em baixo</div>
+              </div>
+              <div class="tmpl-card" id="tmpl-C" onclick="tmplSet('C')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="40" height="80" fill="#7fa8c9"/>
+                  <rect x="40" width="40" height="80" fill="#0A3D62"/>
+                  <line x1="40" y1="0" x2="40" y2="80" stroke="#F5C518" stroke-width="3"/>
+                  <rect x="44" y="26" width="28" height="6" rx="3" fill="white" opacity="0.9"/>
+                  <rect x="44" y="36" width="22" height="6" rx="3" fill="white" opacity="0.7"/>
+                  <rect x="44" y="46" width="16" height="6" rx="3" fill="white" opacity="0.45"/>
+                  <rect x="52" y="68" width="20" height="7" rx="2" fill="#F5C518"/>
+                </svg>
+                <div class="tmpl-card-label">C — Texto à direita</div>
+              </div>
+              <div class="tmpl-card" id="tmpl-D" onclick="tmplSet('D')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="80" height="80" fill="#0A3D62"/>
+                  <rect x="8" y="24" width="64" height="11" rx="4" fill="white" opacity="0.95"/>
+                  <rect x="14" y="39" width="52" height="11" rx="4" fill="white" opacity="0.7"/>
+                  <rect x="22" y="54" width="36" height="8" rx="3" fill="#F5C518" opacity="0.8"/>
+                </svg>
+                <div class="tmpl-card-label">D — Minimalista</div>
+              </div>
+            </div>
           </div>
           <div class="cont-field">
             <label class="cont-label">Data de agendamento <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(opcional — deixa em branco para rascunho)</span></label>
@@ -1177,11 +1231,33 @@ var REDE_CFG = {
   youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
 }
 var _igFormato = 'unico'
+var _templateSlide = 'A'
 
 function igSetFormato(fmt) {
   _igFormato = fmt
   document.getElementById('ig-fmt-unico').className = 'ig-fmt-btn' + (fmt === 'unico' ? ' active' : '')
   document.getElementById('ig-fmt-carrossel').className = 'ig-fmt-btn' + (fmt === 'carrossel' ? ' active' : '')
+  document.getElementById('tmpl-selector-row').style.display = fmt === 'carrossel' ? '' : 'none'
+}
+
+function tmplSet(t) {
+  _templateSlide = t
+  ;['A','B','C','D'].forEach(function(x) {
+    document.getElementById('tmpl-' + x).className = 'tmpl-card' + (x === t ? ' active' : '')
+  })
+}
+
+function getLines(ctx, text, maxWidth) {
+  var words = (text || '').trim().split(/\s+/)
+  var line = '', lines = []
+  words.forEach(function(word) {
+    var test = line + word + ' '
+    if (ctx.measureText(test).width > maxWidth && line !== '') {
+      lines.push(line.trim()); line = word + ' '
+    } else { line = test }
+  })
+  if (line.trim()) lines.push(line.trim())
+  return lines
 }
 
 function igUpdateFormatBar() {
@@ -1617,7 +1693,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   lines.forEach(function(l, i) { ctx.fillText(l, x, startY + i * lineHeight) })
 }
 
-async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) {
+async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session, template) {
   var S = 1080
   var canvas = document.createElement('canvas')
   canvas.width = S; canvas.height = S
@@ -1658,88 +1734,151 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
 
   // ── Image slides ────────────────────────────────────────────────────────
   } else {
-    if (bgImg) {
-      ctx.drawImage(bgImg, 0, 0, S, S)
-    } else {
-      ctx.fillStyle = '#0f2944'
-      ctx.fillRect(0, 0, S, S)
-    }
-
-    // Radial gradient overlay — suave no centro, escuro nas bordas
-    var gradient = ctx.createRadialGradient(540, 540, 100, 540, 540, 760)
-    gradient.addColorStop(0, 'rgba(0,0,0,0.2)')
-    gradient.addColorStop(1, 'rgba(0,0,0,0.75)')
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, S, S)
-
-    // Slide number badge (top-right)
-    ctx.save()
-    ctx.textBaseline = 'alphabetic'
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'
-    roundRect(ctx, 920, 30, 110, 36, 18)
-    ctx.fill()
-    ctx.fillStyle = 'white'
-    ctx.font = 'bold 18px Arial'
-    ctx.textAlign = 'right'
-    ctx.fillText((idx + 1) + ' / ' + total, 1022, 54)
-    ctx.restore()
-
-    // Text — centrado verticalmente no slide
-    ctx.save()
-    ctx.shadowColor = 'rgba(0,0,0,0.95)'
-    ctx.shadowBlur = 25
-    ctx.fillStyle = 'white'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-
     var texto = slide.texto || ''
-    var fontSize = 72
-    ctx.font = 'bold ' + fontSize + 'px Georgia, serif'
-    while (ctx.measureText(texto).width > 880 && fontSize > 36) {
-      fontSize -= 4
-      ctx.font = 'bold ' + fontSize + 'px Georgia, serif'
-    }
+    var tmpl = template || 'A'
 
-    // Word wrap
-    var words = texto.split(' ')
-    var lines = []
-    var currentLine = ''
-    words.forEach(function(word) {
-      var test = currentLine + word + ' '
-      if (ctx.measureText(test).width > 880 && currentLine !== '') {
-        lines.push(currentLine.trim())
-        currentLine = word + ' '
-      } else { currentLine = test }
-    })
-    if (currentLine.trim()) lines.push(currentLine.trim())
+    // ── Template A — Texto sobre imagem ─────────────────────────────────
+    if (tmpl === 'A') {
+      if (bgImg) ctx.drawImage(bgImg, 0, 0, S, S)
+      else { ctx.fillStyle = '#0f2944'; ctx.fillRect(0, 0, S, S) }
 
-    var lineHeight = fontSize * 1.3
-    var totalTextHeight = lines.length * lineHeight
-    var startY = 540 - totalTextHeight / 2 + lineHeight / 2
+      var gA = ctx.createRadialGradient(540, 540, 100, 540, 540, 760)
+      gA.addColorStop(0, 'rgba(0,0,0,0.2)'); gA.addColorStop(1, 'rgba(0,0,0,0.75)')
+      ctx.fillStyle = gA; ctx.fillRect(0, 0, S, S)
 
-    lines.forEach(function(ln, i) {
-      ctx.fillText(ln, 540, startY + i * lineHeight)
-    })
-    ctx.restore()
+      ctx.save()
+      ctx.textBaseline = 'alphabetic'
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; roundRect(ctx, 920, 30, 110, 36, 18); ctx.fill()
+      ctx.fillStyle = 'white'; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'right'
+      ctx.fillText((idx + 1) + ' / ' + total, 1022, 54)
+      ctx.restore()
 
-    // Yellow decorative line ABOVE the text block
-    ctx.save()
-    ctx.shadowBlur = 0
-    ctx.strokeStyle = '#F5C518'
-    ctx.lineWidth = 5
-    var lineY = startY - lineHeight * 0.8
-    ctx.beginPath()
-    ctx.moveTo(200, lineY)
-    ctx.lineTo(880, lineY)
-    ctx.stroke()
-    ctx.restore()
+      var fsA = 96
+      ctx.font = 'bold ' + fsA + 'px Georgia, serif'
+      var lsA = getLines(ctx, texto, 820)
+      while (lsA.length > 3 && fsA > 48) { fsA -= 6; ctx.font = 'bold ' + fsA + 'px Georgia, serif'; lsA = getLines(ctx, texto, 820) }
+      var lhA = fsA * 1.3
+      var syA = 540 - lsA.length * lhA / 2 + lhA / 2
 
-    // Logo badge (bottom-right)
-    if (logoImg) {
-      ctx.fillStyle = '#F5C518'
-      roundRect(ctx, 920, 990, 140, 50, 10)
-      ctx.fill()
-      ctx.drawImage(logoImg, 928, 996, 124, 38)
+      ctx.save()
+      ctx.shadowColor = 'rgba(0,0,0,0.95)'; ctx.shadowBlur = 25
+      ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+      ctx.font = 'bold ' + fsA + 'px Georgia, serif'
+      lsA.forEach(function(ln, i) { ctx.fillText(ln, 540, syA + i * lhA) })
+      ctx.restore()
+
+      ctx.save()
+      ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 5
+      ctx.beginPath(); ctx.moveTo(200, syA - lhA * 0.8); ctx.lineTo(880, syA - lhA * 0.8); ctx.stroke()
+      ctx.restore()
+
+      if (logoImg) { ctx.fillStyle = '#F5C518'; roundRect(ctx, 920, 990, 140, 50, 10); ctx.fill(); ctx.drawImage(logoImg, 928, 996, 124, 38) }
+
+    // ── Template B — Texto em baixo ────────────────────────────────────
+    } else if (tmpl === 'B') {
+      if (bgImg) ctx.drawImage(bgImg, 0, 0, S, S)
+      else { ctx.fillStyle = '#1a3c5e'; ctx.fillRect(0, 0, S, S) }
+      ctx.fillStyle = '#0A3D62'; ctx.fillRect(0, 648, S, S - 648)
+
+      ctx.save()
+      ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 6
+      ctx.beginPath(); ctx.moveTo(0, 648); ctx.lineTo(S, 648); ctx.stroke()
+      ctx.restore()
+
+      ctx.save()
+      ctx.textBaseline = 'alphabetic'; ctx.fillStyle = 'rgba(0,0,0,0.5)'
+      roundRect(ctx, 920, 30, 110, 36, 18); ctx.fill()
+      ctx.fillStyle = 'white'; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'right'
+      ctx.fillText((idx + 1) + ' / ' + total, 1022, 54)
+      ctx.restore()
+
+      var fsB = 96
+      ctx.font = 'bold ' + fsB + 'px Georgia, serif'
+      var lsB = getLines(ctx, texto, 880)
+      while (lsB.length > 3 && fsB > 48) { fsB -= 6; ctx.font = 'bold ' + fsB + 'px Georgia, serif'; lsB = getLines(ctx, texto, 880) }
+      var lhB = fsB * 1.3
+      var syB = 864 - lsB.length * lhB / 2 + lhB / 2
+
+      ctx.save()
+      ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+      ctx.font = 'bold ' + fsB + 'px Georgia, serif'
+      lsB.forEach(function(ln, i) { ctx.fillText(ln, 540, syB + i * lhB) })
+      ctx.restore()
+
+      if (logoImg) { ctx.fillStyle = '#F5C518'; roundRect(ctx, 920, 990, 140, 50, 10); ctx.fill(); ctx.drawImage(logoImg, 928, 996, 124, 38) }
+
+    // ── Template C — Texto à direita ───────────────────────────────────
+    } else if (tmpl === 'C') {
+      if (bgImg) ctx.drawImage(bgImg, 0, 0, S, S)
+      else { ctx.fillStyle = '#1a3c5e'; ctx.fillRect(0, 0, S, S) }
+      ctx.fillStyle = '#0A3D62'; ctx.fillRect(540, 0, 540, S)
+
+      ctx.save()
+      ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 6
+      ctx.beginPath(); ctx.moveTo(540, 0); ctx.lineTo(540, S); ctx.stroke()
+      ctx.restore()
+
+      ctx.save()
+      ctx.textBaseline = 'alphabetic'; ctx.fillStyle = 'rgba(0,0,0,0.5)'
+      roundRect(ctx, 20, 30, 110, 36, 18); ctx.fill()
+      ctx.fillStyle = 'white'; ctx.font = 'bold 18px Arial'; ctx.textAlign = 'left'
+      ctx.fillText((idx + 1) + ' / ' + total, 30, 54)
+      ctx.restore()
+
+      var fsC = 96
+      ctx.font = 'bold ' + fsC + 'px Georgia, serif'
+      var lsC = getLines(ctx, texto, 470)
+      while (lsC.length > 4 && fsC > 48) { fsC -= 6; ctx.font = 'bold ' + fsC + 'px Georgia, serif'; lsC = getLines(ctx, texto, 470) }
+      var lhC = fsC * 1.3
+      var syC = 540 - lsC.length * lhC / 2 + lhC / 2
+
+      ctx.save()
+      ctx.fillStyle = 'white'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+      ctx.font = 'bold ' + fsC + 'px Georgia, serif'
+      lsC.forEach(function(ln, i) { ctx.fillText(ln, 565, syC + i * lhC) })
+      ctx.restore()
+
+      ctx.save()
+      ctx.strokeStyle = '#F5C518'; ctx.lineWidth = 4
+      ctx.beginPath(); ctx.moveTo(565, syC - lhC * 0.9); ctx.lineTo(1050, syC - lhC * 0.9); ctx.stroke()
+      ctx.restore()
+
+      if (logoImg) { ctx.fillStyle = '#F5C518'; roundRect(ctx, 920, 990, 140, 50, 10); ctx.fill(); ctx.drawImage(logoImg, 928, 996, 124, 38) }
+
+    // ── Template D — Bold minimalista ──────────────────────────────────
+    } else if (tmpl === 'D') {
+      var isDark = idx % 2 === 0
+      ctx.fillStyle = isDark ? '#0A3D62' : '#F5C518'; ctx.fillRect(0, 0, S, S)
+
+      if (bgImg) { ctx.save(); ctx.globalAlpha = 0.07; ctx.drawImage(bgImg, 0, 0, S, S); ctx.restore() }
+
+      ctx.save()
+      ctx.textBaseline = 'alphabetic'
+      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'
+      roundRect(ctx, 920, 30, 110, 36, 18); ctx.fill()
+      ctx.fillStyle = isDark ? 'white' : '#0A3D62'
+      ctx.font = 'bold 18px Arial'; ctx.textAlign = 'right'
+      ctx.fillText((idx + 1) + ' / ' + total, 1022, 54)
+      ctx.restore()
+
+      var fsD = 110
+      ctx.font = 'bold ' + fsD + 'px Georgia, serif'
+      var lsD = getLines(ctx, texto, 880)
+      while (lsD.length > 3 && fsD > 48) { fsD -= 8; ctx.font = 'bold ' + fsD + 'px Georgia, serif'; lsD = getLines(ctx, texto, 880) }
+      var lhD = fsD * 1.25
+      var syD = 540 - lsD.length * lhD / 2 + lhD / 2
+
+      ctx.save()
+      ctx.fillStyle = isDark ? 'white' : '#0A3D62'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+      ctx.font = 'bold ' + fsD + 'px Georgia, serif'
+      lsD.forEach(function(ln, i) { ctx.fillText(ln, 540, syD + i * lhD) })
+      ctx.restore()
+
+      if (logoImg) {
+        ctx.fillStyle = isDark ? '#F5C518' : '#0A3D62'
+        roundRect(ctx, 920, 990, 140, 50, 10); ctx.fill()
+        ctx.drawImage(logoImg, 928, 996, 124, 38)
+      }
     }
   }
 
@@ -1771,7 +1910,7 @@ async function carrosselComporTodos(session) {
 
   _slidesCompostos = []
   for (var i = 0; i < slides.length; i++) {
-    var url = await carrosselComporSlide(slides[i], i, slides.length, bgImg, logoImg, session)
+    var url = await carrosselComporSlide(slides[i], i, slides.length, bgImg, logoImg, session, _templateSlide)
     _slidesCompostos.push(url || bgUrl || '')
     slides[i].imagem_url  = url || null
     slides[i].overlay_cor = getSlideOverlayCor(i, slides.length)
