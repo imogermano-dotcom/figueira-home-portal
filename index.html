@@ -404,6 +404,63 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .bib-pick-item img{width:100%;height:100%;object-fit:cover}
 .bib-pick-empty{text-align:center;padding:32px;color:#9ca3af;font-size:.85rem;grid-column:1/-1}
 .bib-pick-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;flex-shrink:0;border-top:1px solid #f0f0f0;margin-top:12px}
+/* Vídeos */
+#page-videos main{flex:1;padding:24px;max-width:1040px;margin:0 auto;width:100%}
+.vid-subnav{display:flex;gap:8px;margin-bottom:20px}
+.vid-subnav-btn{padding:8px 18px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.82rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
+.vid-subnav-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.vid-subview{display:none}.vid-subview.active{display:block}
+.vid-upload-zone{border:2px dashed #d1d5db;border-radius:14px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa}
+.vid-upload-zone:hover,.vid-upload-zone.drag-over{border-color:#2d6a9f;background:#f0f5ff}
+.vid-upload-zone p{margin:8px 0;font-size:.85rem;color:#6b7280}
+.vid-preview-wrap{border-radius:12px;overflow:hidden;background:#000;max-height:320px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.vid-preview-wrap video{max-width:100%;max-height:320px;display:block}
+.vid-meta-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.vid-meta-badge{font-size:.72rem;font-weight:600;background:#e8f0fb;color:#2d6a9f;padding:3px 10px;border-radius:10px}
+.vid-progress-wrap{margin:12px 0;display:none}
+.vid-progress-wrap.show{display:block}
+.vid-progress-bar-bg{background:#e5e7eb;border-radius:6px;height:10px;overflow:hidden}
+.vid-progress-bar{background:#2d6a9f;height:10px;border-radius:6px;width:0;transition:width .3s}
+.vid-progress-label{font-size:.75rem;color:#6b7280;margin-top:4px;text-align:center}
+.vid-section-title{font-size:.78rem;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.vid-form-row{margin-bottom:12px}
+.vid-form-label{display:block;font-size:.75rem;font-weight:600;color:#4b5563;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.vid-form-input{width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;font-family:inherit;outline:none;box-sizing:border-box}
+.vid-form-input:focus{border-color:#2d6a9f}
+.vid-text-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.vid-tab-btn{padding:6px 14px;border:1.5px solid #d1d5db;border-radius:16px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
+.vid-tab-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.vid-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
+@media(max-width:640px){.vid-grid{grid-template-columns:1fr}}
+.vid-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .1s;border:2px solid transparent}
+.vid-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.13);transform:translateY(-1px);border-color:#2d6a9f}
+.vid-card-thumb{position:relative;aspect-ratio:16/9;background:#1a1a2e;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.vid-card-thumb img{width:100%;height:100%;object-fit:cover}
+.vid-card-thumb-ph{font-size:2.5rem}
+.vid-card-dur{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.72);color:#fff;font-size:.68rem;font-weight:600;padding:2px 7px;border-radius:6px}
+.vid-card-body{padding:10px 12px}
+.vid-card-title{font-size:.85rem;font-weight:700;color:#1a3c5e;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vid-card-cat{font-size:.72rem;color:#6b7280}
+.vid-card-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid #f0f0f0;gap:6px}
+.vid-s-rascunho{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#f3f4f6;color:#6b7280}
+.vid-s-agendado{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#dbeafe;color:#1d4ed8}
+.vid-s-publicado{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:8px;background:#dcfce7;color:#15803d}
+.vid-card-del-btn{padding:3px 9px;border:1.5px solid #fca5a5;border-radius:6px;font-size:.7rem;font-weight:600;cursor:pointer;background:#fff;color:#dc2626;transition:all .15s}
+.vid-card-del-btn:hover{background:#fef2f2}
+.vid-panel-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100}
+.vid-panel-overlay.open{display:block}
+.vid-panel{position:fixed;right:0;top:0;bottom:0;width:420px;background:#fff;z-index:101;box-shadow:-4px 0 30px rgba(0,0,0,.14);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .25s}
+.vid-panel-overlay.open .vid-panel{transform:translateX(0)}
+.vid-panel-header{padding:16px 20px;border-bottom:1px solid #eef0f3;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.vid-panel-header h3{font-size:.92rem;font-weight:700;color:#1a3c5e;margin:0}
+.vid-panel-close{background:none;border:none;font-size:1.1rem;cursor:pointer;color:#9ca3af;padding:4px}
+.vid-panel-body{flex:1;overflow-y:auto;padding:16px 20px}
+.vid-panel-thumb{width:100%;aspect-ratio:16/9;border-radius:10px;object-fit:cover;background:#1a1a2e;display:block;margin-bottom:14px}
+.vid-panel-field{margin-bottom:14px}
+.vid-panel-lbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6b7280;margin-bottom:4px;display:block}
+.vid-panel-val{font-size:.85rem;color:#1a3c5e;background:#f9fafb;border-radius:8px;padding:8px 12px;white-space:pre-wrap;word-break:break-word}
+.vid-panel-foot{padding:14px 20px;border-top:1px solid #eef0f3;display:flex;gap:8px;flex-shrink:0}
+.vid-empty{text-align:center;padding:48px;color:#9ca3af;font-size:.9rem;grid-column:1/-1}
 /* Agendamento */
 #page-agendamento main{flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%}
 .ag-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
@@ -519,6 +576,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-kpi" style="display:none" onclick="showTab('kpi')">📊 KPI Dashboard</button>
     <button class="pnav-btn" id="tab-conteudos" onclick="showTab('conteudos')">✨ Conteúdo Social</button>
     <button class="pnav-btn" id="tab-agendamento" onclick="showTab('agendamento')">📅 Agendamento</button>
+    <button class="pnav-btn" id="tab-videos" onclick="showTab('videos')">🎬 Vídeos</button>
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
   </nav>
@@ -863,6 +921,157 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <div id="ag-panel-content"></div>
   </div>
 
+  <!-- Vídeos -->
+  <div class="portal-page" id="page-videos">
+    <main>
+      <div class="cont-box">
+        <div class="vid-subnav">
+          <button class="vid-subnav-btn active" id="vid-subnav-novo" onclick="vidShowView('novo')">➕ Novo Vídeo</button>
+          <button class="vid-subnav-btn" id="vid-subnav-historico" onclick="vidShowView('historico')">📋 Histórico</button>
+        </div>
+
+        <!-- SUB-VIEW: Novo Vídeo -->
+        <div class="vid-subview active" id="vid-view-novo">
+          <div id="vid-upload-zone" class="vid-upload-zone"
+            ondragover="vidOnDragOver(event)" ondragleave="vidOnDragLeave(event)" ondrop="vidOnDrop(event)"
+            onclick="document.getElementById('vid-file-input').click()">
+            <div style="font-size:2.2rem">🎬</div>
+            <p><strong>Arrasta um vídeo aqui</strong> ou clica para seleccionar</p>
+            <p>MP4, MOV, AVI · Máx. 500 MB</p>
+            <input type="file" id="vid-file-input" accept="video/*" style="display:none" onchange="vidOnFile(this.files[0])">
+          </div>
+
+          <div id="vid-preview-wrap" class="vid-preview-wrap" style="display:none;margin-top:12px">
+            <video id="vid-preview-el" controls playsinline style="max-width:100%;max-height:320px"></video>
+          </div>
+          <div id="vid-meta-badges" class="vid-meta-badges"></div>
+
+          <div id="vid-progress-wrap" class="vid-progress-wrap">
+            <div class="vid-progress-bar-bg"><div id="vid-progress-bar" class="vid-progress-bar"></div></div>
+            <div id="vid-progress-label" class="vid-progress-label">A carregar… 0%</div>
+          </div>
+
+          <div id="vid-form" style="display:none">
+            <div class="vid-form-row">
+              <label class="vid-form-label">Título do vídeo</label>
+              <input class="vid-form-input" id="vid-titulo" placeholder="Título descritivo do vídeo">
+            </div>
+            <div class="vid-form-row">
+              <label class="vid-form-label">Categoria</label>
+              <select class="vid-form-input" id="vid-categoria">
+                <option value="imoveis">Imóveis</option>
+                <option value="figueira">Figueira da Foz</option>
+                <option value="ia">IA &amp; Tecnologia</option>
+                <option value="generico">Genérico</option>
+              </select>
+            </div>
+
+            <div class="vid-section-title">Tom do Conteúdo</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+              <button class="perfil-btn active" id="vid-perfil-polemico"    onclick="vidSetPerfil('polemico')">🔥 Polémico</button>
+              <button class="perfil-btn"        id="vid-perfil-informativo" onclick="vidSetPerfil('informativo')">💡 Informativo</button>
+              <button class="perfil-btn"        id="vid-perfil-humanizado"  onclick="vidSetPerfil('humanizado')">🤝 Humanizado</button>
+              <button class="perfil-btn"        id="vid-perfil-educativo"   onclick="vidSetPerfil('educativo')">🎯 Educativo</button>
+              <button class="perfil-btn"        id="vid-perfil-urgencia"    onclick="vidSetPerfil('urgencia')">⚡ Urgência</button>
+            </div>
+
+            <div class="vid-form-row">
+              <label class="vid-form-label">Texto base / descrição do vídeo</label>
+              <textarea class="vid-form-input" id="vid-texto-base" rows="3" placeholder="Descreve o conteúdo do vídeo para gerar legendas…"></textarea>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+              <button class="cont-btn primary" id="vid-gerar-btn" onclick="vidGerarTextos()">✨ Gerar Textos com IA</button>
+              <span id="vid-gerar-spinner" style="display:none;font-size:.82rem;color:#6b7280">A gerar…</span>
+            </div>
+
+            <div id="vid-textos-wrap" style="display:none">
+              <div class="vid-section-title">Textos por Rede Social</div>
+              <div class="vid-text-tabs">
+                <button class="vid-tab-btn active" onclick="vidShowTextTab('instagram')">📸 Instagram</button>
+                <button class="vid-tab-btn"        onclick="vidShowTextTab('facebook')">📘 Facebook</button>
+                <button class="vid-tab-btn"        onclick="vidShowTextTab('linkedin')">💼 LinkedIn</button>
+                <button class="vid-tab-btn"        onclick="vidShowTextTab('youtube')">▶️ YouTube</button>
+              </div>
+              <div id="vid-text-instagram">
+                <div class="vid-form-row"><label class="vid-form-label">Caption Instagram</label>
+                <textarea class="vid-form-input" id="vid-caption-instagram" rows="4"></textarea></div>
+                <div class="vid-form-row"><label class="vid-form-label">Hashtags</label>
+                <textarea class="vid-form-input" id="vid-hashtags-instagram" rows="2"></textarea></div>
+              </div>
+              <div id="vid-text-facebook" style="display:none">
+                <div class="vid-form-row"><label class="vid-form-label">Caption Facebook</label>
+                <textarea class="vid-form-input" id="vid-caption-facebook" rows="4"></textarea></div>
+              </div>
+              <div id="vid-text-linkedin" style="display:none">
+                <div class="vid-form-row"><label class="vid-form-label">Caption LinkedIn</label>
+                <textarea class="vid-form-input" id="vid-caption-linkedin" rows="4"></textarea></div>
+              </div>
+              <div id="vid-text-youtube" style="display:none">
+                <div class="vid-form-row"><label class="vid-form-label">Título YouTube</label>
+                <input class="vid-form-input" id="vid-titulo-youtube"></div>
+                <div class="vid-form-row"><label class="vid-form-label">Descrição YouTube</label>
+                <textarea class="vid-form-input" id="vid-descricao-youtube" rows="4"></textarea></div>
+                <div class="vid-form-row"><label class="vid-form-label">Hashtags YouTube</label>
+                <textarea class="vid-form-input" id="vid-hashtags-youtube" rows="2"></textarea></div>
+              </div>
+            </div>
+
+            <div class="vid-section-title">Publicar em</div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-instagram" value="instagram" checked> 📸 Instagram</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-facebook"  value="facebook"  checked> 📘 Facebook</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-linkedin"  value="linkedin"> 💼 LinkedIn</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox" id="vid-cb-youtube"   value="youtube"> ▶️ YouTube</label>
+            </div>
+            <div class="vid-form-row">
+              <label class="vid-form-label">Data de agendamento <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(opcional)</span></label>
+              <input type="datetime-local" class="vid-form-input" id="vid-data-agenda">
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button class="cont-btn primary" id="vid-guardar-btn" onclick="vidGuardar()">💾 Guardar</button>
+              <button class="cont-btn secondary" onclick="vidResetForm()">🔄 Limpar</button>
+            </div>
+            <div id="vid-save-msg" style="margin-top:8px;font-size:.82rem;color:#16a34a;display:none"></div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW: Histórico -->
+        <div class="vid-subview" id="vid-view-historico">
+          <div class="bib-filters">
+            <select class="bib-select" id="vid-filter-cat" onchange="vidSetFilter()">
+              <option value="">Todas as categorias</option>
+              <option value="imoveis">Imóveis</option>
+              <option value="figueira">Figueira</option>
+              <option value="ia">IA</option>
+              <option value="generico">Genérico</option>
+            </select>
+            <select class="bib-select" id="vid-filter-status" onchange="vidSetFilter()">
+              <option value="">Todos os estados</option>
+              <option value="rascunho">Rascunho</option>
+              <option value="agendado">Agendado</option>
+              <option value="publicado">Publicado</option>
+            </select>
+          </div>
+          <div id="vid-grid" class="vid-grid"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Vídeos — painel lateral -->
+  <div class="vid-panel-overlay" id="vid-panel-overlay" onclick="vidClosePanel()">
+    <div class="vid-panel" onclick="event.stopPropagation()">
+      <div class="vid-panel-header">
+        <h3>🎬 Detalhe do Vídeo</h3>
+        <button class="vid-panel-close" onclick="vidClosePanel()">✕</button>
+      </div>
+      <div class="vid-panel-body" id="vid-panel-body"></div>
+      <div class="vid-panel-foot" id="vid-panel-foot"></div>
+    </div>
+  </div>
+
   <!-- Biblioteca de Imagens -->
   <div class="portal-page" id="page-biblioteca">
     <main>
@@ -1038,7 +1247,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','config'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','videos','biblioteca','config'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -1049,6 +1258,7 @@ function showTab(name) {
     document.getElementById('kpi-frame').src = '/dashboard.html'
   }
   if (name === 'agendamento') agInit()
+  if (name === 'videos') vidInit()
   if (name === 'biblioteca') bibLoad()
 }
 
@@ -3936,6 +4146,464 @@ function cropCancel() {
   document.getElementById('crop-panel').style.display = 'none'
   _cropBibImg = null; _cropBibRow = null
   _cropUpHandler(); _cropTouchEndHandler()
+}
+
+// ── Vídeos ───────────────────────────────────────────────────────────────────
+var _vidRows = []
+var _vidFile = null
+var _vidThumbBlob = null
+var _vidMeta = {}
+var _vidPerfil = 'polemico'
+var _vidUploadedUrl = null
+var _vidThumbUrl = null
+var _vidFilterCat = ''
+var _vidFilterStatus = ''
+var _vidCurrentTextTab = 'instagram'
+var _vidInitDone = false
+
+function vidInit() {
+  if (!_vidInitDone) { _vidInitDone = true }
+  vidLoadHistorico()
+}
+
+function vidShowView(view) {
+  ['novo','historico'].forEach(function(v) {
+    var sv = document.getElementById('vid-view-' + v)
+    var sb = document.getElementById('vid-subnav-' + v)
+    if (sv) sv.className = 'vid-subview' + (v === view ? ' active' : '')
+    if (sb) sb.className = 'vid-subnav-btn' + (v === view ? ' active' : '')
+  })
+  if (view === 'historico') vidLoadHistorico()
+}
+
+function vidSetPerfil(perfil) {
+  _vidPerfil = perfil
+  var ids = ['polemico','informativo','humanizado','educativo','urgencia']
+  ids.forEach(function(p) {
+    var el = document.getElementById('vid-perfil-' + p)
+    if (el) el.className = 'perfil-btn' + (p === perfil ? ' active' : '')
+  })
+}
+
+function vidOnDragOver(e) {
+  e.preventDefault()
+  document.getElementById('vid-upload-zone').classList.add('drag-over')
+}
+
+function vidOnDragLeave(e) {
+  document.getElementById('vid-upload-zone').classList.remove('drag-over')
+}
+
+function vidOnDrop(e) {
+  e.preventDefault()
+  document.getElementById('vid-upload-zone').classList.remove('drag-over')
+  var files = e.dataTransfer && e.dataTransfer.files
+  if (files && files[0]) vidOnFile(files[0])
+}
+
+function vidOnFile(file) {
+  if (!file || !file.type.startsWith('video/')) {
+    alert('Por favor selecciona um ficheiro de vídeo válido.')
+    return
+  }
+  if (file.size > 500 * 1024 * 1024) {
+    alert('O vídeo excede o limite de 500 MB.')
+    return
+  }
+  _vidFile = file
+  _vidUploadedUrl = null
+  _vidThumbUrl = null
+  _vidThumbBlob = null
+
+  // Show preview
+  var previewWrap = document.getElementById('vid-preview-wrap')
+  var videoEl = document.getElementById('vid-preview-el')
+  var objUrl = URL.createObjectURL(file)
+  videoEl.src = objUrl
+  previewWrap.style.display = 'flex'
+
+  // Capture metadata + thumbnail when video is loadedmetadata
+  videoEl.onloadedmetadata = function() {
+    _vidMeta = {
+      duracao: Math.round(videoEl.duration),
+      resolucao: videoEl.videoWidth + 'x' + videoEl.videoHeight,
+      tamanho: file.size,
+      formato: file.type.split('/')[1] || file.name.split('.').pop()
+    }
+    var badges = document.getElementById('vid-meta-badges')
+    badges.innerHTML =
+      '<span class="vid-meta-badge">⏱ ' + vidFmtDuration(_vidMeta.duracao) + '</span>' +
+      '<span class="vid-meta-badge">📐 ' + _vidMeta.resolucao + '</span>' +
+      '<span class="vid-meta-badge">💾 ' + vidFmtSize(_vidMeta.tamanho) + '</span>' +
+      '<span class="vid-meta-badge">🎞 ' + _vidMeta.formato.toUpperCase() + '</span>'
+
+    // Pre-fill youtube title with filename (without extension)
+    var nomeSemExt = file.name.replace(/\.[^.]+$/, '')
+    var yt = document.getElementById('vid-titulo-youtube')
+    if (yt && !yt.value) yt.value = nomeSemExt
+    var tt = document.getElementById('vid-titulo')
+    if (tt && !tt.value) tt.value = nomeSemExt
+
+    // Seek to 1s for thumbnail
+    videoEl.currentTime = Math.min(1, videoEl.duration)
+  }
+
+  videoEl.onseeked = function() {
+    vidCaptureThumbnail(videoEl)
+  }
+
+  // Show form
+  document.getElementById('vid-form').style.display = 'block'
+  document.getElementById('vid-upload-zone').style.display = 'none'
+}
+
+function vidCaptureThumbnail(videoEl) {
+  try {
+    var canvas = document.createElement('canvas')
+    canvas.width  = videoEl.videoWidth  || 1280
+    canvas.height = videoEl.videoHeight || 720
+    var ctx = canvas.getContext('2d')
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
+    canvas.toBlob(function(blob) {
+      if (blob) _vidThumbBlob = blob
+    }, 'image/jpeg', 0.85)
+  } catch(e) {
+    console.warn('[vid] thumbnail capture error', e)
+  }
+}
+
+function vidFmtDuration(secs) {
+  if (!secs) return '0:00'
+  var m = Math.floor(secs / 60), s = secs % 60
+  return m + ':' + (s < 10 ? '0' : '') + s
+}
+
+function vidFmtSize(bytes) {
+  if (!bytes) return '—'
+  if (bytes > 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+  return (bytes / 1024).toFixed(0) + ' KB'
+}
+
+async function vidGerarTextos() {
+  var textoBase = (document.getElementById('vid-texto-base').value || '').trim()
+  if (!textoBase) { alert('Escreve uma descrição do vídeo antes de gerar textos.'); return }
+
+  document.getElementById('vid-gerar-btn').disabled = true
+  document.getElementById('vid-gerar-spinner').style.display = 'inline'
+
+  try {
+    var session = (await sb.auth.getSession()).data.session
+    if (!session) throw new Error('Sem sessão')
+
+    var categoria = document.getElementById('vid-categoria').value || 'generico'
+    var resp = await fetch(DOORSTEP_URL + '/functions/v1/gerar-conteudo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token
+      },
+      body: JSON.stringify({
+        texto: textoBase,
+        categoria: categoria,
+        perfil_conteudo: _vidPerfil,
+        redes: ['instagram','facebook','linkedin','youtube']
+      })
+    })
+    if (!resp.ok) throw new Error('Erro ' + resp.status)
+    var data = await resp.json()
+
+    // Fill text fields
+    if (data.instagram) {
+      document.getElementById('vid-caption-instagram').value = data.instagram.caption || ''
+      document.getElementById('vid-hashtags-instagram').value = data.instagram.hashtags || ''
+    }
+    if (data.facebook)  document.getElementById('vid-caption-facebook').value  = data.facebook.caption  || ''
+    if (data.linkedin)  document.getElementById('vid-caption-linkedin').value  = data.linkedin.caption  || ''
+    if (data.youtube) {
+      document.getElementById('vid-titulo-youtube').value     = data.youtube.titulo  || ''
+      document.getElementById('vid-descricao-youtube').value  = data.youtube.descricao || ''
+      document.getElementById('vid-hashtags-youtube').value   = data.youtube.hashtags  || ''
+    }
+    document.getElementById('vid-textos-wrap').style.display = 'block'
+    vidShowTextTab(_vidCurrentTextTab)
+  } catch(e) {
+    alert('Erro ao gerar textos: ' + e.message)
+  } finally {
+    document.getElementById('vid-gerar-btn').disabled = false
+    document.getElementById('vid-gerar-spinner').style.display = 'none'
+  }
+}
+
+function vidShowTextTab(tab) {
+  _vidCurrentTextTab = tab
+  var tabs = ['instagram','facebook','linkedin','youtube']
+  tabs.forEach(function(t) {
+    var el = document.getElementById('vid-text-' + t)
+    if (el) el.style.display = t === tab ? 'block' : 'none'
+  })
+  // Update tab buttons
+  var btns = document.querySelectorAll('#page-videos .vid-tab-btn')
+  var labels = { instagram: '📸 Instagram', facebook: '📘 Facebook', linkedin: '💼 LinkedIn', youtube: '▶️ YouTube' }
+  btns.forEach(function(b, i) {
+    b.className = 'vid-tab-btn' + (tabs[i] === tab ? ' active' : '')
+  })
+}
+
+async function vidGuardar() {
+  if (!_vidFile && !_vidUploadedUrl) { alert('Selecciona um vídeo primeiro.'); return }
+  var btn = document.getElementById('vid-guardar-btn')
+  btn.disabled = true
+  btn.textContent = '⏳ A guardar…'
+
+  try {
+    // Upload video if not yet uploaded
+    if (!_vidUploadedUrl) {
+      _vidUploadedUrl = await vidUploadVideo(_vidFile)
+    }
+    // Upload thumbnail
+    if (_vidThumbBlob && !_vidThumbUrl) {
+      _vidThumbUrl = await vidUploadThumb(_vidThumbBlob)
+    }
+
+    // Build redes array
+    var redes = []
+    ;['instagram','facebook','linkedin','youtube'].forEach(function(r) {
+      var cb = document.getElementById('vid-cb-' + r)
+      if (cb && cb.checked) redes.push(r)
+    })
+
+    var dataAgenda = document.getElementById('vid-data-agenda').value
+    var payload = {
+      video_url:           _vidUploadedUrl,
+      thumbnail_url:       _vidThumbUrl || null,
+      duracao_segundos:    _vidMeta.duracao || null,
+      tamanho_bytes:       _vidMeta.tamanho || null,
+      formato:             _vidMeta.formato || null,
+      resolucao:           _vidMeta.resolucao || null,
+      titulo:              (document.getElementById('vid-titulo').value || '').trim() || null,
+      categoria:           document.getElementById('vid-categoria').value || null,
+      texto_base:          (document.getElementById('vid-texto-base').value || '').trim() || null,
+      caption_instagram:   (document.getElementById('vid-caption-instagram').value || '').trim() || null,
+      caption_facebook:    (document.getElementById('vid-caption-facebook').value || '').trim() || null,
+      caption_linkedin:    (document.getElementById('vid-caption-linkedin').value || '').trim() || null,
+      titulo_youtube:      (document.getElementById('vid-titulo-youtube').value || '').trim() || null,
+      descricao_youtube:   (document.getElementById('vid-descricao-youtube').value || '').trim() || null,
+      hashtags_instagram:  (document.getElementById('vid-hashtags-instagram').value || '').trim() || null,
+      hashtags_youtube:    (document.getElementById('vid-hashtags-youtube').value || '').trim() || null,
+      redes_seleccionadas: redes,
+      data_agendada:       dataAgenda ? new Date(dataAgenda).toISOString() : null
+    }
+
+    var { error } = await sb.from('videos_sociais').insert(payload)
+    if (error) throw error
+
+    var msg = document.getElementById('vid-save-msg')
+    msg.textContent = '✅ Vídeo guardado com sucesso!'
+    msg.style.display = 'block'
+    setTimeout(function() { msg.style.display = 'none' }, 3000)
+
+    // Hide progress
+    vidSetProgress(0, '')
+    document.getElementById('vid-progress-wrap').classList.remove('show')
+
+  } catch(e) {
+    alert('Erro ao guardar: ' + e.message)
+  } finally {
+    btn.disabled = false
+    btn.textContent = '💾 Guardar'
+  }
+}
+
+function vidUploadVideo(file) {
+  return new Promise(function(resolve, reject) {
+    var ext = file.name.split('.').pop() || 'mp4'
+    var path = 'videos/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext
+    var uploadUrl = DOORSTEP_URL + '/storage/v1/object/videos-conteudos/' + path
+
+    var xhr = new XMLHttpRequest()
+    xhr.open('POST', uploadUrl, true)
+    xhr.setRequestHeader('Authorization', 'Bearer ' + DOORSTEP_ANON)
+    xhr.setRequestHeader('x-upsert', 'true')
+    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
+
+    var progressWrap = document.getElementById('vid-progress-wrap')
+    progressWrap.classList.add('show')
+
+    xhr.upload.onprogress = function(e) {
+      if (e.lengthComputable) {
+        var pct = Math.round(e.loaded / e.total * 100)
+        vidSetProgress(pct, 'A carregar… ' + pct + '%')
+      }
+    }
+
+    xhr.onload = function() {
+      if (xhr.status === 200 || xhr.status === 201) {
+        vidSetProgress(100, 'Upload concluído ✓')
+        var publicUrl = DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
+        resolve(publicUrl)
+      } else {
+        reject(new Error('Upload falhou: ' + xhr.status + ' ' + xhr.responseText.slice(0, 120)))
+      }
+    }
+
+    xhr.onerror = function() { reject(new Error('Erro de rede no upload')) }
+    xhr.send(file)
+  })
+}
+
+async function vidUploadThumb(blob) {
+  try {
+    var path = 'thumbs/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg'
+    var { error } = await sb.storage.from('videos-conteudos').upload(path, blob, {
+      contentType: 'image/jpeg', upsert: true
+    })
+    if (error) throw error
+    var { data } = sb.storage.from('videos-conteudos').getPublicUrl(path)
+    return data.publicUrl
+  } catch(e) {
+    console.warn('[vid] thumb upload error', e)
+    return null
+  }
+}
+
+function vidSetProgress(pct, label) {
+  var bar = document.getElementById('vid-progress-bar')
+  var lbl = document.getElementById('vid-progress-label')
+  if (bar) bar.style.width = pct + '%'
+  if (lbl) lbl.textContent = label
+}
+
+function vidResetForm() {
+  _vidFile = null; _vidThumbBlob = null; _vidMeta = {}
+  _vidUploadedUrl = null; _vidThumbUrl = null
+
+  var videoEl = document.getElementById('vid-preview-el')
+  if (videoEl) { videoEl.src = ''; videoEl.onloadedmetadata = null; videoEl.onseeked = null }
+  document.getElementById('vid-preview-wrap').style.display = 'none'
+  document.getElementById('vid-meta-badges').innerHTML = ''
+  document.getElementById('vid-form').style.display = 'none'
+  document.getElementById('vid-upload-zone').style.display = 'block'
+  document.getElementById('vid-textos-wrap').style.display = 'none'
+  document.getElementById('vid-progress-wrap').classList.remove('show')
+  document.getElementById('vid-save-msg').style.display = 'none'
+  ;['vid-titulo','vid-texto-base','vid-caption-instagram','vid-hashtags-instagram',
+    'vid-caption-facebook','vid-caption-linkedin','vid-titulo-youtube',
+    'vid-descricao-youtube','vid-hashtags-youtube'].forEach(function(id) {
+    var el = document.getElementById(id)
+    if (el) el.value = ''
+  })
+  document.getElementById('vid-file-input').value = ''
+  vidSetPerfil('polemico')
+}
+
+async function vidLoadHistorico() {
+  var { data: { user } } = await sb.auth.getUser()
+  if (!user) return
+  var { data, error } = await sb.from('videos_sociais')
+    .select('*').order('created_at', { ascending: false }).limit(100)
+  if (!error) {
+    _vidRows = data || []
+    vidRenderHistorico()
+  }
+}
+
+function vidGetFilteredRows() {
+  var cat    = (document.getElementById('vid-filter-cat')    || {}).value || ''
+  var status = (document.getElementById('vid-filter-status') || {}).value || ''
+  return _vidRows.filter(function(r) {
+    if (cat && r.categoria !== cat) return false
+    if (status) {
+      var st = r.status_instagram || 'rascunho'
+      if (st !== status) return false
+    }
+    return true
+  })
+}
+
+function vidRenderHistorico() {
+  var grid = document.getElementById('vid-grid')
+  if (!grid) return
+  var rows = vidGetFilteredRows()
+  if (!rows.length) {
+    grid.innerHTML = '<div class="vid-empty">Nenhum vídeo encontrado.</div>'
+    return
+  }
+  grid.innerHTML = rows.map(function(r) {
+    var dur = r.duracao_segundos ? vidFmtDuration(r.duracao_segundos) : ''
+    var thumbHtml = r.thumbnail_url
+      ? '<img src="' + r.thumbnail_url + '" alt="thumb" loading="lazy">'
+      : '<div class="vid-card-thumb-ph">🎬</div>'
+    var durBadge = dur ? '<span class="vid-card-dur">' + dur + '</span>' : ''
+    var status = r.status_instagram || 'rascunho'
+    var statusCls = 'vid-s-' + status
+    var titulo = r.titulo || r.video_url.split('/').pop().slice(0,40) || '(sem título)'
+    var cat = r.categoria || '—'
+    return '<div class="vid-card" onclick="vidOpenPanel(\'' + r.id + '\')">' +
+      '<div class="vid-card-thumb">' + thumbHtml + durBadge + '</div>' +
+      '<div class="vid-card-body"><div class="vid-card-title">' + titulo + '</div>' +
+      '<div class="vid-card-cat">' + cat + '</div></div>' +
+      '<div class="vid-card-foot"><span class="' + statusCls + '">' + status + '</span>' +
+      '<button class="vid-card-del-btn" onclick="event.stopPropagation();vidApagar(\'' + r.id + '\')">🗑</button></div>' +
+      '</div>'
+  }).join('')
+}
+
+function vidSetFilter() {
+  vidRenderHistorico()
+}
+
+function vidOpenPanel(id) {
+  var r = _vidRows.find(function(x) { return x.id === id })
+  if (!r) return
+  var body = document.getElementById('vid-panel-body')
+  var foot = document.getElementById('vid-panel-foot')
+
+  var thumbHtml = r.thumbnail_url
+    ? '<img class="vid-panel-thumb" src="' + r.thumbnail_url + '" alt="thumb">'
+    : '<div style="width:100%;aspect-ratio:16/9;background:#1a1a2e;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:14px">🎬</div>'
+
+  function fld(lbl, val) {
+    if (!val) return ''
+    return '<div class="vid-panel-field"><span class="vid-panel-lbl">' + lbl + '</span>' +
+           '<div class="vid-panel-val">' + val + '</div></div>'
+  }
+
+  var dur = r.duracao_segundos ? vidFmtDuration(r.duracao_segundos) : null
+  var meta = [dur, r.resolucao, r.formato ? r.formato.toUpperCase() : null, r.tamanho_bytes ? vidFmtSize(r.tamanho_bytes) : null].filter(Boolean).join(' · ')
+
+  body.innerHTML = thumbHtml +
+    fld('Título', r.titulo) +
+    fld('Categoria', r.categoria) +
+    (meta ? fld('Metadados', meta) : '') +
+    fld('Texto base', r.texto_base) +
+    fld('Caption Instagram', r.caption_instagram) +
+    fld('Hashtags Instagram', r.hashtags_instagram) +
+    fld('Caption Facebook', r.caption_facebook) +
+    fld('Caption LinkedIn', r.caption_linkedin) +
+    fld('Título YouTube', r.titulo_youtube) +
+    fld('Descrição YouTube', r.descricao_youtube) +
+    fld('Redes', (r.redes_seleccionadas || []).join(', ')) +
+    fld('Estado', r.status_instagram || 'rascunho') +
+    fld('Agendado para', r.data_agendada ? new Date(r.data_agendada).toLocaleString('pt-PT') : null) +
+    fld('Criado em', new Date(r.created_at).toLocaleString('pt-PT'))
+
+  foot.innerHTML = '<a class="cont-btn primary" style="text-decoration:none;padding:8px 18px;font-size:.82rem" href="' + r.video_url + '" target="_blank">▶️ Ver Vídeo</a>' +
+    '<button class="cont-btn secondary" style="padding:8px 14px;font-size:.82rem;color:#dc2626;border-color:#fca5a5" onclick="vidApagar(\'' + r.id + '\')">🗑 Eliminar</button>'
+
+  document.getElementById('vid-panel-overlay').classList.add('open')
+}
+
+function vidClosePanel() {
+  document.getElementById('vid-panel-overlay').classList.remove('open')
+}
+
+async function vidApagar(id) {
+  if (!confirm('Eliminar este vídeo? Esta acção não pode ser desfeita.')) return
+  var { error } = await sb.from('videos_sociais').delete().eq('id', id)
+  if (error) { alert('Erro ao eliminar: ' + error.message); return }
+  _vidRows = _vidRows.filter(function(x) { return x.id !== id })
+  vidClosePanel()
+  vidRenderHistorico()
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
