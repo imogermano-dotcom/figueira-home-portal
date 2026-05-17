@@ -4670,11 +4670,18 @@ async function bibUploadSubmit() {
 
       // Vídeo grande em processamento background via n8n
       if (vidUrl === '__MERGING__') {
-        msg.style.color = '#2d6a9f'
-        msg.textContent = '✓ ' + f.name + ' recebido — o vídeo está a ser processado e aparecerá na Biblioteca em breve.'
         prog.classList.remove('show')
-        ok++
-        continue
+        btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'
+        _bibUploadFiles = []
+        document.getElementById('bib-upload-previews').innerHTML = ''
+        msg.style.color = '#10b981'
+        msg.textContent = '✅ Upload concluído! O vídeo está a ser processado e aparecerá na biblioteca em breve.'
+        setTimeout(function() {
+          msg.style.color = ''
+          document.getElementById('bib-upload-modal').classList.remove('open')
+          bibLoad()
+        }, 3000)
+        return  // sair de bibUploadSubmit — modal fecha após 3s
       }
 
       if (!vidUrl) {
@@ -4814,7 +4821,7 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
     // Último chunk — n8n fará o merge em background
     if (result.status === 'merging') {
       if (progBar) progBar.style.width = '100%'
-      if (progLbl) progLbl.textContent = '✓ Recebido — a processar em background…'
+      if (progLbl) progLbl.textContent = '✅ Upload concluído!'
       console.log('[upload-video] merging em background', result.message)
       return '__MERGING__'
     }
