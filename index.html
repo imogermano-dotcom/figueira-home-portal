@@ -4660,11 +4660,23 @@ async function bibUploadSubmit() {
     console.log('[upload] início', f.name, f.size, f.type)
 
     if (isVid) {
-      // Video: Supabase SDK upload (handles large files / TUS chunking automatically)
+      // Video: chunked upload via Edge Function (contorna limite 100 MB Cloudflare)
       prog.classList.add('show')
       var vidPath = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
-      var vidUrl = await bibUploadVideoSDK(f, vidPath, progBar, progLbl)
+      var vidUrl = await bibUploadVideoSDK(f, vidPath, progBar, progLbl, {
+        userId: user.id, categoria: cat, descricao: desc
+      })
       console.log('[upload] storage result', { vidUrl, hadError: !vidUrl })
+
+      // Vídeo grande em processamento background via n8n
+      if (vidUrl === '__MERGING__') {
+        msg.style.color = '#2d6a9f'
+        msg.textContent = '✓ ' + f.name + ' recebido — o vídeo está a ser processado e aparecerá na Biblioteca em breve.'
+        prog.classList.remove('show')
+        ok++
+        continue
+      }
+
       if (!vidUrl) {
         errors.push(f.name + ': falha no upload para storage')
         prog.classList.remove('show')
@@ -4736,17 +4748,20 @@ async function bibUploadSubmit() {
   }, errors.length ? 3000 : 1200)
 }
 
-async function bibUploadVideoSDK(file, path, progBar, progLbl) {
+async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
   // Upload em chunks de 5 MB via Edge Function upload-video.
-  // Contorna o limite de 100 MB do Cloudflare: cada chunk é um request separado
-  // (< 6 MB), a edge function junta tudo internamente e faz o upload final ao Storage.
-  var CHUNK_SIZE   = 5 * 1024 * 1024  // 5 MB
-  var EDGE_UPLOAD  = DOORSTEP_URL + '/functions/v1/upload-video'
+  // Cada chunk (< 6 MB) passa no limite do Cloudflare.
+  // O merge do ficheiro final é feito pelo n8n em background.
+  var CHUNK_SIZE  = 5 * 1024 * 1024  // 5 MB
+  var EDGE_UPLOAD = DOORSTEP_URL + '/functions/v1/upload-video'
   var { data: { session } } = await sb.auth.getSession()
   if (!session) { console.warn('[upload-video] sem sessão'); return null }
 
   var totalChunks = Math.ceil(file.size / CHUNK_SIZE)
   var uploadId    = Date.now() + '_' + file.name.replace(/[^a-z0-9]/gi, '_').slice(0, 40)
+  var userId      = (meta && meta.userId)    || ''
+  var categoria   = (meta && meta.categoria) || ''
+  var descricao   = (meta && meta.descricao) || ''
 
   console.log('[upload-video] início', { nome: file.name, tamanho: Math.round(file.size/1024/1024) + 'MB', chunks: totalChunks })
 
@@ -4770,7 +4785,12 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl) {
           'x-total-chunks':  String(totalChunks),
           'x-file-path':     path,
           'x-file-type':     file.type || 'video/mp4',
-          'x-upload-id':     uploadId
+          'x-upload-id':     uploadId,
+          'x-user-id':       userId,
+          'x-categoria':     categoria,
+          'x-descricao':     encodeURIComponent(descricao),
+          'x-file-name':     encodeURIComponent(file.name),
+          'x-file-size':     String(file.size)
         },
         body: chunk
       })
@@ -4791,7 +4811,15 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl) {
       return null
     }
 
-    // Último chunk — a edge function devolveu a URL final
+    // Último chunk — n8n fará o merge em background
+    if (result.status === 'merging') {
+      if (progBar) progBar.style.width = '100%'
+      if (progLbl) progLbl.textContent = '✓ Recebido — a processar em background…'
+      console.log('[upload-video] merging em background', result.message)
+      return '__MERGING__'
+    }
+
+    // Upload normal (ficheiro pequeno com URL imediata)
     if (result.done && result.url) {
       if (progBar) progBar.style.width = '100%'
       if (progLbl) progLbl.textContent = '100%'
@@ -4802,9 +4830,7 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl) {
     console.log('[upload-video] chunk ' + (i+1) + '/' + totalChunks + ' ok')
   }
 
-  // Segurança: se chegar aqui sem resultado.done, construir URL manualmente
-  if (progBar) progBar.style.width = '100%'
-  if (progLbl) progLbl.textContent = '100%'
+  // Fallback (não deve chegar aqui)
   return DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
 }
 function bibGetVideoMeta(file) {
