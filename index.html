@@ -90,6 +90,61 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 
 /* Config page */
 #page-config main{flex:1;padding:24px;max-width:900px;margin:0 auto;width:100%}
+
+/* Conteúdo Social */
+#page-conteudos main{flex:1;padding:24px;max-width:1040px;margin:0 auto;width:100%}
+.cont-subtabs{display:flex;gap:4px;margin-bottom:20px}
+.csubtab{padding:6px 16px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#666;transition:all .2s}
+.csubtab.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.cont-box{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:20px;margin-bottom:16px}
+.cont-box h2{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:14px}
+.cont-label{display:block;font-size:.78rem;font-weight:600;color:#4b5563;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.cont-textarea{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.88rem;font-family:inherit;resize:vertical;outline:none;transition:border-color .2s}
+.cont-textarea:focus{border-color:#2d6a9f}
+.cont-redes{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+.cont-rede-cb{display:flex;align-items:center;gap:6px;font-size:.88rem;cursor:pointer}
+.cont-rede-cb input{cursor:pointer}
+.cont-date{padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;transition:border-color .2s;max-width:260px}
+.cont-date:focus{border-color:#2d6a9f}
+.cont-btn{padding:10px 22px;border:none;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s}
+.cont-btn.primary{background:#1a3c5e;color:#fff}.cont-btn.primary:hover{background:#2d6a9f}.cont-btn.primary:disabled{opacity:.6;cursor:not-allowed}
+.cont-btn.secondary{background:#fff;color:#1a3c5e;border:1.5px solid #1a3c5e}.cont-btn.secondary:hover{background:#f0f4f8}.cont-btn.secondary:disabled{opacity:.6;cursor:not-allowed}
+.cont-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px;margin-bottom:16px}
+.cont-card{border-radius:10px;border:1.5px solid #e0e6f0;padding:16px}
+.cont-card.ig{border-color:#f9a8d4;background:#fff9fb}
+.cont-card.fb{border-color:#93c5fd;background:#f9fbff}
+.cont-card.li{border-color:#7dd3fc;background:#f7fbff}
+.cont-card.yt{border-color:#fca5a5;background:#fff9f9}
+.cont-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cont-card-title{font-weight:700;font-size:.9rem;color:#1a3c5e;display:flex;align-items:center;gap:6px}
+.cont-word-count{font-size:.72rem;color:#9ca3af;background:#f0f4f8;padding:2px 8px;border-radius:10px}
+.cont-field-label{font-size:.72rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.cont-copy-btn{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:.75rem;padding:0;transition:color .2s}.cont-copy-btn:hover{color:#2d6a9f}
+.cont-field{margin-bottom:10px}
+.cont-script-toggle{background:none;border:none;font-size:.75rem;color:#6b7280;cursor:pointer;padding:4px 0;text-align:left;display:flex;align-items:center;gap:4px;width:100%}.cont-script-toggle:hover{color:#1a3c5e}
+.cont-script-panel{margin-top:6px;display:none}
+.cont-script-panel.open{display:block}
+.cont-btn-row{display:flex;gap:10px;flex-wrap:wrap;padding-top:6px}
+.cont-result-title{font-size:.9rem;font-weight:700;color:#1a3c5e;margin-bottom:14px}
+.hist-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.hist-select{padding:5px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.8rem;font-family:inherit;outline:none}
+.hist-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e0e6f0}
+.hist-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.hist-table th{text-align:left;padding:8px 12px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.hist-table td{padding:8px 12px;border-top:1px solid #f0f0f0;vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.hist-table tr:hover td{background:#f7f9fc}
+.s-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.s-rascunho{background:#fef9c3;color:#854d0e}
+.s-agendado{background:#dbeafe;color:#1e40af}
+.s-publicado{background:#dcfce7;color:#15803d}
+.s-erro{background:#fee2e2;color:#b91c1c}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#fff;border-radius:14px;padding:28px;max-width:680px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-box h3{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:16px}
+.modal-section{margin-bottom:14px}
+.modal-section-title{font-size:.74rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.modal-text{font-size:.82rem;color:#374151;background:#f9fafb;border-left:3px solid #d1d5db;padding:8px 12px;border-radius:0 6px 6px 0;white-space:pre-wrap;line-height:1.5}
+.modal-close{margin-top:16px;padding:8px 20px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer}
 .admin-box{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:20px}
 .admin-box h2{font-size:1rem;font-weight:700;color:#1a3c5e;margin-bottom:6px}
 .admin-box p{font-size:.8rem;color:#6b7280;margin-bottom:14px}
@@ -139,6 +194,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   <nav id="portal-nav">
     <button class="pnav-btn active" id="tab-search" onclick="showTab('search')">🔍 Pesquisa IA</button>
     <button class="pnav-btn" id="tab-kpi" style="display:none" onclick="showTab('kpi')">📊 KPI Dashboard</button>
+    <button class="pnav-btn" id="tab-conteudos" onclick="showTab('conteudos')">✨ Conteúdo Social</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
   </nav>
 
@@ -166,6 +222,88 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   <!-- KPI Dashboard (admin only) -->
   <div class="portal-page" id="page-kpi">
     <iframe id="kpi-frame" src="" allowfullscreen></iframe>
+  </div>
+
+  <!-- Conteúdo Social -->
+  <div class="portal-page" id="page-conteudos">
+    <main>
+      <div class="cont-subtabs">
+        <button class="csubtab active" id="csubtab-gerar" onclick="contShowView('gerar')">✨ Gerar</button>
+        <button class="csubtab" id="csubtab-historico" onclick="contShowView('historico')">📋 Histórico</button>
+      </div>
+
+      <!-- View: Gerar -->
+      <div id="cont-view-gerar">
+        <div class="cont-box">
+          <h2>✨ Gerar Conteúdo Social</h2>
+          <div class="cont-field">
+            <label class="cont-label">Texto base</label>
+            <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
+          </div>
+          <div class="cont-field">
+            <label class="cont-label">Redes sociais</label>
+            <div class="cont-redes">
+              <label class="cont-rede-cb"><input type="checkbox" id="cb-instagram" checked> 📸 Instagram</label>
+              <label class="cont-rede-cb"><input type="checkbox" id="cb-facebook" checked> 👥 Facebook</label>
+              <label class="cont-rede-cb"><input type="checkbox" id="cb-linkedin" checked> 💼 LinkedIn</label>
+              <label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked> ▶️ YouTube</label>
+            </div>
+          </div>
+          <div class="cont-field">
+            <label class="cont-label">Data de agendamento <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(opcional — deixa em branco para rascunho)</span></label>
+            <input type="datetime-local" class="cont-date" id="cont-data">
+          </div>
+          <button class="cont-btn primary" id="cont-gerar-btn" onclick="contGerar()">✨ Gerar Conteúdo</button>
+        </div>
+
+        <div id="cont-results" style="display:none">
+          <p class="cont-result-title">Conteúdo gerado — edita antes de guardar</p>
+          <div class="cont-cards" id="cont-cards"></div>
+          <div class="cont-btn-row">
+            <button class="cont-btn secondary" id="cont-rascunho-btn" onclick="contGuardar(false)">💾 Guardar Rascunho</button>
+            <button class="cont-btn primary" id="cont-agendar-btn" onclick="contGuardar(true)">📅 Guardar e Agendar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- View: Histórico -->
+      <div id="cont-view-historico" style="display:none">
+        <div class="cont-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h2 style="margin:0">📋 Histórico de Conteúdos</h2>
+            <button class="cont-btn secondary" style="padding:6px 14px;font-size:.8rem" onclick="histLoad()">↻ Actualizar</button>
+          </div>
+          <div class="hist-filters">
+            <select class="hist-select" id="hist-filter-rede" onchange="histRender()">
+              <option value="">Todas as redes</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="youtube">YouTube</option>
+            </select>
+            <select class="hist-select" id="hist-filter-status" onchange="histRender()">
+              <option value="">Todos os status</option>
+              <option value="rascunho">Rascunho</option>
+              <option value="agendado">Agendado</option>
+              <option value="publicado">Publicado</option>
+              <option value="erro">Erro</option>
+            </select>
+          </div>
+          <div class="hist-table-wrap">
+            <table class="hist-table">
+              <thead><tr><th>Data</th><th>Texto base</th><th>Instagram</th><th>Facebook</th><th>LinkedIn</th><th>YouTube</th><th>Agendado</th></tr></thead>
+              <tbody id="hist-tbody"></tbody>
+            </table>
+          </div>
+          <div id="hist-empty" style="display:none;padding:32px;text-align:center;color:#9ca3af;font-size:.85rem">Nenhum conteúdo encontrado.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal detalhe histórico -->
+  <div class="modal-overlay" id="hist-modal" style="display:none" onclick="if(event.target===this)histModalClose()">
+    <div class="modal-box" id="hist-modal-box"></div>
   </div>
 
   <!-- Configuração (admin only) -->
@@ -245,7 +383,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','config'].forEach(function(n) {
+  ['search','kpi','conteudos','config'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -570,6 +708,260 @@ function buildCardHtml(r) {
 function esc(s) {
   if (!s) return ''
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+// ── Conteúdo Social ──────────────────────────────────────────────────────────
+var _contGerado = null
+var _histRows = []
+var EDGE_GERAR = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
+var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
+
+var REDE_CFG = {
+  instagram: { label: 'Instagram', icon: '📸', cls: 'ig' },
+  facebook:  { label: 'Facebook',  icon: '👥', cls: 'fb' },
+  linkedin:  { label: 'LinkedIn',  icon: '💼', cls: 'li' },
+  youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
+}
+
+function contShowView(v) {
+  ['gerar','historico'].forEach(function(n) {
+    document.getElementById('cont-view-'+n).style.display = n === v ? '' : 'none'
+    var btn = document.getElementById('csubtab-'+n)
+    if (btn) btn.className = 'csubtab' + (n === v ? ' active' : '')
+  })
+  if (v === 'historico') histLoad()
+}
+
+function contGetRedes() {
+  return ['instagram','facebook','linkedin','youtube'].filter(function(r) {
+    return document.getElementById('cb-'+r).checked
+  })
+}
+
+async function contGerar() {
+  var texto = document.getElementById('cont-texto').value.trim()
+  if (!texto) { alert('Introduz o texto base.'); return }
+  var redes = contGetRedes()
+  if (!redes.length) { alert('Selecciona pelo menos uma rede.'); return }
+  var btn = document.getElementById('cont-gerar-btn')
+  btn.disabled = true; btn.textContent = '⏳ A gerar...'
+  document.getElementById('cont-results').style.display = 'none'
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    var r = await fetch(EDGE_GERAR, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ texto_base: texto, redes: redes })
+    })
+    var data = await r.json()
+    if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
+    _contGerado = data.conteudo
+    contRenderCards(redes)
+    document.getElementById('cont-results').style.display = ''
+  } catch(e) {
+    alert('Erro ao gerar: ' + e.message)
+  }
+  btn.disabled = false; btn.textContent = '✨ Gerar Conteúdo'
+}
+
+function contRenderCards(redes) {
+  var wrap = document.getElementById('cont-cards')
+  wrap.innerHTML = ''
+  redes.forEach(function(rede) {
+    var d = _contGerado[rede]
+    if (!d) return
+    var cfg = REDE_CFG[rede]
+    var isYt = rede === 'youtube'
+    var mainText = isYt ? (d.description || '') : (d.caption || '')
+    var div = document.createElement('div')
+    div.className = 'cont-card ' + cfg.cls
+    div.id = 'card-' + rede
+    div.innerHTML =
+      '<div class="cont-card-header">'
+      + '<span class="cont-card-title">' + cfg.icon + ' ' + cfg.label + '</span>'
+      + '<span class="cont-word-count" id="wc-'+rede+'">' + countWords(mainText) + ' palavras</span>'
+      + '</div>'
+      + '<div class="cont-field">'
+      + '<div class="cont-field-label"><span>' + (isYt ? 'Descrição' : 'Caption') + '</span>'
+      + '<button class="cont-copy-btn" onclick="contCopy(\'main-'+rede+'\',this)">📋 copiar</button></div>'
+      + '<textarea class="cont-textarea" id="main-'+rede+'" rows="6" oninput="contUpdateWc(\''+rede+'\',this.value)">' + esc(mainText) + '</textarea>'
+      + '</div>'
+      + (!isYt ? '<div class="cont-field">'
+        + '<div class="cont-field-label"><span>Hashtags</span>'
+        + '<button class="cont-copy-btn" onclick="contCopy(\'hash-'+rede+'\',this)">📋 copiar</button></div>'
+        + '<textarea class="cont-textarea" id="hash-'+rede+'" rows="2" style="font-size:.78rem">' + esc(d.hashtags || '') + '</textarea>'
+        + '</div>' : '')
+      + '<div class="cont-field">'
+      + '<button class="cont-script-toggle" onclick="contToggleScript(\''+rede+'\')" id="stoggle-'+rede+'">▶ Script vídeo 90s <span id="swc-'+rede+'" style="margin-left:auto;font-size:.7rem;color:#9ca3af">' + countWords(d.video_script||'') + ' palavras</span></button>'
+      + '<div class="cont-script-panel" id="script-panel-'+rede+'">'
+      + '<div class="cont-field-label" style="margin-top:6px"><span>&nbsp;</span><button class="cont-copy-btn" onclick="contCopy(\'script-'+rede+'\',this)">📋 copiar</button></div>'
+      + '<textarea class="cont-textarea" id="script-'+rede+'" rows="6">' + esc(d.video_script || '') + '</textarea>'
+      + '</div></div>'
+    wrap.appendChild(div)
+  })
+}
+
+function contUpdateWc(rede, val) {
+  var el = document.getElementById('wc-'+rede)
+  if (el) el.textContent = countWords(val) + ' palavras'
+}
+
+function contToggleScript(rede) {
+  var panel = document.getElementById('script-panel-'+rede)
+  var btn = document.getElementById('stoggle-'+rede)
+  var open = panel.classList.toggle('open')
+  btn.textContent = (open ? '▼' : '▶') + ' Script vídeo 90s '
+  var swc = document.getElementById('swc-'+rede)
+  if (swc) btn.appendChild(swc)
+}
+
+function contCopy(id, btn) {
+  var el = document.getElementById(id)
+  if (!el) return
+  navigator.clipboard.writeText(el.value).then(function() {
+    var orig = btn.textContent; btn.textContent = '✓ copiado'
+    setTimeout(function(){ btn.textContent = orig }, 1500)
+  })
+}
+
+function countWords(s) {
+  return s && s.trim() ? s.trim().split(/\s+/).length : 0
+}
+
+async function contGuardar(agendar) {
+  if (!_contGerado) return
+  var redes = contGetRedes()
+  var data = document.getElementById('cont-data').value
+  if (agendar && !data) { alert('Define uma data de agendamento para agendar.'); return }
+  var status = agendar && data ? 'agendado' : 'rascunho'
+  var payload = {
+    texto_base: document.getElementById('cont-texto').value.trim(),
+    redes_seleccionadas: redes,
+    data_agendada: agendar && data ? new Date(data).toISOString() : null
+  }
+  redes.forEach(function(r) {
+    var d = _contGerado[r]; if (!d) return
+    var isYt = r === 'youtube'
+    var mainEl = document.getElementById('main-'+r)
+    var hashEl = document.getElementById('hash-'+r)
+    var scriptEl = document.getElementById('script-'+r)
+    if (isYt) {
+      payload['conteudo_youtube'] = mainEl ? mainEl.value : (d.description||'')
+    } else {
+      payload['conteudo_'+r] = mainEl ? mainEl.value : (d.caption||'')
+      payload['hashtags_'+r] = hashEl ? hashEl.value : (d.hashtags||'')
+    }
+    payload['script_'+r] = scriptEl ? scriptEl.value : (d.video_script||'')
+    payload['status_'+r] = status
+  })
+  var savBtn = agendar ? document.getElementById('cont-agendar-btn') : document.getElementById('cont-rascunho-btn')
+  savBtn.disabled = true; savBtn.textContent = '⏳ A guardar...'
+  try {
+    var { data: saved, error } = await sb.from('conteudos_sociais').insert(payload).select().single()
+    if (error) throw error
+    if (agendar && data) {
+      try {
+        var wBody = { id: saved.id, data_agendada: saved.data_agendada, redes: redes }
+        redes.forEach(function(r) {
+          if (_contGerado[r]) {
+            wBody['conteudo_'+r] = payload['conteudo_'+r]
+            if (payload['hashtags_'+r]) wBody['hashtags_'+r] = payload['hashtags_'+r]
+          }
+        })
+        await fetch(N8N_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(wBody) })
+      } catch(we) { console.warn('webhook n8n falhou', we) }
+    }
+    alert(agendar ? '✅ Conteúdo agendado!' : '✅ Rascunho guardado!')
+    document.getElementById('cont-texto').value = ''
+    document.getElementById('cont-data').value = ''
+    document.getElementById('cont-results').style.display = 'none'
+    _contGerado = null
+  } catch(e) {
+    alert('Erro ao guardar: ' + e.message)
+  }
+  savBtn.disabled = false
+  savBtn.textContent = agendar ? '📅 Guardar e Agendar' : '💾 Guardar Rascunho'
+}
+
+// ── Histórico ─────────────────────────────────────────────────────────────────
+async function histLoad() {
+  document.getElementById('hist-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:20px">A carregar...</td></tr>'
+  var { data, error } = await sb.from('conteudos_sociais').select('*').order('created_at', { ascending: false }).limit(200)
+  _histRows = error ? [] : (data || [])
+  histRender()
+}
+
+function histRender() {
+  var rede = document.getElementById('hist-filter-rede').value
+  var status = document.getElementById('hist-filter-status').value
+  var rows = _histRows.filter(function(r) {
+    if (rede) {
+      if (!r.redes_seleccionadas || !r.redes_seleccionadas.includes(rede)) return false
+      if (status && r['status_'+rede] !== status) return false
+    } else if (status) {
+      var ss = ['instagram','facebook','linkedin','youtube'].map(function(n){ return r['status_'+n] })
+      if (!ss.some(function(s){ return s === status })) return false
+    }
+    return true
+  })
+  var tbody = document.getElementById('hist-tbody')
+  var empty = document.getElementById('hist-empty')
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = ''; return }
+  empty.style.display = 'none'
+  tbody.innerHTML = rows.map(function(r) {
+    return '<tr onclick="histModalOpen(\''+r.id+'\')">'
+      + '<td style="color:#6b7280;white-space:nowrap">' + esc(fmtDate(r.created_at)) + '</td>'
+      + '<td style="max-width:160px" title="'+esc(r.texto_base)+'">' + esc((r.texto_base||'').slice(0,60)) + (r.texto_base && r.texto_base.length>60?'…':'') + '</td>'
+      + '<td>' + sTag(r.status_instagram) + '</td>'
+      + '<td>' + sTag(r.status_facebook) + '</td>'
+      + '<td>' + sTag(r.status_linkedin) + '</td>'
+      + '<td>' + sTag(r.status_youtube) + '</td>'
+      + '<td style="color:#6b7280;white-space:nowrap">' + (r.data_agendada ? esc(fmtDate(r.data_agendada)) : '—') + '</td>'
+      + '</tr>'
+  }).join('')
+}
+
+function sTag(s) {
+  var map = { rascunho:'s-rascunho', agendado:'s-agendado', publicado:'s-publicado', erro:'s-erro' }
+  var cls = map[s] || 's-rascunho'
+  return '<span class="s-tag '+cls+'">' + esc(s||'rascunho') + '</span>'
+}
+
+function fmtDate(iso) {
+  if (!iso) return ''
+  var d = new Date(iso)
+  return d.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})
+}
+
+function histModalOpen(id) {
+  var r = _histRows.find(function(x){ return x.id === id })
+  if (!r) return
+  var redes = ['instagram','facebook','linkedin','youtube']
+  var html = '<h3>Detalhe do conteúdo</h3>'
+  html += '<div class="modal-section"><div class="modal-section-title">Texto base</div><div class="modal-text">'+esc(r.texto_base)+'</div></div>'
+  redes.forEach(function(rede) {
+    var isYt = rede === 'youtube'
+    var caption = isYt ? r.conteudo_youtube : r['conteudo_'+rede]
+    var hashtags = !isYt ? r['hashtags_'+rede] : null
+    var script = r['script_'+rede]
+    var status = r['status_'+rede]
+    if (!caption && !script) return
+    var cfg = REDE_CFG[rede]
+    html += '<div class="modal-section">'
+    html += '<div class="modal-section-title">'+cfg.icon+' '+cfg.label+' — '+sTag(status)+'</div>'
+    if (caption) html += '<div class="modal-text" style="margin-bottom:6px">'+esc(caption)+'</div>'
+    if (hashtags) html += '<div class="modal-text" style="font-size:.76rem;font-family:monospace;margin-bottom:6px">'+esc(hashtags)+'</div>'
+    if (script) html += '<details style="margin-top:4px"><summary style="font-size:.75rem;color:#6b7280;cursor:pointer">Script vídeo</summary><div class="modal-text" style="margin-top:4px">'+esc(script)+'</div></details>'
+    html += '</div>'
+  })
+  if (r.data_agendada) html += '<div class="modal-section"><div class="modal-section-title">Agendado para</div><p style="font-size:.85rem">'+esc(fmtDate(r.data_agendada))+'</p></div>'
+  html += '<button class="modal-close" onclick="histModalClose()">Fechar</button>'
+  document.getElementById('hist-modal-box').innerHTML = html
+  document.getElementById('hist-modal').style.display = 'flex'
+}
+
+function histModalClose() {
+  document.getElementById('hist-modal').style.display = 'none'
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
