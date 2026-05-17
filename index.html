@@ -252,6 +252,10 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .save-btn:hover{background:#2d6a9f}
 .save-ok{color:#15803d;font-size:.75rem;margin-left:6px}
 /* Instagram format toggle */
+.fonte-row{display:flex;gap:8px;margin-top:6px}
+.fonte-btn{padding:7px 18px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.83rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
+.fonte-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
+.fonte-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
 .ig-fmt-row{display:none;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .ig-fmt-row.show{display:flex}
 .ig-fmt-lbl{font-size:.78rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px}
@@ -516,10 +520,82 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div id="cont-view-gerar">
         <div class="cont-box">
           <h2>✨ Gerar Conteúdo Social</h2>
+
+          <!-- 1. FONTE -->
           <div class="cont-field">
-            <label class="cont-label">Texto base</label>
+            <label class="cont-label">Fonte</label>
+            <div class="fonte-row">
+              <button class="fonte-btn active" id="fonte-manual" onclick="fonteSet('manual')">✍️ Texto Manual</button>
+              <button class="fonte-btn" id="fonte-noticia" onclick="fonteSet('noticia')">📰 Notícia</button>
+            </div>
+          </div>
+          <div class="cont-field" id="fonte-noticia-extra" style="display:none">
+            <label class="cont-label">URL da notícia <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">opcional</span></label>
+            <input type="url" class="cont-date" id="cont-noticia-url" placeholder="https://..." style="max-width:100%">
+          </div>
+
+          <!-- 2. TEXTO BASE -->
+          <div class="cont-field">
+            <label class="cont-label" id="cont-texto-label">Texto base</label>
             <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
           </div>
+
+          <!-- 3. FORMATO INSTAGRAM -->
+          <div class="ig-fmt-row" id="ig-fmt-row">
+            <span class="ig-fmt-lbl">Formato Instagram:</span>
+            <button class="ig-fmt-btn active" id="ig-fmt-unico" onclick="igSetFormato('unico')">Post Único</button>
+            <button class="ig-fmt-btn" id="ig-fmt-carrossel" onclick="igSetFormato('carrossel')">🎠 Carrossel</button>
+          </div>
+
+          <!-- 4. ESTILO DOS SLIDES (carrossel only) -->
+          <div class="cont-field" id="tmpl-selector-row" style="display:none">
+            <label class="cont-label">Estilo dos slides</label>
+            <div class="tmpl-selector">
+              <div class="tmpl-card active" id="tmpl-A" onclick="tmplSet('A')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="80" height="80" fill="#7fa8c9"/><rect width="80" height="80" fill="rgba(0,0,0,0.38)"/>
+                  <line x1="12" y1="28" x2="68" y2="28" stroke="#F5C518" stroke-width="2.5"/>
+                  <rect x="10" y="32" width="60" height="7" rx="3" fill="white" opacity="0.9"/>
+                  <rect x="16" y="43" width="48" height="7" rx="3" fill="white" opacity="0.65"/>
+                  <rect x="56" y="68" width="20" height="7" rx="2" fill="#F5C518"/>
+                </svg>
+                <div class="tmpl-card-label">A — Sobre imagem</div>
+              </div>
+              <div class="tmpl-card" id="tmpl-B" onclick="tmplSet('B')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="80" height="80" fill="#7fa8c9"/>
+                  <rect y="48" width="80" height="32" fill="#0A3D62"/>
+                  <line x1="0" y1="48" x2="80" y2="48" stroke="#F5C518" stroke-width="3"/>
+                  <rect x="10" y="54" width="60" height="7" rx="3" fill="white" opacity="0.9"/>
+                  <rect x="18" y="65" width="44" height="6" rx="3" fill="white" opacity="0.55"/>
+                </svg>
+                <div class="tmpl-card-label">B — Texto em baixo</div>
+              </div>
+              <div class="tmpl-card" id="tmpl-C" onclick="tmplSet('C')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="40" height="80" fill="#7fa8c9"/>
+                  <rect x="40" width="40" height="80" fill="#0A3D62"/>
+                  <line x1="40" y1="0" x2="40" y2="80" stroke="#F5C518" stroke-width="3"/>
+                  <rect x="44" y="26" width="28" height="6" rx="3" fill="white" opacity="0.9"/>
+                  <rect x="44" y="36" width="22" height="6" rx="3" fill="white" opacity="0.7"/>
+                  <rect x="44" y="46" width="16" height="6" rx="3" fill="white" opacity="0.45"/>
+                  <rect x="52" y="68" width="20" height="7" rx="2" fill="#F5C518"/>
+                </svg>
+                <div class="tmpl-card-label">C — Texto à direita</div>
+              </div>
+              <div class="tmpl-card" id="tmpl-D" onclick="tmplSet('D')">
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="80" height="80" fill="#0A3D62"/>
+                  <rect x="8" y="24" width="64" height="11" rx="4" fill="white" opacity="0.95"/>
+                  <rect x="14" y="39" width="52" height="11" rx="4" fill="white" opacity="0.7"/>
+                  <rect x="22" y="54" width="36" height="8" rx="3" fill="#F5C518" opacity="0.8"/>
+                </svg>
+                <div class="tmpl-card-label">D — Minimalista</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. IMAGEM -->
           <div class="cont-field">
             <label class="cont-label">Imagem</label>
             <!-- AI Image -->
@@ -589,6 +665,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="img-warn" id="img-warn-instagram">⚠️ Sem imagem — o post Instagram pode não publicar.</div>
           </div>
 
+          <!-- 6. REDES SOCIAIS -->
           <div class="cont-field">
             <label class="cont-label">Redes sociais</label>
             <div class="cont-redes">
@@ -598,63 +675,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked> ▶️ YouTube</label>
             </div>
           </div>
-          <!-- Formato Instagram -->
-          <div class="ig-fmt-row" id="ig-fmt-row">
-            <span class="ig-fmt-lbl">Formato Instagram:</span>
-            <button class="ig-fmt-btn active" id="ig-fmt-unico" onclick="igSetFormato('unico')">Post Único</button>
-            <button class="ig-fmt-btn" id="ig-fmt-carrossel" onclick="igSetFormato('carrossel')">🎠 Carrossel</button>
-          </div>
-          <!-- Template selector (visível só no modo Carrossel) -->
-          <div class="cont-field" id="tmpl-selector-row" style="display:none">
-            <label class="cont-label">Estilo dos slides</label>
-            <div class="tmpl-selector">
-              <div class="tmpl-card active" id="tmpl-A" onclick="tmplSet('A')">
-                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="80" height="80" fill="#7fa8c9"/><rect width="80" height="80" fill="rgba(0,0,0,0.38)"/>
-                  <line x1="12" y1="28" x2="68" y2="28" stroke="#F5C518" stroke-width="2.5"/>
-                  <rect x="10" y="32" width="60" height="7" rx="3" fill="white" opacity="0.9"/>
-                  <rect x="16" y="43" width="48" height="7" rx="3" fill="white" opacity="0.65"/>
-                  <rect x="56" y="68" width="20" height="7" rx="2" fill="#F5C518"/>
-                </svg>
-                <div class="tmpl-card-label">A — Sobre imagem</div>
-              </div>
-              <div class="tmpl-card" id="tmpl-B" onclick="tmplSet('B')">
-                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="80" height="80" fill="#7fa8c9"/>
-                  <rect y="48" width="80" height="32" fill="#0A3D62"/>
-                  <line x1="0" y1="48" x2="80" y2="48" stroke="#F5C518" stroke-width="3"/>
-                  <rect x="10" y="54" width="60" height="7" rx="3" fill="white" opacity="0.9"/>
-                  <rect x="18" y="65" width="44" height="6" rx="3" fill="white" opacity="0.55"/>
-                </svg>
-                <div class="tmpl-card-label">B — Texto em baixo</div>
-              </div>
-              <div class="tmpl-card" id="tmpl-C" onclick="tmplSet('C')">
-                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="40" height="80" fill="#7fa8c9"/>
-                  <rect x="40" width="40" height="80" fill="#0A3D62"/>
-                  <line x1="40" y1="0" x2="40" y2="80" stroke="#F5C518" stroke-width="3"/>
-                  <rect x="44" y="26" width="28" height="6" rx="3" fill="white" opacity="0.9"/>
-                  <rect x="44" y="36" width="22" height="6" rx="3" fill="white" opacity="0.7"/>
-                  <rect x="44" y="46" width="16" height="6" rx="3" fill="white" opacity="0.45"/>
-                  <rect x="52" y="68" width="20" height="7" rx="2" fill="#F5C518"/>
-                </svg>
-                <div class="tmpl-card-label">C — Texto à direita</div>
-              </div>
-              <div class="tmpl-card" id="tmpl-D" onclick="tmplSet('D')">
-                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="80" height="80" fill="#0A3D62"/>
-                  <rect x="8" y="24" width="64" height="11" rx="4" fill="white" opacity="0.95"/>
-                  <rect x="14" y="39" width="52" height="11" rx="4" fill="white" opacity="0.7"/>
-                  <rect x="22" y="54" width="36" height="8" rx="3" fill="#F5C518" opacity="0.8"/>
-                </svg>
-                <div class="tmpl-card-label">D — Minimalista</div>
-              </div>
-            </div>
-          </div>
+
+          <!-- 7. DATA DE AGENDAMENTO -->
           <div class="cont-field">
             <label class="cont-label">Data de agendamento <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(opcional — deixa em branco para rascunho)</span></label>
             <input type="datetime-local" class="cont-date" id="cont-data">
           </div>
+
+          <!-- 8. BOTÃO -->
           <button class="cont-btn primary" id="cont-gerar-btn" onclick="contGerar()">✨ Gerar Conteúdo</button>
         </div>
 
@@ -1264,6 +1292,21 @@ var REDE_CFG = {
   linkedin:  { label: 'LinkedIn',  icon: '💼', cls: 'li' },
   youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
 }
+var _fonteMode = 'manual'
+
+function fonteSet(mode) {
+  _fonteMode = mode
+  document.getElementById('fonte-manual').className = 'fonte-btn' + (mode === 'manual' ? ' active' : '')
+  document.getElementById('fonte-noticia').className = 'fonte-btn' + (mode === 'noticia' ? ' active' : '')
+  document.getElementById('fonte-noticia-extra').style.display = mode === 'noticia' ? '' : 'none'
+  var lbl = document.getElementById('cont-texto-label')
+  if (lbl) lbl.textContent = mode === 'noticia' ? 'Texto da notícia' : 'Texto base'
+  var ta = document.getElementById('cont-texto')
+  if (ta) ta.placeholder = mode === 'noticia'
+    ? 'Cola aqui o texto do artigo ou notícia de imprensa...'
+    : 'Cola aqui a ficha do imóvel, artigo ou ideia...'
+}
+
 var _igFormato = 'unico'
 var _templateSlide = 'A'
 
