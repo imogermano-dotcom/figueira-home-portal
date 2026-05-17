@@ -1706,6 +1706,7 @@ function contGetRedes() {
 }
 
 async function contGerar() {
+  console.log('[gerar] início — formato:', _igFormato)
   var texto = document.getElementById('cont-texto').value.trim()
   if (!texto) { alert('Introduz o texto base.'); return }
   var redes = contGetRedes()
@@ -1731,8 +1732,22 @@ async function contGerar() {
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
     _contGerado = data.conteudo
+    console.log('[gerar] conteúdo recebido — instagram.slides:', JSON.stringify(
+      (_contGerado && _contGerado.instagram && _contGerado.instagram.slides) || null
+    ))
     contRenderCards(redes)
     document.getElementById('cont-results').style.display = ''
+
+    // Auto-compose carousel slides immediately after generation
+    if (_igFormato === 'carrossel' && redes.indexOf('instagram') !== -1) {
+      var slides = _contGerado && _contGerado.instagram && _contGerado.instagram.slides
+      console.log('[carrossel] a chamar composição automática... slides:', slides ? slides.length : 0)
+      if (slides && slides.length) {
+        btn.textContent = '🎨 A compor slides...'
+        await carrosselComporTodos(session)
+        console.log('[carrossel] composição concluída — _slidesCompostos:', _slidesCompostos.length)
+      }
+    }
   } catch(e) {
     aiImgSetState('initial')
     alert('Erro ao gerar: ' + e.message)
