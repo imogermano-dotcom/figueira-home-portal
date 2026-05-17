@@ -261,6 +261,30 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .team-section{margin-top:20px;border-top:1px solid #e5e7eb;padding-top:20px}
 .team-section h3{font-size:.9rem;font-weight:700;color:#1a3c5e;margin-bottom:4px}
 .team-section p{font-size:.78rem;color:#6b7280;margin-bottom:12px}
+/* Categorias admin */
+.cat-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px}
+.cat-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#f9fafb;border-radius:8px;border:1.5px solid #e5e7eb;transition:border-color .15s}
+.cat-item.drag-over{border-color:#2d6a9f;background:#eff6ff}
+.cat-item.dragging{opacity:.45}
+.cat-drag{cursor:grab;color:#cbd5e1;font-size:.9rem;flex-shrink:0;user-select:none}
+.cat-drag:active{cursor:grabbing}
+.cat-emoji-inp{width:38px;text-align:center;font-size:1.05rem;border:1px solid #d1d5db;border-radius:6px;padding:2px 3px;background:#fff;font-family:inherit}
+.cat-label-inp{flex:1;border:1px solid transparent;border-radius:6px;padding:4px 6px;font-size:.82rem;background:transparent;font-family:inherit;min-width:0}
+.cat-label-inp:focus{border-color:#2d6a9f;background:#fff;outline:none}
+.cat-toggle-wrap{position:relative;width:34px;height:18px;flex-shrink:0}
+.cat-toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.cat-toggle-slider{position:absolute;inset:0;background:#d1d5db;border-radius:10px;cursor:pointer;transition:background .2s}
+.cat-toggle-wrap input:checked+.cat-toggle-slider{background:#10b981}
+.cat-toggle-slider:before{content:'';position:absolute;width:12px;height:12px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s}
+.cat-toggle-wrap input:checked+.cat-toggle-slider:before{transform:translateX(16px)}
+.cat-del-btn{background:none;border:none;cursor:pointer;color:#d1d5db;font-size:.9rem;padding:2px 5px;flex-shrink:0;transition:color .15s;line-height:1}
+.cat-del-btn:hover{color:#dc2626}
+.cat-add-form{display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;flex-wrap:wrap}
+.cat-emoji-pick{width:42px;text-align:center;padding:6px 3px;border:1.5px solid #d1d5db;border-radius:8px;font-size:1.05rem;font-family:inherit;outline:none}
+.cat-add-inp{flex:1;min-width:140px;padding:6px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-family:inherit;outline:none}
+.cat-add-inp:focus{border-color:#2d6a9f}
+.cat-add-btn{padding:6px 14px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.cat-add-btn:hover{background:#2d6a9f}
 .team-invite-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .team-invite-row input{padding:6px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-family:inherit;outline:none;flex:1;min-width:140px}
 .team-invite-row input:focus{border-color:#2d6a9f}
@@ -686,11 +710,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <label class="cont-label">Categoria</label>
             <select class="cont-cat-sel" id="cont-categoria" onchange="contSetCategoria(this.value)">
               <option value="">— Sem categoria —</option>
-              <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
-              <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
-              <option value="recrutamento">👥 Conteúdos de Recrutamento</option>
-              <option value="clientes_vendedores">🏷️ Conteúdos para Clientes Vendedores</option>
-              <option value="clientes_compradores">🔑 Conteúdos para Clientes Compradores</option>
             </select>
           </div>
 
@@ -894,11 +913,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             </select>
             <select class="hist-select" id="hist-filter-cat" onchange="histRender()">
               <option value="">Todas as categorias</option>
-              <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
-              <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
-              <option value="recrutamento">👥 Recrutamento</option>
-              <option value="clientes_vendedores">🏷️ Clientes Vendedores</option>
-              <option value="clientes_compradores">🔑 Clientes Compradores</option>
             </select>
           </div>
           <div class="hist-table-wrap">
@@ -939,11 +953,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button class="ag-filter-btn" data-filter="rascunho" onclick="agSetFilter('rascunho')">🟡 Rascunhos</button>
           <select class="ag-cat-sel" id="ag-filter-cat" onchange="agSetCatFilter(this.value)">
             <option value="">Todas as categorias</option>
-            <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
-            <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
-            <option value="recrutamento">👥 Recrutamento</option>
-            <option value="clientes_vendedores">🏷️ Clientes Vendedores</option>
-            <option value="clientes_compradores">🔑 Clientes Compradores</option>
           </select>
         </div>
       </div>
@@ -984,11 +993,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           </select>
           <select class="bib-select" id="bib-filter-cat" onchange="bibSetFilter('categoria', this.value)">
             <option value="">Todas as categorias</option>
-            <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
-            <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
-            <option value="recrutamento">👥 Recrutamento</option>
-            <option value="clientes_vendedores">🏷️ Clientes Vendedores</option>
-            <option value="clientes_compradores">🔑 Clientes Compradores</option>
           </select>
         </div>
         <div class="bib-grid" id="bib-grid">
@@ -1022,11 +1026,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <label class="bib-form-label">Categoria</label>
         <select class="bib-form-input" id="bib-upload-cat">
           <option value="">— Sem categoria —</option>
-          <option value="noticias_imoveis">🏠 Notícias do Imobiliário</option>
-          <option value="noticias_figueira">🏖️ Notícias da Figueira</option>
-          <option value="recrutamento">👥 Conteúdos de Recrutamento</option>
-          <option value="clientes_vendedores">🏷️ Conteúdos para Clientes Vendedores</option>
-          <option value="clientes_compradores">🔑 Conteúdos para Clientes Compradores</option>
         </select>
       </div>
       <div class="bib-form-row">
@@ -1049,11 +1048,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <input type="text" class="bib-search" style="max-width:140px" id="bib-pick-search" placeholder="Pesquisar..." oninput="bibLoadPick()">
         <select class="bib-select" id="bib-pick-cat" onchange="bibLoadPick()">
           <option value="">Todas as categorias</option>
-          <option value="noticias_imoveis">🏠 Imobiliário</option>
-          <option value="noticias_figueira">🏖️ Figueira</option>
-          <option value="recrutamento">👥 Recrutamento</option>
-          <option value="clientes_vendedores">🏷️ Vendedores</option>
-          <option value="clientes_compradores">🔑 Compradores</option>
         </select>
         <select class="bib-select" id="bib-pick-tipo" onchange="bibLoadPick()">
           <option value="">📸+🎬 Todos</option>
@@ -1099,6 +1093,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <button class="team-invite-btn" onclick="teamInvite()">✉️ Convidar</button>
           </div>
           <div id="team-invite-msg" style="font-size:.78rem;min-height:18px"></div>
+        </div>
+
+        <div class="team-section">
+          <h3>🏷️ Categorias de Conteúdo</h3>
+          <p>Gere as categorias usadas em todo o portal. Arrasta para reordenar. Clica no nome para editar.</p>
+          <div class="cat-list" id="cat-list"></div>
+          <div class="cat-add-form">
+            <input type="text" class="cat-emoji-pick" id="cat-add-emoji" value="📁" maxlength="2" placeholder="📁" title="Emoji">
+            <input type="text" class="cat-add-inp" id="cat-add-label" placeholder="Nome da nova categoria" onkeydown="if(event.key==='Enter')catAdd()">
+            <button class="cat-add-btn" onclick="catAdd()">+ Adicionar</button>
+          </div>
         </div>
       </div>
     </main>
@@ -1167,6 +1172,7 @@ async function loadApp() {
 
   var isAdmin = _profile.role === 'admin' || _profile.is_admin
   document.getElementById('user-badge').textContent = (_profile.nome || user.email) + (isAdmin ? ' · Admin' : '')
+  await categoriasLoad()
   document.getElementById('auth-screen').style.display = 'none'
   document.getElementById('app-screen').style.display = 'flex'
   document.getElementById('app-screen').style.flexDirection = 'column'
@@ -1218,6 +1224,7 @@ async function loadAdminPanel() {
       + '<td><button class="save-btn" onclick="saveEgoResp(\''+p.user_id+'\')">Guardar</button><span class="save-ok" id="ok_'+p.user_id+'"></span></td>'
     tbody.appendChild(tr)
   })
+  categoriasRender()
 }
 
 async function saveEgoResp(uid) {
@@ -1589,20 +1596,172 @@ var EDGE_GERAR      = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/ger
 var EDGE_IMAGEM     = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-imagem'
 var EDGE_ENRIQUECER = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/enriquecer-noticia'
 
-var CATEGORIAS = [
-  { id: 'noticias_imoveis',     label: '🏠 Notícias do Imobiliário' },
-  { id: 'noticias_figueira',    label: '🏖️ Notícias da Figueira' },
-  { id: 'recrutamento',         label: '👥 Conteúdos de Recrutamento' },
-  { id: 'clientes_vendedores',  label: '🏷️ Conteúdos para Clientes Vendedores' },
-  { id: 'clientes_compradores', label: '🔑 Conteúdos para Clientes Compradores' }
-]
+// Categories loaded dynamically from DB (replaces hardcoded CATEGORIAS array)
+var _categorias = []   // [{ id, slug, label, emoji, ordem, activa }]
+var _catDragSrc = null
 
-// Map news panel category (from notícias DB) → content category id
+// Map news panel category tab → content category slug (static — matches DB slugs)
 var NEWS_CAT_MAP = { imoveis: 'noticias_imoveis', figueira: 'noticias_figueira' }
 
-function catLabel(id) {
-  var c = CATEGORIAS.find(function(x) { return x.id === id })
-  return c ? c.label : (id || '')
+function catLabel(slug) {
+  var c = _categorias.find(function(x) { return x.slug === slug || x.id === slug })
+  return c ? (c.emoji || '') + ' ' + c.label : (slug || '')
+}
+
+async function categoriasLoad() {
+  var { data } = await sb.from('categorias').select('*').order('ordem')
+  _categorias = data || []
+  populateCatSelects()
+}
+
+function populateCatSelects() {
+  var active = _categorias.filter(function(c) { return c.activa })
+  var filterOpts = '<option value="">Todas as categorias</option>'
+    + active.map(function(c) {
+      return '<option value="' + esc(c.slug || c.id) + '">' + esc((c.emoji||'') + ' ' + c.label) + '</option>'
+    }).join('')
+  var formOpts = '<option value="">— Sem categoria —</option>'
+    + active.map(function(c) {
+      return '<option value="' + esc(c.slug || c.id) + '">' + esc((c.emoji||'') + ' ' + c.label) + '</option>'
+    }).join('')
+
+  ;['hist-filter-cat','ag-filter-cat','bib-filter-cat','bib-pick-cat'].forEach(function(id) {
+    var el = document.getElementById(id)
+    if (!el) return
+    var cur = el.value
+    el.innerHTML = filterOpts
+    if (cur) el.value = cur
+  })
+  ;['cont-categoria','bib-upload-cat'].forEach(function(id) {
+    var el = document.getElementById(id)
+    if (!el) return
+    var cur = el.value
+    el.innerHTML = formOpts
+    if (cur) el.value = cur
+  })
+}
+
+// ── Categorias admin management ──────────────────────────────────────────────
+function categoriasRender() {
+  var list = document.getElementById('cat-list')
+  if (!list) return
+  if (!_categorias.length) {
+    list.innerHTML = '<div style="color:#9ca3af;font-size:.82rem;text-align:center;padding:12px">Nenhuma categoria.</div>'
+    return
+  }
+  list.innerHTML = _categorias.map(function(c) {
+    return '<div class="cat-item" id="catrow-' + c.id + '" draggable="true"'
+      + ' ondragstart="catDragStart(event,\'' + c.id + '\')"'
+      + ' ondragover="catDragOver(event)" ondragleave="catDragLeave(event)"'
+      + ' ondrop="catDrop(event,\'' + c.id + '\')" ondragend="catDragEnd()">'
+      + '<span class="cat-drag" title="Arrastar para reordenar">⠿</span>'
+      + '<input class="cat-emoji-inp" type="text" value="' + esc(c.emoji||'') + '" maxlength="2"'
+      + '  onblur="catSaveField(\'' + c.id + '\',\'emoji\',this.value)" title="Emoji">'
+      + '<input class="cat-label-inp" type="text" value="' + esc(c.label) + '"'
+      + '  onblur="catSaveField(\'' + c.id + '\',\'label\',this.value)" title="Clica para editar">'
+      + '<label class="cat-toggle-wrap" title="' + (c.activa ? 'Activa' : 'Inactiva') + '">'
+      + '  <input type="checkbox" ' + (c.activa ? 'checked' : '') + ' onchange="catToggle(\'' + c.id + '\',this.checked)">'
+      + '  <span class="cat-toggle-slider"></span>'
+      + '</label>'
+      + '<button class="cat-del-btn" onclick="catDelete(\'' + c.id + '\')" title="Apagar">🗑</button>'
+      + '</div>'
+  }).join('')
+}
+
+async function catSaveField(id, field, val) {
+  val = (val || '').trim()
+  if (!val) return
+  var c = _categorias.find(function(x) { return x.id === id })
+  if (!c || c[field] === val) return
+  c[field] = val
+  await sb.from('categorias').update({ [field]: val }).eq('id', id)
+  populateCatSelects()
+}
+
+async function catToggle(id, active) {
+  var c = _categorias.find(function(x) { return x.id === id })
+  if (c) c.activa = active
+  await sb.from('categorias').update({ activa: active }).eq('id', id)
+  populateCatSelects()
+  var row = document.getElementById('catrow-' + id)
+  if (row) {
+    var lbl = row.querySelector('.cat-toggle-wrap')
+    if (lbl) lbl.title = active ? 'Activa' : 'Inactiva'
+  }
+}
+
+async function catDelete(id) {
+  if (!confirm('Apagar esta categoria? Os conteúdos existentes não são afectados.')) return
+  await sb.from('categorias').delete().eq('id', id)
+  _categorias = _categorias.filter(function(c) { return c.id !== id })
+  categoriasRender()
+  populateCatSelects()
+}
+
+async function catAdd() {
+  var emojiEl = document.getElementById('cat-add-emoji')
+  var labelEl = document.getElementById('cat-add-label')
+  var emoji = (emojiEl.value || '').trim() || '📁'
+  var label = (labelEl.value || '').trim()
+  if (!label) { labelEl.focus(); return }
+  // Auto-generate backward-compat slug
+  var slug = label.toLowerCase()
+    .replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i')
+    .replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0, 40)
+  // Deduplicate slug if needed
+  var base = slug; var n = 2
+  while (_categorias.some(function(c) { return c.slug === slug })) slug = base + '_' + (n++)
+  var maxOrdem = _categorias.reduce(function(m, c) { return Math.max(m, c.ordem || 0) }, 0)
+  var { data: novo, error } = await sb.from('categorias')
+    .insert({ emoji: emoji, label: label, slug: slug, ordem: maxOrdem + 1, activa: true })
+    .select().single()
+  if (error) { alert('Erro ao criar categoria: ' + error.message); return }
+  _categorias.push(novo)
+  emojiEl.value = '📁'; labelEl.value = ''
+  categoriasRender()
+  populateCatSelects()
+}
+
+// Drag-and-drop reorder
+function catDragStart(e, id) {
+  _catDragSrc = id
+  e.dataTransfer.effectAllowed = 'move'
+  setTimeout(function() {
+    var el = document.getElementById('catrow-' + id)
+    if (el) el.classList.add('dragging')
+  }, 0)
+}
+function catDragOver(e) {
+  e.preventDefault(); e.dataTransfer.dropEffect = 'move'
+  var item = e.target.closest('.cat-item')
+  if (item) item.classList.add('drag-over')
+}
+function catDragLeave(e) {
+  var item = e.target.closest('.cat-item')
+  if (item) item.classList.remove('drag-over')
+}
+async function catDrop(e, targetId) {
+  e.preventDefault()
+  var item = e.target.closest('.cat-item')
+  if (item) item.classList.remove('drag-over')
+  if (!_catDragSrc || _catDragSrc === targetId) return
+  var si = _categorias.findIndex(function(c) { return c.id === _catDragSrc })
+  var ti = _categorias.findIndex(function(c) { return c.id === targetId })
+  if (si < 0 || ti < 0) return
+  var moved = _categorias.splice(si, 1)[0]
+  _categorias.splice(ti, 0, moved)
+  _categorias.forEach(function(c, i) { c.ordem = i + 1 })
+  categoriasRender()
+  populateCatSelects()
+  // Persist new order
+  for (var i = 0; i < _categorias.length; i++) {
+    await sb.from('categorias').update({ ordem: _categorias[i].ordem }).eq('id', _categorias[i].id)
+  }
+}
+function catDragEnd() {
+  _catDragSrc = null
+  document.querySelectorAll('.cat-item').forEach(function(el) { el.classList.remove('dragging','drag-over') })
 }
 var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
 
