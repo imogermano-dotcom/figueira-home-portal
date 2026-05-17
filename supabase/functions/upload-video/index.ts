@@ -1,12 +1,13 @@
-// upload-video/index.ts
+// upload-video/index.ts  (v3)
 //
-// Proxy de upload em chunks para contornar o limite de 100 MB do Cloudflare.
+// Proxy de upload em chunks — contorna o limite de 100 MB do Cloudflare.
 //
-// Abordagem "streaming merge" (sem buffer em memória):
-//  1. Browser envia o ficheiro em pedaços de 5 MB → edge guarda em temp/
-//  2. No último chunk: cria um ReadableStream que lê os chunks do Storage
-//     um de cada vez e faz pipe directo para o upload final via fetch.
-//     → em memória: apenas 1 chunk (~5 MB) de cada vez, nunca o ficheiro inteiro.
+// Fluxo:
+//  1. Browser envia chunks de 5 MB → guardados em temp/{uploadId}/
+//  2. No último chunk: streaming merge via ReadableStream → upload final ao Storage
+//     (request interno edge→Storage, não passa pelo Cloudflare)
+//
+// Mem: apenas 1 chunk (~5 MB) em memória de cada vez — sem WORKER_RESOURCE_LIMIT.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -16,6 +17,7 @@ const CORS = {
   "Access-Control-Allow-Headers":
     "authorization, content-type, x-chunk-index, x-total-chunks, " +
     "x-file-path, x-file-type, x-upload-id",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req) => {
@@ -24,28 +26,40 @@ serve(async (req) => {
   }
 
   try {
-    // ── Auth ──────────────────────────────────────────────────────────────────
-    const authHeader = req.headers.get("authorization") || "";
-    if (!authHeader) {
-      return json({ error: "Sem autorização" }, 401);
+    // ── Ler env vars com trim() defensivo ─────────────────────────────────────
+    const SUPA_URL  = (Deno.env.get("SUPABASE_URL")              ?? "").trim();
+    const SVC_KEY   = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+    const ANON_KEY  = (Deno.env.get("SUPABASE_ANON_KEY")         ?? "").trim();
+
+    // Diagnóstico imediato — visível nos logs da Edge Function
+    console.log("[upload-video] env check", {
+      url:      SUPA_URL.slice(0, 30),
+      svc_key:  SVC_KEY  ? SVC_KEY.slice(0, 20) + "…" : "AUSENTE",
+      anon_key: ANON_KEY ? ANON_KEY.slice(0, 20) + "…" : "AUSENTE",
+    });
+
+    if (!SVC_KEY.startsWith("eyJ")) {
+      return json({ error: "SUPABASE_SERVICE_ROLE_KEY inválida ou ausente" }, 500);
     }
 
-    // Service-role client para operações de Storage (sem RLS)
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // ── Auth do utilizador ────────────────────────────────────────────────────
+    const authHeader = req.headers.get("authorization") || "";
+    if (!authHeader) return json({ error: "Sem autorização" }, 401);
 
-    // Validar que o JWT pertence a um utilizador real
+    // Validar JWT do utilizador com cliente anon
     const { data: { user }, error: authErr } = await createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      SUPA_URL, ANON_KEY,
       { global: { headers: { Authorization: authHeader } } }
     ).auth.getUser();
 
     if (authErr || !user) {
-      return json({ error: "Token inválido" }, 401);
+      return json({ error: "Token inválido: " + (authErr?.message ?? "") }, 401);
     }
+
+    // ── Cliente service-role (sem RLS, sem refresh de sessão) ─────────────────
+    const supabase = createClient(SUPA_URL, SVC_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     // ── Headers do chunk ──────────────────────────────────────────────────────
     const chunkIndex  = parseInt(req.headers.get("x-chunk-index")  || "0");
@@ -76,81 +90,74 @@ serve(async (req) => {
 
     console.log(`[upload-video] chunk ${chunkIndex + 1}/${totalChunks} ok`);
 
-    // Não é o último chunk — confirmar recepção e aguardar
     if (chunkIndex < totalChunks - 1) {
       return json({ received: chunkIndex, done: false });
     }
 
-    // ── Último chunk: streaming merge ─────────────────────────────────────────
-    // Verifica que todos os chunks chegaram
+    // ── Último chunk: verificar integridade ───────────────────────────────────
     const { data: chunkList, error: listErr } = await supabase.storage
       .from("videos-conteudos")
       .list(`temp/${uploadId}`, { sortBy: { column: "name", order: "asc" } });
 
     if (listErr || !chunkList || chunkList.length < totalChunks) {
       const got = chunkList?.length ?? 0;
-      console.error(`[upload-video] chunks incompletos: ${got}/${totalChunks}`);
       return json({ error: `Chunks incompletos: ${got}/${totalChunks}` }, 500);
     }
 
-    console.log(`[upload-video] a fazer streaming merge de ${totalChunks} chunks → ${filePath}`);
+    console.log(`[upload-video] streaming merge ${totalChunks} chunks → ${filePath}`);
 
-    // ReadableStream que emite os chunks um a um — nunca carrega tudo em memória
+    // ── Streaming merge ───────────────────────────────────────────────────────
+    // ReadableStream lê um chunk de cada vez — pico de memória: ~5 MB.
     let cursor = 0;
     const readable = new ReadableStream({
       async pull(controller) {
-        if (cursor >= totalChunks) {
-          controller.close();
-          return;
-        }
+        if (cursor >= totalChunks) { controller.close(); return; }
+
         const cp = `temp/${uploadId}/chunk_${String(cursor).padStart(5, "0")}`;
         const { data: blob, error: dlErr } = await supabase.storage
-          .from("videos-conteudos")
-          .download(cp);
+          .from("videos-conteudos").download(cp);
 
         if (dlErr || !blob) {
-          controller.error(new Error(`Chunk ${cursor} não encontrado: ${dlErr?.message}`));
+          controller.error(new Error(`Chunk ${cursor} falhou: ${dlErr?.message}`));
           return;
         }
 
-        // Enfileirar bytes e avançar cursor — chunk anterior pode ser recolhido pelo GC
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        controller.enqueue(bytes);
+        controller.enqueue(new Uint8Array(await blob.arrayBuffer()));
         cursor++;
       },
     });
 
-    // Fazer upload via fetch directo à Storage REST API com body em streaming.
-    // Este request é interno (edge → Storage), não passa pelo Cloudflare — sem limite de 100 MB.
-    const storageUrl =
-      `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/videos-conteudos/${filePath}`;
+    // Upload interno edge→Storage via fetch directo com service role key.
+    // Não passa pelo proxy Cloudflare → sem limite de 100 MB.
+    const storageUrl = `${SUPA_URL}/storage/v1/object/videos-conteudos/${filePath}`;
+    console.log("[upload-video] fetch final →", storageUrl);
+    console.log("[upload-video] auth header:", "Bearer " + SVC_KEY.slice(0, 20) + "…");
 
     const uploadResp = await fetch(storageUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        "Content-Type": fileType,
-        "x-upsert": "true",
+        "Authorization": `Bearer ${SVC_KEY}`,
+        "Content-Type":  fileType,
+        "x-upsert":      "true",
         "cache-control": "3600",
       },
       body: readable,
-      // @ts-ignore — duplex necessário para streaming request body em Deno
+      // @ts-ignore — duplex necessário para streaming body no Deno edge runtime
       duplex: "half",
     });
 
     // Limpar temp/ (best-effort)
-    const tempPaths = (chunkList ?? []).map((f) => `temp/${uploadId}/${f.name}`);
+    const tempPaths = chunkList.map((f) => `temp/${uploadId}/${f.name}`);
     supabase.storage.from("videos-conteudos").remove(tempPaths).catch(console.warn);
 
     if (!uploadResp.ok) {
       const errText = await uploadResp.text().catch(() => "");
-      console.error(`[upload-video] upload final falhou ${uploadResp.status}:`, errText);
+      console.error(`[upload-video] fetch final ${uploadResp.status}:`, errText);
       return json({ error: `Upload final falhou (${uploadResp.status}): ${errText}` }, 500);
     }
 
     const { data: pub } = supabase.storage
-      .from("videos-conteudos")
-      .getPublicUrl(filePath);
+      .from("videos-conteudos").getPublicUrl(filePath);
 
     console.log("[upload-video] concluído:", pub.publicUrl);
     return json({ done: true, url: pub.publicUrl });
@@ -161,7 +168,6 @@ serve(async (req) => {
   }
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
