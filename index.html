@@ -32,6 +32,9 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .user-badge{font-size:.78rem;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:20px}
 .logout-btn{font-size:.78rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;transition:background .2s}
 .logout-btn:hover{background:rgba(255,255,255,.22)}
+.admin-toggle-btn{font-size:.78rem;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;transition:background .2s}
+.admin-toggle-btn:hover{background:rgba(255,255,255,.28)}
+.admin-toggle-btn.equipa{background:rgba(99,179,237,.35);border-color:rgba(99,179,237,.5)}
 
 /* Portal nav */
 #portal-nav{background:#fff;border-bottom:2px solid #e0e6f0;display:flex;gap:0;padding:0 20px;flex-wrap:wrap;flex-shrink:0}
@@ -250,6 +253,18 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .admin-table input:focus{border-color:#2d6a9f}
 .save-btn{padding:4px 12px;background:#1a3c5e;color:#fff;border:none;border-radius:6px;font-size:.78rem;cursor:pointer}
 .save-btn:hover{background:#2d6a9f}
+.save-ok{font-size:.75rem;color:#10b981;margin-left:6px}
+.team-section{margin-top:20px;border-top:1px solid #e5e7eb;padding-top:20px}
+.team-section h3{font-size:.9rem;font-weight:700;color:#1a3c5e;margin-bottom:4px}
+.team-section p{font-size:.78rem;color:#6b7280;margin-bottom:12px}
+.team-invite-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.team-invite-row input{padding:6px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-family:inherit;outline:none;flex:1;min-width:140px}
+.team-invite-row input:focus{border-color:#2d6a9f}
+.team-invite-btn{padding:6px 14px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.team-invite-btn:hover{background:#2d6a9f}
+.user-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.hist-user-pill{display:inline-block;font-size:.68rem;padding:1px 7px;border-radius:10px;color:#fff;font-weight:500;margin-left:4px;vertical-align:middle}
+.ag-user-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle;flex-shrink:0}
 .save-ok{color:#15803d;font-size:.75rem;margin-left:6px}
 /* Instagram format toggle */
 .fonte-row{display:flex;gap:8px;margin-top:6px}
@@ -552,6 +567,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <h1>🏠 Portal Figueira Home</h1>
     <div class="header-right">
       <span class="user-badge" id="user-badge"></span>
+      <button class="admin-toggle-btn" id="admin-toggle" style="display:none" onclick="adminViewToggle()">👤 Minha Vista</button>
       <button class="logout-btn" onclick="doLogout()">Sair</button>
     </div>
   </header>
@@ -1050,9 +1066,20 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <h2>⚙️ Mapeamento Consultores → eGO</h2>
         <p>Define o nome exacto de cada consultor no campo "responsavel" do eGO para que a pesquisa seja filtrada correctamente.</p>
         <table class="admin-table">
-          <thead><tr><th>Utilizador</th><th>Email</th><th>Nome no eGO (responsavel)</th><th></th></tr></thead>
+          <thead><tr><th>Utilizador</th><th>Email</th><th>Nome no eGO (responsavel)</th><th>Admin</th><th></th></tr></thead>
           <tbody id="admin-tbody"></tbody>
         </table>
+
+        <div class="team-section">
+          <h3>👥 Gestão de Equipa</h3>
+          <p>Convida novos membros da equipa. Receberão um e-mail com link para definir a palavra-passe.</p>
+          <div class="team-invite-row">
+            <input type="email" id="team-invite-email" placeholder="email@exemplo.com">
+            <input type="text" id="team-invite-nome" placeholder="Nome do consultor">
+            <button class="team-invite-btn" onclick="teamInvite()">✉️ Convidar</button>
+          </div>
+          <div id="team-invite-msg" style="font-size:.78rem;min-height:18px"></div>
+        </div>
       </div>
     </main>
   </div>
@@ -1077,6 +1104,10 @@ var _kpiLoaded = false
 var _allResults = []
 var _lastBody = null
 var _hasMore = false
+var _currentUserId = null
+var _isAdminView = false
+var _profilesMap = {}  // userId → { nome, email, color }
+var TEAM_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899']
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 async function doLogin() {
@@ -1110,17 +1141,26 @@ document.getElementById('password').addEventListener('keydown', function(e){ if(
 async function loadApp() {
   var { data: { user } } = await sb.auth.getUser()
   if (!user) return
-  var { data: profile } = await sb.from('profiles').select('nome,email,role,ego_responsavel').eq('user_id', user.id).single()
-  _profile = profile || { nome: user.email, role: 'consultor', ego_responsavel: null }
+  _currentUserId = user.id
+  var { data: profile } = await sb.from('profiles').select('nome,email,role,ego_responsavel,is_admin').eq('user_id', user.id).single()
+  _profile = profile || { nome: user.email, role: 'consultor', ego_responsavel: null, is_admin: false }
 
-  document.getElementById('user-badge').textContent = (_profile.nome || user.email) + (_profile.role === 'admin' ? ' · Admin' : '')
+  var isAdmin = _profile.role === 'admin' || _profile.is_admin
+  document.getElementById('user-badge').textContent = (_profile.nome || user.email) + (isAdmin ? ' · Admin' : '')
   document.getElementById('auth-screen').style.display = 'none'
   document.getElementById('app-screen').style.display = 'flex'
   document.getElementById('app-screen').style.flexDirection = 'column'
 
-  if (_profile.role === 'admin') {
+  if (isAdmin) {
     document.getElementById('tab-kpi').style.display = 'block'
     document.getElementById('tab-config').style.display = 'block'
+    document.getElementById('admin-toggle').style.display = ''
+    // Load all profiles to build color map
+    var { data: allProfiles } = await sb.from('profiles').select('user_id,nome,email').order('nome')
+    _profilesMap = {}
+    ;(allProfiles || []).forEach(function(p, i) {
+      _profilesMap[p.user_id] = { nome: p.nome || p.email || '?', email: p.email || '', color: TEAM_COLORS[i % TEAM_COLORS.length] }
+    })
     loadAdminPanel()
   }
 }
@@ -1143,14 +1183,18 @@ function showTab(name) {
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
 async function loadAdminPanel() {
-  var { data: profiles } = await sb.from('profiles').select('user_id,nome,email,ego_responsavel').order('nome')
+  var { data: profiles } = await sb.from('profiles').select('user_id,nome,email,ego_responsavel,is_admin,role').order('nome')
   var tbody = document.getElementById('admin-tbody')
   tbody.innerHTML = ''
   ;(profiles || []).forEach(function(p) {
+    var isAdm = p.is_admin || p.role === 'admin'
+    var colorIdx = Object.keys(_profilesMap).indexOf(p.user_id)
+    var dot = colorIdx >= 0 ? '<span class="user-dot" style="background:'+TEAM_COLORS[colorIdx % TEAM_COLORS.length]+'"></span>' : ''
     var tr = document.createElement('tr')
-    tr.innerHTML = '<td>'+esc(p.nome||'')+'</td>'
+    tr.innerHTML = '<td>'+dot+esc(p.nome||'')+'</td>'
       + '<td style="color:#6b7280">'+esc(p.email||'')+'</td>'
       + '<td><input type="text" value="'+esc(p.ego_responsavel||'')+'" id="ego_'+p.user_id+'" placeholder="ex: Alexandra Santos"></td>'
+      + '<td style="text-align:center"><input type="checkbox" '+(isAdm?'checked':'')+' onchange="teamSetAdmin(\''+p.user_id+'\',this.checked)" title="Administrador"></td>'
       + '<td><button class="save-btn" onclick="saveEgoResp(\''+p.user_id+'\')">Guardar</button><span class="save-ok" id="ok_'+p.user_id+'"></span></td>'
     tbody.appendChild(tr)
   })
@@ -1162,6 +1206,54 @@ async function saveEgoResp(uid) {
   var { error } = await sb.from('profiles').update({ ego_responsavel: val || null }).eq('user_id', uid)
   okEl.textContent = error ? '✗ Erro' : '✓ Guardado'
   setTimeout(function(){ okEl.textContent = '' }, 2000)
+}
+
+async function teamSetAdmin(uid, checked) {
+  await sb.from('profiles').update({ is_admin: checked }).eq('user_id', uid)
+}
+
+async function teamInvite() {
+  var emailEl = document.getElementById('team-invite-email')
+  var nomeEl  = document.getElementById('team-invite-nome')
+  var msgEl   = document.getElementById('team-invite-msg')
+  var email = emailEl.value.trim()
+  var nome  = nomeEl.value.trim()
+  if (!email) { msgEl.style.color = '#ef4444'; msgEl.textContent = 'Introduz um email válido.'; return }
+  msgEl.style.color = '#6b7280'; msgEl.textContent = '⏳ A enviar convite...'
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    var EDGE_INVITE = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/admin-invite'
+    var r = await fetch(EDGE_INVITE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ email, nome })
+    })
+    var d = await r.json()
+    if (!r.ok || !d.success) throw new Error(d.error || 'Erro desconhecido')
+    msgEl.style.color = '#10b981'; msgEl.textContent = '✓ Convite enviado para ' + email
+    emailEl.value = ''; nomeEl.value = ''
+    // Refresh admin panel to show new user
+    await loadAdminPanel()
+  } catch(e) {
+    msgEl.style.color = '#ef4444'; msgEl.textContent = '✗ ' + e.message
+  }
+}
+
+function adminViewToggle() {
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+  if (!isAdmin) return
+  _isAdminView = !_isAdminView
+  var btn = document.getElementById('admin-toggle')
+  if (_isAdminView) {
+    btn.textContent = '👥 Vista Equipa'
+    btn.className = 'admin-toggle-btn equipa'
+  } else {
+    btn.textContent = '👤 Minha Vista'
+    btn.className = 'admin-toggle-btn'
+  }
+  // Re-render affected sections
+  histRender()
+  agRender()
 }
 
 // ── Search ───────────────────────────────────────────────────────────────────
@@ -3058,7 +3150,8 @@ async function contGuardar(agendar) {
     texto_base: document.getElementById('cont-texto').value.trim(),
     redes_seleccionadas: redes,
     data_agendada: agendar && data ? new Date(data).toISOString() : null,
-    imagens_urls: _imgUrls.length ? _imgUrls : []
+    imagens_urls: _imgUrls.length ? _imgUrls : [],
+    user_id: _currentUserId || null
   }
   if (_aiImgFinal) {
     payload['imagem_gerada_url'] = _aiImgFinal
@@ -3177,6 +3270,7 @@ async function contGuardarVideo(agendar) {
       titulo:               (document.getElementById('cont-texto').value || '').trim().slice(0, 100) || null,
       categoria:            _contCategoria || null,
       texto_base:           (document.getElementById('cont-texto').value || '').trim() || null,
+      user_id:              _currentUserId || null,
       caption_instagram:    ig ? (document.getElementById('main-instagram') || {}).value || (ig.caption || '') : null,
       hashtags_instagram:   ig ? (document.getElementById('hash-instagram') || {}).value || (ig.hashtags || '') : null,
       caption_facebook:     fb ? (document.getElementById('main-facebook') || {}).value || (fb.caption || '') : null,
@@ -3227,7 +3321,10 @@ function histRender() {
   var rede   = document.getElementById('hist-filter-rede').value
   var status = document.getElementById('hist-filter-status').value
   var cat    = (document.getElementById('hist-filter-cat') || {}).value || ''
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
   var rows = _histRows.filter(function(r) {
+    // In personal view (non-admin or admin with toggle off) only show own rows
+    if (!_isAdminView && r.user_id && r.user_id !== _currentUserId) return false
     if (cat && r.categoria !== cat) return false
     if (rede) {
       if (!r.redes_seleccionadas || !r.redes_seleccionadas.includes(rede)) return false
@@ -3243,9 +3340,14 @@ function histRender() {
   if (!rows.length) { tbody.innerHTML = ''; empty.style.display = ''; return }
   empty.style.display = 'none'
   tbody.innerHTML = rows.map(function(r) {
+    var userBadge = ''
+    if (_isAdminView && r.user_id && _profilesMap[r.user_id]) {
+      var p = _profilesMap[r.user_id]
+      userBadge = '<span class="hist-user-pill" style="background:'+p.color+'" title="'+esc(p.email)+'">'+esc(p.nome.split(' ')[0])+'</span>'
+    }
     return '<tr onclick="histModalOpen(\''+r.id+'\')">'
       + '<td style="color:#6b7280;white-space:nowrap">' + esc(fmtDate(r.created_at)) + '</td>'
-      + '<td style="max-width:160px" title="'+esc(r.texto_base)+'">' + esc((r.texto_base||'').slice(0,60)) + (r.texto_base && r.texto_base.length>60?'…':'') + '</td>'
+      + '<td style="max-width:160px" title="'+esc(r.texto_base)+'">' + esc((r.texto_base||'').slice(0,60)) + (r.texto_base && r.texto_base.length>60?'…':'') + userBadge + '</td>'
       + '<td>' + sTag(r.status_instagram) + '</td>'
       + '<td>' + sTag(r.status_facebook) + '</td>'
       + '<td>' + sTag(r.status_linkedin) + '</td>'
@@ -3374,6 +3476,7 @@ function agRenderMetrics() {
 
 function agFilteredRows() {
   return _agRows.filter(function(r) {
+    if (!_isAdminView && r.user_id && r.user_id !== _currentUserId) return false
     if (_agCatFilter && r.categoria !== _agCatFilter) return false
     if (!_agFilter) return true
     var nets = ['instagram','facebook','linkedin','youtube']
@@ -3421,7 +3524,9 @@ function agRenderCal() {
     posts.slice(0, 3).forEach(function(r) {
       var net = (r.redes_seleccionadas || [])[0] || 'instagram'
       var label = (r._tipo === 'video' ? '🎬 ' : '') + (r.texto_base || r.titulo || '').slice(0, 20) || '—'
-      html += '<div class="ag-pill ag-pill-' + net + '" onclick="agOpenPanel(\'' + r.id + '\')">' + esc(label) + '</div>'
+      var uDot = (_isAdminView && r.user_id && _profilesMap[r.user_id])
+        ? '<span class="ag-user-dot" style="background:'+_profilesMap[r.user_id].color+'"></span>' : ''
+      html += '<div class="ag-pill ag-pill-' + net + '" onclick="agOpenPanel(\'' + r.id + '\')" style="display:flex;align-items:center;gap:2px">' + uDot + esc(label) + '</div>'
     })
     if (posts.length > 3) {
       html += '<div class="ag-pill-more" onclick="agOpenPanel(\'' + posts[3].id + '\')">+' + (posts.length - 3) + ' mais</div>'
@@ -3456,7 +3561,9 @@ function agRenderList() {
     html += '<td style="white-space:nowrap">' + esc(timeStr) + '</td>'
     html += '<td>' + netsHtml + '</td>'
     var vidBadge = r._tipo === 'video' ? '<span style="font-size:.68rem;background:#1a1a2e;color:#fff;padding:1px 6px;border-radius:6px;margin-right:4px">🎬</span>' : ''
-    html += '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(r.texto_base||r.titulo||'') + '">' + vidBadge + esc((r.texto_base||r.titulo||'').slice(0,55)) + '</td>'
+    var agUserBadge = (_isAdminView && r.user_id && _profilesMap[r.user_id])
+      ? '<span class="hist-user-pill" style="background:'+_profilesMap[r.user_id].color+'">'+esc(_profilesMap[r.user_id].nome.split(' ')[0])+'</span>' : ''
+    html += '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(r.texto_base||r.titulo||'') + '">' + vidBadge + esc((r.texto_base||r.titulo||'').slice(0,55)) + agUserBadge + '</td>'
     html += '<td>' + agStatusBadge(status) + '</td>'
     html += '<td><button class="ag-act-btn" onclick="event.stopPropagation();agOpenPanel(\'' + r.id + '\')">Ver →</button></td>'
     html += '</tr>'
