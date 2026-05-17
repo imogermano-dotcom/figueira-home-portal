@@ -4660,10 +4660,10 @@ async function bibUploadSubmit() {
     console.log('[upload] início', f.name, f.size, f.type)
 
     if (isVid) {
-      // Video: XHR upload with progress, using authenticated session token
+      // Video: Supabase SDK upload (handles large files / TUS chunking automatically)
       prog.classList.add('show')
       var vidPath = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
-      var vidUrl = await bibUploadVideoXHR(f, vidPath, progBar, progLbl, accessToken)
+      var vidUrl = await bibUploadVideoSDK(f, vidPath, progBar, progLbl)
       console.log('[upload] storage result', { vidUrl, hadError: !vidUrl })
       if (!vidUrl) {
         errors.push(f.name + ': falha no upload para storage')
@@ -4736,33 +4736,58 @@ async function bibUploadSubmit() {
   }, errors.length ? 3000 : 1200)
 }
 
-function bibUploadVideoXHR(file, path, progBar, progLbl, accessToken) {
-  return new Promise(function(resolve) {
-    var uploadUrl = DOORSTEP_URL + '/storage/v1/object/videos-conteudos/' + path
-    var xhr = new XMLHttpRequest()
-    xhr.open('POST', uploadUrl, true)
-    // Use authenticated session token (not anon key) so Storage RLS can verify user identity
-    xhr.setRequestHeader('Authorization', 'Bearer ' + (accessToken || DOORSTEP_ANON))
-    xhr.setRequestHeader('x-upsert', 'true')
-    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
-    xhr.upload.onprogress = function(e) {
-      if (e.lengthComputable) {
-        var pct = Math.round(e.loaded / e.total * 100)
-        if (progBar) progBar.style.width = pct + '%'
-        if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + pct + '%'
-      }
+async function bibUploadVideoSDK(file, path, progBar, progLbl) {
+  // Log bucket config for diagnostics
+  try {
+    var { data: bucketInfo } = await sb.storage.getBucket('videos-conteudos')
+    console.log('[bucket config]', bucketInfo)
+  } catch(e) { console.warn('[bucket config] erro ao ler', e) }
+
+  // Animate progress bar (SDK does not expose byte-level progress)
+  var animFrame = null
+  var fakePct = 0
+  function animProg() {
+    // Fast to 85%, then crawl while awaiting server confirmation
+    var step = fakePct < 85 ? 0.6 : 0.03
+    fakePct = Math.min(fakePct + step, 95)
+    if (progBar) progBar.style.width = Math.round(fakePct) + '%'
+    if (progLbl) progLbl.textContent = 'A carregar vídeo… ' + Math.round(fakePct) + '%'
+    animFrame = requestAnimationFrame(animProg)
+  }
+  animFrame = requestAnimationFrame(animProg)
+
+  try {
+    // Supabase Storage SDK — handles chunked/TUS upload for large files automatically.
+    // duplex: 'half' is required in some browsers for streaming fetch request bodies.
+    var { data, error } = await sb.storage
+      .from('videos-conteudos')
+      .upload(path, file, {
+        contentType: file.type || 'video/mp4',
+        upsert:      true,
+        duplex:      'half'
+      })
+
+    cancelAnimationFrame(animFrame)
+
+    if (error) {
+      console.warn('[bibUploadVideoSDK] erro', error)
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ ' + (error.message || 'upload falhou')
+      return null
     }
-    xhr.onload = function() {
-      if (xhr.status === 200 || xhr.status === 201) {
-        resolve(DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path)
-      } else {
-        console.warn('[bibUploadVideoXHR] falhou', xhr.status, xhr.responseText.slice(0, 200))
-        resolve(null)
-      }
-    }
-    xhr.onerror = function(e) { console.warn('[bibUploadVideoXHR] onerror', e); resolve(null) }
-    xhr.send(file)
-  })
+
+    if (progBar) progBar.style.width = '100%'
+    if (progLbl) progLbl.textContent = '100%'
+
+    var { data: urlData } = sb.storage.from('videos-conteudos').getPublicUrl(path)
+    console.log('[bibUploadVideoSDK] ok', urlData.publicUrl)
+    return urlData.publicUrl
+
+  } catch(e) {
+    cancelAnimationFrame(animFrame)
+    console.warn('[bibUploadVideoSDK] excepção', e)
+    return null
+  }
 }
 
 function bibGetVideoMeta(file) {
