@@ -1034,7 +1034,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       </div>
       <div style="display:flex;gap:10px;margin-top:16px">
         <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
-        <button class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
+        <button type="button" class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
       </div>
       <div id="bib-upload-msg" style="margin-top:10px;font-size:.8rem;color:#6b7280"></div>
     </div>
@@ -4634,7 +4634,15 @@ function bibFmtOverride(val) {
 }
 
 async function bibUploadSubmit() {
-  if (!_bibUploadFiles.length) { alert('Selecciona pelo menos um ficheiro.'); return }
+  console.log('[debug] 1. bibUploadSubmit chamado')
+  console.log('[debug] 2. _bibUploadFiles:', _bibUploadFiles.length, _bibUploadFiles.map(function(f){return f.name+' ('+Math.round(f.size/1024/1024)+'MB '+f.type+')'}))
+
+  if (!_bibUploadFiles.length) {
+    console.log('[debug] STOP: sem ficheiros')
+    alert('Selecciona pelo menos um ficheiro.')
+    return
+  }
+
   var btn = document.getElementById('bib-upload-btn')
   var msg = document.getElementById('bib-upload-msg')
   var prog = document.getElementById('bib-up-prog')
@@ -4642,13 +4650,16 @@ async function bibUploadSubmit() {
   var progLbl = document.getElementById('bib-up-prog-lbl')
   btn.disabled = true; btn.textContent = '⏳ A guardar...'
 
+  console.log('[debug] 3. a obter sessão...')
   var { data: { session } } = await sb.auth.getSession()
   var user = session && session.user
+  console.log('[debug] 4. sessão:', user ? 'ok uid=' + user.id : 'AUSENTE')
   if (!user) { btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'; return }
   var accessToken = session.access_token
 
   var cat = document.getElementById('bib-upload-cat').value
   var desc = document.getElementById('bib-upload-desc').value.trim()
+  console.log('[debug] 5. cat=' + cat + ' desc=' + desc)
   var ok = 0
   var errors = []
 
@@ -4657,12 +4668,13 @@ async function bibUploadSubmit() {
     var isVid = f.type.startsWith('video/')
     var ext = f.name.split('.').pop() || (isVid ? 'mp4' : 'jpg')
     msg.textContent = 'A carregar ' + (i + 1) + ' de ' + _bibUploadFiles.length + '...'
-    console.log('[upload] início', f.name, f.size, f.type)
+    console.log('[debug] 6. ficheiro ' + (i+1) + '/' + _bibUploadFiles.length + ':', f.name, Math.round(f.size/1024/1024)+'MB', f.type, 'isVid='+isVid)
 
     if (isVid) {
       // Video: chunked upload via Edge Function (contorna limite 100 MB Cloudflare)
       prog.classList.add('show')
       var vidPath = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
+      console.log('[debug] 7. a chamar bibUploadVideoSDK', { vidPath, cat, desc })
       var vidUrl = await bibUploadVideoSDK(f, vidPath, progBar, progLbl, {
         userId: user.id, categoria: cat, descricao: desc
       })
