@@ -4808,7 +4808,7 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
   // Upload em chunks de 5 MB via Edge Function upload-video (via XHR).
   // Cada chunk (< 6 MB) passa no limite do Cloudflare.
   // O merge do ficheiro final é feito pelo n8n em background.
-  var CHUNK_SIZE  = 5 * 1024 * 1024  // 5 MB
+  var CHUNK_SIZE  = 1 * 1024 * 1024  // 1 MB
   var EDGE_UPLOAD = DOORSTEP_URL + '/functions/v1/upload-video'
   var { data: { session } } = await sb.auth.getSession()
   if (!session) { console.warn('[upload-video] sem sessão'); return null }
@@ -4833,7 +4833,7 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest()
       xhr.open('POST', EDGE_UPLOAD, true)
-      xhr.timeout = 120000  // 2 min por chunk
+      xhr.timeout = 300000  // 5 min por chunk
 
       // Headers
       xhr.setRequestHeader('Authorization',  'Bearer ' + session.access_token)
