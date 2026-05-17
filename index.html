@@ -1533,6 +1533,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
       ctx.fillStyle = '#F5C518'
       ctx.font = 'bold 52px Georgia, serif'
       ctx.textAlign = 'center'
+      ctx.textBaseline = 'alphabetic'
       ctx.fillText('Figueira Home', S / 2, 480)
     }
 
@@ -1541,11 +1542,13 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
     ctx.font = 'bold ' + ctaSize + 'px Georgia, serif'
     ctx.fillStyle = 'white'
     ctx.textAlign = 'center'
+    ctx.textBaseline = 'alphabetic'
     wrapText(ctx, ctaText, 540, 650, 880, ctaSize * 1.3)
 
     ctx.fillStyle = '#F5C518'
     ctx.font = 'bold 32px Arial'
     ctx.textAlign = 'center'
+    ctx.textBaseline = 'alphabetic'
     ctx.fillText('@miguelgermano', 540, 750)
 
   // ── Image slides ────────────────────────────────────────────────────────
@@ -1557,15 +1560,16 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
       ctx.fillRect(0, 0, S, S)
     }
 
-    // Gradient overlay
-    var gradient = ctx.createLinearGradient(0, 400, 0, S)
-    gradient.addColorStop(0, 'rgba(0,0,0,0)')
-    gradient.addColorStop(0.5, 'rgba(0,0,0,0.3)')
-    gradient.addColorStop(1, 'rgba(0,0,0,0.85)')
+    // Radial gradient overlay — suave no centro, escuro nas bordas
+    var gradient = ctx.createRadialGradient(540, 540, 100, 540, 540, 760)
+    gradient.addColorStop(0, 'rgba(0,0,0,0.2)')
+    gradient.addColorStop(1, 'rgba(0,0,0,0.75)')
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, S, S)
 
     // Slide number badge (top-right)
+    ctx.save()
+    ctx.textBaseline = 'alphabetic'
     ctx.fillStyle = 'rgba(0,0,0,0.5)'
     roundRect(ctx, 920, 30, 110, 36, 18)
     ctx.fill()
@@ -1573,26 +1577,57 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
     ctx.font = 'bold 18px Arial'
     ctx.textAlign = 'right'
     ctx.fillText((idx + 1) + ' / ' + total, 1022, 54)
+    ctx.restore()
 
-    // Slide text
-    ctx.shadowColor = 'rgba(0,0,0,0.9)'
-    ctx.shadowBlur = 20
+    // Text — centrado verticalmente no slide
+    ctx.save()
+    ctx.shadowColor = 'rgba(0,0,0,0.95)'
+    ctx.shadowBlur = 25
     ctx.fillStyle = 'white'
     ctx.textAlign = 'center'
-    var texto = slide.texto || ''
-    var fontSize = textoFits(ctx, texto, 900, 64) ? 64 : textoFits(ctx, texto, 900, 52) ? 52 : 42
-    ctx.font = 'bold ' + fontSize + 'px Georgia, "Times New Roman", serif'
-    wrapText(ctx, texto, 540, 870, 900, fontSize * 1.25)
+    ctx.textBaseline = 'middle'
 
-    // Yellow decorative line above text
+    var texto = slide.texto || ''
+    var fontSize = 72
+    ctx.font = 'bold ' + fontSize + 'px Georgia, serif'
+    while (ctx.measureText(texto).width > 880 && fontSize > 36) {
+      fontSize -= 4
+      ctx.font = 'bold ' + fontSize + 'px Georgia, serif'
+    }
+
+    // Word wrap
+    var words = texto.split(' ')
+    var lines = []
+    var currentLine = ''
+    words.forEach(function(word) {
+      var test = currentLine + word + ' '
+      if (ctx.measureText(test).width > 880 && currentLine !== '') {
+        lines.push(currentLine.trim())
+        currentLine = word + ' '
+      } else { currentLine = test }
+    })
+    if (currentLine.trim()) lines.push(currentLine.trim())
+
+    var lineHeight = fontSize * 1.3
+    var totalTextHeight = lines.length * lineHeight
+    var startY = 540 - totalTextHeight / 2 + lineHeight / 2
+
+    lines.forEach(function(ln, i) {
+      ctx.fillText(ln, 540, startY + i * lineHeight)
+    })
+    ctx.restore()
+
+    // Yellow decorative line ABOVE the text block
+    ctx.save()
     ctx.shadowBlur = 0
-    ctx.shadowColor = 'transparent'
     ctx.strokeStyle = '#F5C518'
-    ctx.lineWidth = 4
+    ctx.lineWidth = 5
+    var lineY = startY - lineHeight * 0.8
     ctx.beginPath()
-    ctx.moveTo(200, 790)
-    ctx.lineTo(880, 790)
+    ctx.moveTo(200, lineY)
+    ctx.lineTo(880, lineY)
     ctx.stroke()
+    ctx.restore()
 
     // Logo badge (bottom-right)
     if (logoImg) {
@@ -1619,6 +1654,10 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
 async function carrosselComporTodos(session) {
   var slides = _contGerado && _contGerado.instagram && _contGerado.instagram.slides
   if (!slides || !slides.length) return
+
+  console.log('[carrossel] slides a compor:', slides.map(function(s, i) {
+    return i + ': ' + (s.texto || '(vazio)').slice(0, 60)
+  }))
 
   var bgUrl = _aiImgFinal || _aiImgUrl || (_imgUrls.length ? _imgUrls[0] : null)
   var bgImg  = null; var logoImg = null
