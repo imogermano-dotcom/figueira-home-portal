@@ -905,9 +905,10 @@ var _contGerado = null
 var _histRows = []
 var _imgFiles = []   // File objects pendentes
 var _imgUrls  = []   // URLs públicos já carregados
-var _aiImgUrl    = null   // URL Supabase da imagem IA (antes de overlay)
-var _aiImgFinal  = null   // URL final após overlay logo
-var _aiImgPrompt = ''
+var _aiImgUrl       = null   // URL Supabase da imagem IA (antes de overlay)
+var _aiImgFinal     = null   // URL final após overlay logo
+var _aiImgPrompt    = ''
+var _slidesCompostos = []    // URLs dos slides compostos por Canvas API
 var EDGE_GERAR  = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-conteudo'
 var EDGE_IMAGEM = 'https://fykbogojkcqokvopnmkz.supabase.co/functions/v1/gerar-imagem'
 var N8N_WEBHOOK = 'https://n8n.figueirahome.cloud/webhook/publicar-conteudo'
@@ -1197,11 +1198,175 @@ function aiImgOverlayAndUpload(supabaseUrl, session) {
 
 function aiImgReset() {
   _aiImgUrl = null; _aiImgFinal = null; _aiImgPrompt = ''
+  _slidesCompostos = []
   var ta = document.getElementById('ai-img-prompt-ta')
   if (ta) ta.value = ''
   var thumb = document.getElementById('ai-img-thumb')
   if (thumb) thumb.src = ''
   aiImgSetState('initial')
+}
+
+// ── Carousel slide composition ────────────────────────────────────────────────
+var SLIDE_BRAND_OVERLAYS = [
+  'rgba(10,61,98,0.85)',
+  'rgba(26,95,122,0.85)',
+  'rgba(44,122,123,0.85)',
+  'rgba(71,143,130,0.85)'
+]
+
+function getSlideOverlayCor(index, total) {
+  if (index === 0) return 'rgba(0,0,0,0.40)'
+  if (index === total - 1) return '#0A3D62'
+  return SLIDE_BRAND_OVERLAYS[(index - 1) % SLIDE_BRAND_OVERLAYS.length]
+}
+
+function loadImg(url) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload  = function() { resolve(img) }
+    img.onerror = function() { reject(new Error('load failed: ' + url)) }
+    img.src = url
+  })
+}
+
+function wrapLines(ctx, text, maxW) {
+  var words = (text || '').trim().split(/\s+/)
+  var lines = []; var line = ''
+  words.forEach(function(w) {
+    var test = line ? line + ' ' + w : w
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line); line = w
+    } else { line = test }
+  })
+  if (line) lines.push(line)
+  return lines
+}
+
+async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) {
+  var S = 1080
+  var canvas = document.createElement('canvas')
+  canvas.width = S; canvas.height = S
+  var ctx = canvas.getContext('2d')
+  var cx = S / 2
+  var PAD = 90
+  var isFirst = idx === 0
+  var isLast  = idx === total - 1
+  var overlayColor = getSlideOverlayCor(idx, total)
+
+  if (isLast) {
+    // ── CTA slide: solid brand background ─────────────────────────────────
+    ctx.fillStyle = '#0A3D62'
+    ctx.fillRect(0, 0, S, S)
+
+    if (logoImg) {
+      var lw = Math.round(S * 0.60)
+      var lh = Math.round(lw * logoImg.naturalHeight / logoImg.naturalWidth)
+      ctx.drawImage(logoImg, (S - lw) / 2, Math.round(S * 0.20), lw, lh)
+    } else {
+      ctx.font = 'bold 64px "Segoe UI",Arial,sans-serif'
+      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'
+      ctx.fillText('Figueira Home', cx, Math.round(S * 0.40))
+    }
+
+    ctx.textAlign = 'center'
+    ctx.font = 'bold 54px "Segoe UI",Arial,sans-serif'
+    ctx.fillStyle = '#ffffff'
+    var ctaLines = wrapLines(ctx, slide.texto || '', S - PAD * 2)
+    var lh2 = 68; var ctaY = Math.round(S * 0.70)
+    ctaLines.forEach(function(ln, i) { ctx.fillText(ln, cx, ctaY + i * lh2) })
+
+    ctx.font = '36px "Segoe UI",Arial,sans-serif'
+    ctx.globalAlpha = 0.75
+    ctx.fillText('@figueirahome', cx, Math.round(S * 0.88))
+    ctx.globalAlpha = 1
+
+  } else {
+    // ── Image + overlay slide ─────────────────────────────────────────────
+    if (bgImg) {
+      ctx.drawImage(bgImg, 0, 0, S, S)
+    } else {
+      ctx.fillStyle = '#1a3c5e'
+      ctx.fillRect(0, 0, S, S)
+    }
+
+    ctx.fillStyle = overlayColor
+    ctx.fillRect(0, 0, S, S)
+
+    var fontSize = isFirst ? 72 : 54
+    ctx.font = 'bold ' + fontSize + 'px "Segoe UI",Arial,sans-serif'
+    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'
+    var lhText = Math.round(fontSize * 1.28)
+    var textLines = wrapLines(ctx, slide.texto || '', S - PAD * 2)
+    var textBlock = textLines.length * lhText
+    var textY = Math.round(S / 2 - textBlock / 2 + lhText * 0.85)
+    textLines.forEach(function(ln, i) { ctx.fillText(ln, cx, textY + i * lhText) })
+
+    // Slide number (not on hook)
+    if (!isFirst) {
+      ctx.textAlign = 'right'
+      ctx.font = '30px "Segoe UI",Arial,sans-serif'
+      ctx.globalAlpha = 0.70
+      ctx.fillText((idx + 1) + '/' + total, S - 26, 46)
+      ctx.globalAlpha = 1
+    }
+
+    // Logo bottom-right
+    if (logoImg) {
+      var lw3 = isFirst ? Math.round(S * 0.18) : Math.round(S * 0.13)
+      var lh3 = Math.round(lw3 * logoImg.naturalHeight / logoImg.naturalWidth)
+      var mg  = 22
+      ctx.globalAlpha = 0.90
+      ctx.drawImage(logoImg, S - lw3 - mg, S - lh3 - mg, lw3, lh3)
+      ctx.globalAlpha = 1
+    }
+  }
+
+  return new Promise(function(resolve) {
+    canvas.toBlob(async function(blob) {
+      if (!blob) { resolve(null); return }
+      var path = session.user.id + '/slides/' + Date.now() + '_s' + idx + '.jpg'
+      var { error } = await sb.storage.from('conteudos-imagens')
+        .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+      if (error) { console.warn('slide upload error', error); resolve(null); return }
+      var { data: pub } = sb.storage.from('conteudos-imagens').getPublicUrl(path)
+      resolve(pub.publicUrl)
+    }, 'image/jpeg', 0.92)
+  })
+}
+
+async function carrosselComporTodos(session) {
+  var slides = _contGerado && _contGerado.instagram && _contGerado.instagram.slides
+  if (!slides || !slides.length) return
+
+  var bgUrl = _aiImgFinal || _aiImgUrl || (_imgUrls.length ? _imgUrls[0] : null)
+  var bgImg  = null; var logoImg = null
+  if (bgUrl) { try { bgImg  = await loadImg(bgUrl) } catch(e) {} }
+  try { logoImg = await loadImg('/logo-figueirahome.png') } catch(e) {}
+
+  _slidesCompostos = []
+  for (var i = 0; i < slides.length; i++) {
+    var url = await carrosselComporSlide(slides[i], i, slides.length, bgImg, logoImg, session)
+    _slidesCompostos.push(url || bgUrl || '')
+    slides[i].imagem_url  = url || null
+    slides[i].overlay_cor = getSlideOverlayCor(i, slides.length)
+  }
+
+  // Refresh preview if currently open
+  var prevEl = document.getElementById('card-preview-instagram')
+  if (prevEl && prevEl.classList.contains('open')) {
+    prevEl.innerHTML = prevBuildHtml('instagram')
+  }
+}
+
+async function carrosselRecompor() {
+  var btn = document.getElementById('carrossel-recompor-btn')
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ A compor...' }
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    await carrosselComporTodos(session)
+  } catch(e) { console.warn('recompor error', e) }
+  if (btn) { btn.disabled = false; btn.textContent = '🎨 Recompor' }
 }
 
 // ── Conteúdo Social ───────────────────────────────────────────────────────────
@@ -1248,9 +1413,14 @@ async function contGerar() {
     _contGerado = data.conteudo
     contRenderCards(redes)
     document.getElementById('cont-results').style.display = ''
-    // Generate AI image (non-blocking on text result — runs after cards are shown)
+    // Generate AI image
     btn.textContent = '🖼️ A criar imagem com IA...'
     await aiImgGerar(texto, session)
+    // Compose carousel slides (canvas per slide) if applicable
+    if (redes.includes('instagram') && _igFormato === 'carrossel' && _contGerado && _contGerado.instagram) {
+      btn.textContent = '🎨 A compor slides...'
+      await carrosselComporTodos(session)
+    }
   } catch(e) {
     aiImgSetState('initial')
     alert('Erro ao gerar: ' + e.message)
@@ -1322,6 +1492,7 @@ function contRenderCards(redes) {
       + '<span class="cont-card-title">' + cfg.icon + ' ' + cfg.label + (isCarrossel ? ' <span style="font-size:.72rem;color:#c13584;font-weight:600">Carrossel</span>' : '') + '</span>'
       + '<div style="display:flex;align-items:center;gap:8px">'
       + '<span class="cont-word-count" id="wc-'+rede+'">' + wcText + '</span>'
+      + (isCarrossel ? '<button class="cont-btn secondary" id="carrossel-recompor-btn" style="padding:4px 10px;font-size:.72rem" onclick="carrosselRecompor()">🎨 Recompor</button>' : '')
       + '<button class="prev-toggle" id="ptoggle-'+rede+'" onclick="contTogglePreview(\''+rede+'\')">👁 Preview</button>'
       + '</div></div>'
       + '<div id="card-edit-'+rede+'">' + editInner + '</div>'
@@ -1402,7 +1573,15 @@ function prevBuildHtml(rede) {
         'linear-gradient(135deg,#9f1239,#e11d48)'
       ]
       var slidesHtml = slides.map(function(s, i) {
-        var bg = _imgUrls[i] || _imgUrls[0] || null
+        // Prefer composed slide (canvas-rendered with text baked in)
+        var composedUrl = _slidesCompostos[i]
+        if (composedUrl) {
+          return '<div class="prev-ig-slide" style="background:#1a3c5e">'
+            + '<img src="'+esc(composedUrl)+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
+            + '</div>'
+        }
+        // Fallback: raw image + JS overlay
+        var bg = _aiImgFinal || _imgUrls[0] || null
         var imgTag = bg ? '<img src="'+esc(bg)+'" alt="">' : ''
         var gradient = gradients[i % gradients.length]
         return '<div class="prev-ig-slide" style="background:'+gradient+'">'
@@ -1591,12 +1770,19 @@ async function contGuardar(agendar) {
     var hashEl = document.getElementById('hash-'+r)
     var scriptEl = document.getElementById('script-'+r)
     if (isIgCarrossel) {
+      var totalSlides = (d.slides || []).length
       var slidesData = (d.slides || []).map(function(s, i) {
         var ta = document.getElementById('slide-'+i)
-        return { ordem: s.ordem, texto: ta ? ta.value : (s.texto||'') }
+        return {
+          ordem: s.ordem,
+          texto: ta ? ta.value : (s.texto || ''),
+          imagem_url: s.imagem_url || _slidesCompostos[i] || null,
+          overlay_cor: s.overlay_cor || getSlideOverlayCor(i, totalSlides)
+        }
       })
       payload['formato_instagram'] = 'carrossel'
       payload['slides_instagram'] = slidesData
+      payload['slides_compostos_urls'] = _slidesCompostos.filter(Boolean)
       payload['hashtags_instagram'] = hashEl ? hashEl.value : (d.hashtags||'')
       payload['script_instagram'] = scriptEl ? scriptEl.value : (d.video_script||'')
       payload['status_instagram'] = status
