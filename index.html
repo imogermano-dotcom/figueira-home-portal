@@ -4789,20 +4789,20 @@ async function bibUploadSubmit() {
 }
 
 async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
-  // Arquitectura directa: get-upload-url (edge fn) → signed URL → PUT directo Storage
-  // Sem proxy de dados, sem chunks, sem timeout issues
+  // Arquitectura directa: get-upload-url (edge fn) → uploadToSignedUrl (SDK)
+  // SDK trata Content-Type, token e headers automaticamente — sem HTTP 400
   var GET_URL_FN = DOORSTEP_URL + '/functions/v1/get-upload-url'
   var { data: { session } } = await sb.auth.getSession()
   if (!session) { console.warn('[upload-video] sem sessão'); return null }
 
-  console.log('[upload-video] início directo', {
+  console.log('[upload-video] início', {
     nome: file.name,
     tamanho: Math.round(file.size/1024/1024) + 'MB',
     tipo: file.type || '(vazio)',
     path: path
   })
 
-  // 1. Obter URL assinado via edge function (< 1s)
+  // 1. Obter token assinado via edge function (< 1s)
   if (progLbl) progLbl.textContent = 'A preparar upload…'
   var urlResp, urlData
   try {
@@ -4821,61 +4821,50 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
     if (progLbl) progLbl.textContent = '✗ Erro ao obter URL de upload'
     return null
   }
-  if (!urlResp.ok || !urlData.signedUrl) {
+  if (!urlResp.ok || !urlData.token) {
     console.error('[upload-video] get-upload-url erro:', urlResp.status, urlData)
     if (progBar) { progBar.style.background = '#ef4444' }
     if (progLbl) progLbl.textContent = '✗ ' + (urlData.error || 'Erro ao obter URL (' + urlResp.status + ')')
     return null
   }
-  console.log('[upload-video] signed URL obtido, a iniciar PUT directo…')
+  console.log('[upload-video] token obtido, a iniciar upload via SDK…')
 
-  // 2. PUT directo para Supabase Storage — sem proxy, sem limite de tempo Cloudflare
-  return new Promise(function(resolve) {
-    var xhr = new XMLHttpRequest()
-    xhr.open('PUT', urlData.signedUrl, true)
-    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
-    xhr.timeout = 1800000  // 30 minutos
-
-    xhr.upload.onprogress = function(ev) {
-      if (ev.lengthComputable && progBar && progLbl) {
-        var pct = Math.round((ev.loaded / ev.total) * 100)
-        progBar.style.width = pct + '%'
-        progLbl.textContent = 'A carregar… ' + pct + '%' +
-          ' (' + Math.round(ev.loaded/1024/1024) + '/' + Math.round(ev.total/1024/1024) + ' MB)'
+  // 2. Animação de progresso (SDK não expõe bytes — animar barra durante o upload)
+  var animTimer = null
+  var animPct   = 5
+  if (progBar && progLbl) {
+    progBar.style.width = '5%'
+    progLbl.textContent = 'A carregar vídeo… (' + Math.round(file.size/1024/1024) + ' MB)'
+    animTimer = setInterval(function() {
+      // Avança lentamente até 90% enquanto espera — nunca chega a 100% sozinho
+      if (animPct < 90) {
+        animPct += (90 - animPct) * 0.04  // desacelera à medida que se aproxima
+        progBar.style.width = Math.round(animPct) + '%'
       }
-    }
+    }, 800)
+  }
 
-    xhr.onload = function() {
-      console.log('[upload-video] PUT status=' + xhr.status)
-      if (xhr.status >= 200 && xhr.status < 300) {
-        if (progBar) progBar.style.width = '100%'
-        if (progLbl) progLbl.textContent = '✅ Upload concluído!'
-        resolve(DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path)
-      } else {
-        console.error('[upload-video] PUT falhou:', xhr.status, xhr.responseText.slice(0, 200))
-        if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-        if (progLbl) progLbl.textContent = '✗ Upload falhou: HTTP ' + xhr.status
-        resolve(null)
-      }
-    }
-    xhr.onerror   = function() {
-      console.error('[upload-video] XHR onerror — falha de rede')
-      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-      if (progLbl) progLbl.textContent = '✗ Erro de rede'
-      resolve(null)
-    }
-    xhr.onabort   = function() {
-      console.warn('[upload-video] XHR abortado')
-      resolve(null)
-    }
-    xhr.ontimeout = function() {
-      console.error('[upload-video] XHR timeout (>30 min)')
-      if (progLbl) progLbl.textContent = '✗ Timeout (>30 min)'
-      resolve(null)
-    }
+  // 3. Upload via SDK — trata token, Content-Type e PUT correctamente
+  var mimeType = file.type || 'video/mp4'
+  var uploadResult = await sb.storage
+    .from('videos-conteudos')
+    .uploadToSignedUrl(path, urlData.token, file, { contentType: mimeType })
 
-    xhr.send(file)
-  })
+  if (animTimer) clearInterval(animTimer)
+
+  if (uploadResult.error) {
+    console.error('[upload-video] uploadToSignedUrl erro:', uploadResult.error.message)
+    if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+    if (progLbl) progLbl.textContent = '✗ ' + uploadResult.error.message
+    return null
+  }
+
+  if (progBar) progBar.style.width = '100%'
+  if (progLbl) progLbl.textContent = '✅ Upload concluído!'
+  var publicUrl = DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
+  console.log('[upload-video] concluído:', publicUrl)
+  return publicUrl
+
 }
 function bibGetVideoMeta(file) {
   return new Promise(function(resolve) {
