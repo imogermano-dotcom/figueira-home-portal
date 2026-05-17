@@ -1268,71 +1268,157 @@ function wrapLines(ctx, text, maxW) {
   return lines
 }
 
+function drawHalfGradient(ctx, S, startRatio, maxAlpha) {
+  var grad = ctx.createLinearGradient(0, S * startRatio, 0, S)
+  grad.addColorStop(0, 'rgba(0,0,0,0)')
+  grad.addColorStop(0.45, 'rgba(0,0,0,' + (maxAlpha * 0.45).toFixed(2) + ')')
+  grad.addColorStop(1, 'rgba(0,0,0,' + maxAlpha + ')')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, S, S)
+}
+
+function drawSlideBadge(ctx, text, S, margin) {
+  ctx.save()
+  ctx.font = 'bold 18px "Segoe UI",Arial,sans-serif'
+  var tw = ctx.measureText(text).width
+  var pH = 12, pV = 6, r = 8
+  var bw = tw + pH * 2, bh = 30
+  var bx = S - bw - margin, by = margin
+  ctx.globalAlpha = 0.70
+  ctx.fillStyle = '#000000'
+  ctx.beginPath()
+  ctx.moveTo(bx + r, by); ctx.lineTo(bx + bw - r, by); ctx.arcTo(bx + bw, by, bx + bw, by + r, r)
+  ctx.lineTo(bx + bw, by + bh - r); ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r)
+  ctx.lineTo(bx + r, by + bh); ctx.arcTo(bx, by + bh, bx, by + bh - r, r)
+  ctx.lineTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r)
+  ctx.closePath(); ctx.fill()
+  ctx.globalAlpha = 1
+  ctx.fillStyle = '#ffffff'
+  ctx.textAlign = 'center'
+  ctx.fillText(text, bx + bw / 2, by + pV + 18)
+  ctx.restore()
+}
+
+function drawLogoBadgeCorner(ctx, logoImg, S, logoW, padding, margin) {
+  var logoH = Math.round(logoW * (logoImg.naturalHeight || logoW) / (logoImg.naturalWidth || logoW))
+  var bw = logoW + padding * 2, bh = logoH + padding * 2
+  var bx = S - bw - margin, by = S - bh - margin
+  var r = 12
+  ctx.save()
+  ctx.fillStyle = '#F5C518'
+  ctx.beginPath()
+  ctx.moveTo(bx + r, by); ctx.lineTo(bx + bw - r, by); ctx.arcTo(bx + bw, by, bx + bw, by + r, r)
+  ctx.lineTo(bx + bw, by + bh - r); ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r)
+  ctx.lineTo(bx + r, by + bh); ctx.arcTo(bx, by + bh, bx, by + bh - r, r)
+  ctx.lineTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r)
+  ctx.closePath(); ctx.fill()
+  ctx.drawImage(logoImg, bx + padding, by + padding, logoW, logoH)
+  ctx.restore()
+}
+
+function drawLogoBadgeCentered(ctx, logoImg, cx, cy, logoW, padding) {
+  var logoH = Math.round(logoW * (logoImg.naturalHeight || logoW) / (logoImg.naturalWidth || logoW))
+  var bw = logoW + padding * 2, bh = logoH + padding * 2
+  var bx = cx - bw / 2, by = cy - bh / 2
+  var r = 14
+  ctx.save()
+  ctx.fillStyle = '#F5C518'
+  ctx.beginPath()
+  ctx.moveTo(bx + r, by); ctx.lineTo(bx + bw - r, by); ctx.arcTo(bx + bw, by, bx + bw, by + r, r)
+  ctx.lineTo(bx + bw, by + bh - r); ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r)
+  ctx.lineTo(bx + r, by + bh); ctx.arcTo(bx, by + bh, bx, by + bh - r, r)
+  ctx.lineTo(bx, by + r); ctx.arcTo(bx, by, bx + r, by, r)
+  ctx.closePath(); ctx.fill()
+  ctx.drawImage(logoImg, bx + padding, by + padding, logoW, logoH)
+  ctx.restore()
+}
+
+function fitText(ctx, text, maxW, startSize, maxLines, fontStyle) {
+  var fs = startSize
+  var lines
+  while (fs >= 22) {
+    ctx.font = fontStyle.replace('__FS__', fs)
+    lines = wrapLines(ctx, text, maxW)
+    if (lines.length <= maxLines) break
+    fs -= 4
+  }
+  return { lines: lines, fontSize: fs }
+}
+
 async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) {
   var S = 1080
+  var cx = S / 2
+  var TEXT_W = Math.round(S * 0.80)  // max 80% width for text
+  var MARGIN = 20
+
   var canvas = document.createElement('canvas')
   canvas.width = S; canvas.height = S
   var ctx = canvas.getContext('2d')
-  var cx = S / 2
-  var PAD = 90
+
   var isFirst = idx === 0
   var isLast  = idx === total - 1
-  var overlayColor = getSlideOverlayCor(idx, total)
 
+  // ── CTA slide ───────────────────────────────────────────────────────────
   if (isLast) {
-    // ── CTA slide: solid brand background ─────────────────────────────────
     ctx.fillStyle = '#0A3D62'
     ctx.fillRect(0, 0, S, S)
 
-    ctx.font = 'bold 64px "Segoe UI",Arial,sans-serif'
+    // Centred logo badge at 32%
+    if (logoImg) { drawLogoBadgeCentered(ctx, logoImg, cx, Math.round(S * 0.32), 200, 14) }
+    else {
+      ctx.font = 'bold 52px Georgia,serif'
+      ctx.fillStyle = '#F5C518'; ctx.textAlign = 'center'
+      ctx.fillText('Figueira Home', cx, Math.round(S * 0.35))
+    }
+
+    // CTA text
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8
+    var ctaFit = fitText(ctx, slide.texto || '', TEXT_W, 42, 3, 'bold __FS__px Georgia,serif')
+    ctx.font = 'bold ' + ctaFit.fontSize + 'px Georgia,serif'
     ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'
-    ctx.fillText('Figueira Home', cx, Math.round(S * 0.35))
+    var ctaLH = Math.round(ctaFit.fontSize * 1.30)
+    var ctaY = Math.round(S * 0.56)
+    ctaFit.lines.forEach(function(ln, i) { ctx.fillText(ln, cx, ctaY + i * ctaLH) })
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'
 
-    ctx.textAlign = 'center'
-    ctx.font = 'bold 54px "Segoe UI",Arial,sans-serif'
-    ctx.fillStyle = '#ffffff'
-    var ctaLines = wrapLines(ctx, slide.texto || '', S - PAD * 2)
-    var lh2 = 68; var ctaY = Math.round(S * 0.70)
-    ctaLines.forEach(function(ln, i) { ctx.fillText(ln, cx, ctaY + i * lh2) })
+    // Handle
+    ctx.font = '22px "Segoe UI",Arial,sans-serif'
+    ctx.fillStyle = '#F5C518'; ctx.textAlign = 'center'
+    ctx.fillText('@figueirahome', cx, Math.round(S * 0.87))
 
-    ctx.font = '36px "Segoe UI",Arial,sans-serif'
-    ctx.globalAlpha = 0.75
-    ctx.fillText('@figueirahome', cx, Math.round(S * 0.88))
-    ctx.globalAlpha = 1
-
-    if (logoImg) { drawLogoCorner(ctx, logoImg, S, 80, 16) }
-
+  // ── Image slides ────────────────────────────────────────────────────────
   } else {
-    // ── Image + overlay slide ─────────────────────────────────────────────
+    // Background
     if (bgImg) {
       ctx.drawImage(bgImg, 0, 0, S, S)
     } else {
-      ctx.fillStyle = '#1a3c5e'
+      ctx.fillStyle = '#0f2944'
       ctx.fillRect(0, 0, S, S)
     }
 
-    ctx.fillStyle = overlayColor
-    ctx.fillRect(0, 0, S, S)
+    // Half-gradient overlay
+    var gradAlpha = isFirst ? 0.90 : 0.80
+    drawHalfGradient(ctx, S, 0.30, gradAlpha)
 
-    var fontSize = isFirst ? 72 : 54
-    ctx.font = 'bold ' + fontSize + 'px "Segoe UI",Arial,sans-serif'
+    // Slide number badge (all slides)
+    drawSlideBadge(ctx, (idx + 1) + ' / ' + total, S, MARGIN)
+
+    // Title text — positioned in lower area
+    var startSize = isFirst ? 58 : 52
+    var fit = fitText(ctx, slide.texto || '', TEXT_W, startSize, 2, 'bold __FS__px Georgia,serif')
+    ctx.font = 'bold ' + fit.fontSize + 'px Georgia,serif'
     ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'
-    var lhText = Math.round(fontSize * 1.28)
-    var textLines = wrapLines(ctx, slide.texto || '', S - PAD * 2)
-    var textBlock = textLines.length * lhText
-    var textY = Math.round(S / 2 - textBlock / 2 + lhText * 0.85)
-    textLines.forEach(function(ln, i) { ctx.fillText(ln, cx, textY + i * lhText) })
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 12
+    var lh = Math.round(fit.fontSize * 1.25)
+    var textBlock = fit.lines.length * lh
+    // bottom area: anchor bottom of text block at ~82% for hook, ~80% for middle
+    var bottomAnchor = Math.round(S * (isFirst ? 0.78 : 0.75))
+    var textY = bottomAnchor - textBlock + lh
+    fit.lines.forEach(function(ln, i) { ctx.fillText(ln, cx, textY + i * lh) })
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'
 
-    // Slide number (not on hook)
-    if (!isFirst) {
-      ctx.textAlign = 'right'
-      ctx.font = '30px "Segoe UI",Arial,sans-serif'
-      ctx.globalAlpha = 0.70
-      ctx.fillText((idx + 1) + '/' + total, S - 26, 46)
-      ctx.globalAlpha = 1
-    }
-
-    if (logoImg) { drawLogoCorner(ctx, logoImg, S, 80, 16) }
+    // Logo badge bottom-right
+    if (logoImg) { drawLogoBadgeCorner(ctx, logoImg, S, 100, 8, MARGIN) }
   }
 
   return new Promise(function(resolve) {
@@ -1344,7 +1430,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
       if (error) { console.warn('slide upload error', error); resolve(null); return }
       var { data: pub } = sb.storage.from('conteudos-imagens').getPublicUrl(path)
       resolve(pub.publicUrl)
-    }, 'image/jpeg', 0.92)
+    }, 'image/jpeg', 0.93)
   })
 }
 
