@@ -4708,7 +4708,7 @@ async function bibUploadSubmit() {
     console.log('[debug] 6. ficheiro ' + (i+1) + '/' + _bibUploadFiles.length + ':', f.name, Math.round(f.size/1024/1024)+'MB', f.type, 'isVid='+isVid)
 
     if (isVid) {
-      // Video: chunked upload via Edge Function (contorna limite 100 MB Cloudflare)
+      // Video: URL assinado → upload directo para Storage (sem proxy, sem timeout)
       prog.classList.add('show')
       var vidPath = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
       console.log('[debug] 7. a chamar bibUploadVideoSDK', { vidPath, cat, desc })
@@ -4716,22 +4716,6 @@ async function bibUploadSubmit() {
         userId: user.id, categoria: cat, descricao: desc
       })
       console.log('[upload] storage result', { vidUrl, hadError: !vidUrl })
-
-      // Vídeo grande em processamento background via n8n
-      if (vidUrl === '__MERGING__') {
-        prog.classList.remove('show')
-        btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'
-        _bibUploadFiles = []
-        document.getElementById('bib-upload-previews').innerHTML = ''
-        msg.style.color = '#10b981'
-        msg.textContent = '✅ Upload concluído! O vídeo está a ser processado e aparecerá na biblioteca em breve.'
-        setTimeout(function() {
-          msg.style.color = ''
-          document.getElementById('bib-upload-modal').classList.remove('open')
-          bibLoad()
-        }, 3000)
-        return  // sair de bibUploadSubmit — modal fecha após 3s
-      }
 
       if (!vidUrl) {
         errors.push(f.name + ': falha no upload para storage')
@@ -4805,141 +4789,93 @@ async function bibUploadSubmit() {
 }
 
 async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
-  // Upload em chunks de 5 MB via Edge Function upload-video (via XHR).
-  // Cada chunk (< 6 MB) passa no limite do Cloudflare.
-  // O merge do ficheiro final é feito pelo n8n em background.
-  var CHUNK_SIZE  = 1 * 1024 * 1024  // 1 MB
-  var EDGE_UPLOAD = DOORSTEP_URL + '/functions/v1/upload-video'
+  // Arquitectura directa: get-upload-url (edge fn) → signed URL → PUT directo Storage
+  // Sem proxy de dados, sem chunks, sem timeout issues
+  var GET_URL_FN = DOORSTEP_URL + '/functions/v1/get-upload-url'
   var { data: { session } } = await sb.auth.getSession()
   if (!session) { console.warn('[upload-video] sem sessão'); return null }
 
-  var totalChunks = Math.ceil(file.size / CHUNK_SIZE)
-  var uploadId    = Date.now() + '_' + file.name.replace(/[^a-z0-9]/gi, '_').slice(0, 40)
-  var userId      = (meta && meta.userId)    || ''
-  var categoria   = (meta && meta.categoria) || ''
-  var descricao   = (meta && meta.descricao) || ''
-
-  console.log('[upload-video] início', {
+  console.log('[upload-video] início directo', {
     nome: file.name,
     tamanho: Math.round(file.size/1024/1024) + 'MB',
     tipo: file.type || '(vazio)',
-    chunks: totalChunks,
-    uploadId: uploadId,
-    edgeUrl: EDGE_UPLOAD
+    path: path
   })
 
-  // Warmup — acorda o worker Deno antes do primeiro chunk (evita cold-start 504)
-  if (progLbl) progLbl.textContent = 'A preparar ligação…'
+  // 1. Obter URL assinado via edge function (< 1s)
+  if (progLbl) progLbl.textContent = 'A preparar upload…'
+  var urlResp, urlData
   try {
-    await fetch(EDGE_UPLOAD, { method: 'GET' })
-    console.log('[upload-video] warmup ok')
-  } catch(e) {
-    console.warn('[upload-video] warmup falhou (não crítico):', e.message)
-  }
-  await new Promise(function(r) { setTimeout(r, 2000) })
-
-  // Helper: envia um chunk via XHR e devolve Promise com o resultado JSON
-  function _sendChunk(chunkBlob, chunkIdx) {
-    return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest()
-      xhr.open('POST', EDGE_UPLOAD, true)
-      xhr.timeout = 600000  // 10 min por chunk (cold start incluído)
-
-      // Headers
-      xhr.setRequestHeader('Authorization',  'Bearer ' + session.access_token)
-      xhr.setRequestHeader('Content-Type',   'application/octet-stream')
-      xhr.setRequestHeader('x-chunk-index',  String(chunkIdx))
-      xhr.setRequestHeader('x-total-chunks', String(totalChunks))
-      xhr.setRequestHeader('x-file-path',    path)
-      xhr.setRequestHeader('x-file-type',    file.type || 'video/mp4')
-      xhr.setRequestHeader('x-upload-id',    uploadId)
-      xhr.setRequestHeader('x-user-id',      userId)
-      xhr.setRequestHeader('x-categoria',    categoria)
-      xhr.setRequestHeader('x-descricao',    encodeURIComponent(descricao))
-      xhr.setRequestHeader('x-file-name',    encodeURIComponent(file.name))
-      xhr.setRequestHeader('x-file-size',    String(file.size))
-
-      // Upload progress (bytes reais)
-      xhr.upload.onprogress = function(ev) {
-        if (ev.lengthComputable && progBar && progLbl) {
-          var chunksDone = chunkIdx + ev.loaded / ev.total
-          var pct = Math.round((chunksDone / totalChunks) * 100)
-          progBar.style.width = pct + '%'
-          progLbl.textContent = 'A carregar vídeo… ' + pct + '% (chunk ' + (chunkIdx+1) + '/' + totalChunks + ')'
-        }
-      }
-
-      xhr.onload = function() {
-        console.log('[upload-video] chunk ' + (chunkIdx+1) + '/' + totalChunks + ' status=' + xhr.status)
-        var result
-        try { result = JSON.parse(xhr.responseText) } catch(e) { result = {} }
-        if (xhr.status >= 200 && xhr.status < 300 && !result.error) {
-          resolve(result)
-        } else {
-          reject(new Error('HTTP ' + xhr.status + ': ' + (result.error || xhr.responseText.slice(0,120))))
-        }
-      }
-
-      xhr.onerror = function() {
-        console.error('[upload-video] XHR onerror chunk ' + (chunkIdx+1) + ' — falha de rede')
-        reject(new Error('Erro de rede (onerror) no chunk ' + (chunkIdx+1)))
-      }
-      xhr.onabort = function() {
-        console.warn('[upload-video] XHR onabort chunk ' + (chunkIdx+1))
-        reject(new Error('Abortado no chunk ' + (chunkIdx+1)))
-      }
-      xhr.ontimeout = function() {
-        console.error('[upload-video] XHR timeout chunk ' + (chunkIdx+1) + ' (>2 min)')
-        reject(new Error('Timeout no chunk ' + (chunkIdx+1)))
-      }
-
-      console.log('[upload-video] a enviar chunk ' + (chunkIdx+1) + '/' + totalChunks +
-        ' (' + Math.round(chunkBlob.size/1024) + ' KB) para ' + EDGE_UPLOAD)
-      xhr.send(chunkBlob)
+    urlResp = await fetch(GET_URL_FN, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + session.access_token,
+        'Content-Type':  'application/json'
+      },
+      body: JSON.stringify({ filePath: path, bucket: 'videos-conteudos' })
     })
+    urlData = await urlResp.json()
+  } catch(e) {
+    console.error('[upload-video] get-upload-url falhou:', e.message)
+    if (progBar) { progBar.style.background = '#ef4444' }
+    if (progLbl) progLbl.textContent = '✗ Erro ao obter URL de upload'
+    return null
   }
+  if (!urlResp.ok || !urlData.signedUrl) {
+    console.error('[upload-video] get-upload-url erro:', urlResp.status, urlData)
+    if (progBar) { progBar.style.background = '#ef4444' }
+    if (progLbl) progLbl.textContent = '✗ ' + (urlData.error || 'Erro ao obter URL (' + urlResp.status + ')')
+    return null
+  }
+  console.log('[upload-video] signed URL obtido, a iniciar PUT directo…')
 
-  for (var i = 0; i < totalChunks; i++) {
-    var start = i * CHUNK_SIZE
-    var end   = Math.min(start + CHUNK_SIZE, file.size)
-    var chunk = file.slice(start, end)
+  // 2. PUT directo para Supabase Storage — sem proxy, sem limite de tempo Cloudflare
+  return new Promise(function(resolve) {
+    var xhr = new XMLHttpRequest()
+    xhr.open('PUT', urlData.signedUrl, true)
+    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
+    xhr.timeout = 1800000  // 30 minutos
 
-    // Progresso inicial do chunk (antes de começar o envio)
-    var pct0 = Math.round((i / totalChunks) * 100)
-    if (progBar) progBar.style.width = pct0 + '%'
-    if (progLbl) progLbl.textContent = 'A preparar chunk ' + (i+1) + '/' + totalChunks + '…'
+    xhr.upload.onprogress = function(ev) {
+      if (ev.lengthComputable && progBar && progLbl) {
+        var pct = Math.round((ev.loaded / ev.total) * 100)
+        progBar.style.width = pct + '%'
+        progLbl.textContent = 'A carregar… ' + pct + '%' +
+          ' (' + Math.round(ev.loaded/1024/1024) + '/' + Math.round(ev.total/1024/1024) + ' MB)'
+      }
+    }
 
-    var result
-    try {
-      result = await _sendChunk(chunk, i)
-    } catch(e) {
-      console.error('[upload-video] falha no chunk ' + (i+1), e.message)
+    xhr.onload = function() {
+      console.log('[upload-video] PUT status=' + xhr.status)
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (progBar) progBar.style.width = '100%'
+        if (progLbl) progLbl.textContent = '✅ Upload concluído!'
+        resolve(DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path)
+      } else {
+        console.error('[upload-video] PUT falhou:', xhr.status, xhr.responseText.slice(0, 200))
+        if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+        if (progLbl) progLbl.textContent = '✗ Upload falhou: HTTP ' + xhr.status
+        resolve(null)
+      }
+    }
+    xhr.onerror   = function() {
+      console.error('[upload-video] XHR onerror — falha de rede')
       if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-      if (progLbl) progLbl.textContent = '✗ ' + e.message
-      return null
+      if (progLbl) progLbl.textContent = '✗ Erro de rede'
+      resolve(null)
+    }
+    xhr.onabort   = function() {
+      console.warn('[upload-video] XHR abortado')
+      resolve(null)
+    }
+    xhr.ontimeout = function() {
+      console.error('[upload-video] XHR timeout (>30 min)')
+      if (progLbl) progLbl.textContent = '✗ Timeout (>30 min)'
+      resolve(null)
     }
 
-    // Último chunk — n8n fará o merge em background
-    if (result.status === 'merging') {
-      if (progBar) progBar.style.width = '100%'
-      if (progLbl) progLbl.textContent = '✅ Upload concluído!'
-      console.log('[upload-video] merging em background', result.message)
-      return '__MERGING__'
-    }
-
-    // Upload normal (ficheiro pequeno com URL imediata)
-    if (result.done && result.url) {
-      if (progBar) progBar.style.width = '100%'
-      if (progLbl) progLbl.textContent = '100%'
-      console.log('[upload-video] concluído', result.url)
-      return result.url
-    }
-
-    console.log('[upload-video] chunk ' + (i+1) + '/' + totalChunks + ' ok ✓')
-  }
-
-  // Fallback (não deve chegar aqui)
-  return DOORSTEP_URL + '/storage/v1/object/public/videos-conteudos/' + path
+    xhr.send(file)
+  })
 }
 function bibGetVideoMeta(file) {
   return new Promise(function(resolve) {
