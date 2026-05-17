@@ -270,6 +270,35 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .tmpl-card.active .tmpl-card-label{color:#1a3c5e}
 .crop-panel{border:1.5px solid #e0e6f0;border-radius:10px;padding:16px;background:#fafbff;margin-top:12px}
 .crop-panel h4{font-size:.85rem;font-weight:700;color:#1a3c5e;margin:0 0 10px}
+.noticia-panel{border:1.5px solid #e0e6f0;border-radius:10px;background:#fff;overflow:hidden;margin-top:0}
+.noticia-filters{padding:12px;border-bottom:1px solid #f0f0f0;display:flex;flex-direction:column;gap:8px}
+.noticia-cat-row{display:flex;gap:6px;flex-wrap:wrap}
+.noticia-cat-btn{padding:5px 12px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
+.noticia-cat-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.noticia-filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.noticia-period-btn{padding:4px 9px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.73rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
+.noticia-period-btn.active{background:#2d6a9f;color:#fff;border-color:#2d6a9f}
+.noticia-all-btn{padding:4px 9px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.73rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s;white-space:nowrap}
+.noticia-all-btn.active{background:#f59e0b;color:#fff;border-color:#f59e0b}
+.noticia-source-sel{padding:4px 8px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.73rem;font-family:inherit;outline:none;color:#6b7280;background:#fff;cursor:pointer}
+.noticia-search{flex:1;min-width:100px;padding:4px 10px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.73rem;font-family:inherit;outline:none;transition:border-color .2s}
+.noticia-search:focus{border-color:#2d6a9f}
+.noticia-count{padding:7px 12px;font-size:.73rem;color:#9ca3af;border-bottom:1px solid #f5f5f5}
+.noticia-cards-list{max-height:380px;overflow-y:auto;padding:8px}
+.noticia-loading{text-align:center;padding:24px;color:#9ca3af;font-size:.84rem}
+.noticia-card{display:flex;gap:10px;padding:8px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;margin-bottom:6px}
+.noticia-card:hover{background:#f8faff;border-color:#e0e6f0}
+.noticia-card.selected{background:#eff6ff;border-color:#2d6a9f}
+.noticia-card-img{width:68px;height:68px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#e8eef6}
+.noticia-card-body{flex:1;min-width:0}
+.noticia-card-title{font-size:.82rem;font-weight:600;color:#1a3c5e;line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.noticia-card-meta{font-size:.71rem;color:#9ca3af;margin-bottom:4px}
+.noticia-card-badges{display:flex;gap:4px;flex-wrap:wrap}
+.badge-publicada{display:inline-flex;align-items:center;gap:3px;background:#fef2f2;color:#dc2626;font-size:.64rem;font-weight:700;padding:2px 6px;border-radius:10px;border:1px solid #fecaca}
+.badge-parcial{display:inline-flex;align-items:center;gap:3px;background:#fefce8;color:#b45309;font-size:.64rem;font-weight:700;padding:2px 6px;border-radius:10px;border:1px solid #fde68a}
+.noticia-usar-row{padding:8px 12px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.noticia-indicator{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;font-size:.82rem;color:#1a3c5e;margin-top:8px}
+.noticia-indicator-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crop-canvas-wrap{position:relative;display:flex;justify-content:center}
 #crop-canvas{border-radius:8px;cursor:grab;display:block;border:1px solid #e0e6f0;touch-action:none}
 #crop-canvas:active{cursor:grabbing}
@@ -529,15 +558,53 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <button class="fonte-btn" id="fonte-noticia" onclick="fonteSet('noticia')">📰 Notícia</button>
             </div>
           </div>
-          <div class="cont-field" id="fonte-noticia-extra" style="display:none">
-            <label class="cont-label">URL da notícia <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">opcional</span></label>
-            <input type="url" class="cont-date" id="cont-noticia-url" placeholder="https://..." style="max-width:100%">
+          <!-- Painel de notícias (visível só quando fonte = notícia) -->
+          <div id="fonte-noticia-panel" style="display:none">
+            <div class="noticia-panel">
+              <div class="noticia-filters">
+                <div class="noticia-cat-row">
+                  <button class="noticia-cat-btn active" id="ncat-figueira" onclick="noticiaSetCat('figueira')">🏖️ Figueira</button>
+                  <button class="noticia-cat-btn" id="ncat-imoveis" onclick="noticiaSetCat('imoveis')">🏠 Imobiliário</button>
+                  <button class="noticia-cat-btn" id="ncat-ia" onclick="noticiaSetCat('ia')">🤖 IA</button>
+                </div>
+                <div class="noticia-filter-row">
+                  <select class="noticia-source-sel" id="noticia-fonte-sel" onchange="noticiaLoad()">
+                    <option value="">Todas as fontes</option>
+                    <option>Casino da Figueira</option>
+                    <option>Diário As Beiras</option>
+                    <option>Diário de Coimbra</option>
+                    <option>Figueira da Foz</option>
+                    <option>Figueira na Hora</option>
+                  </select>
+                  <button class="noticia-period-btn" id="np-1" onclick="noticiaSetDias(1)">Hoje</button>
+                  <button class="noticia-period-btn" id="np-3" onclick="noticiaSetDias(3)">3d</button>
+                  <button class="noticia-period-btn active" id="np-7" onclick="noticiaSetDias(7)">7d</button>
+                  <button class="noticia-period-btn" id="np-30" onclick="noticiaSetDias(30)">30d</button>
+                  <button class="noticia-all-btn" id="noticia-all-btn" onclick="noticiaToggleAll()">Todas</button>
+                </div>
+                <input type="text" class="noticia-search" id="noticia-search" placeholder="🔍 Pesquisar título..." oninput="noticiaRenderCards()">
+              </div>
+              <div class="noticia-count" id="noticia-count">—</div>
+              <div id="noticia-cards-list" class="noticia-cards-list">
+                <div class="noticia-loading">A carregar...</div>
+              </div>
+              <div class="noticia-usar-row">
+                <span id="noticia-sel-label" style="font-size:.77rem;color:#9ca3af;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Nenhuma notícia seleccionada</span>
+                <button class="cont-btn primary" id="noticia-usar-btn" onclick="noticiaUsar()" disabled style="padding:6px 16px;font-size:.82rem;white-space:nowrap;flex-shrink:0">Usar esta notícia →</button>
+              </div>
+            </div>
           </div>
 
           <!-- 2. TEXTO BASE -->
-          <div class="cont-field">
-            <label class="cont-label" id="cont-texto-label">Texto base</label>
-            <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
+          <div id="fonte-texto-area">
+            <div class="noticia-indicator" id="noticia-indicator" style="display:none">
+              📰 <span class="noticia-indicator-text" id="noticia-indicator-text"></span>
+              <button onclick="noticiaLimpar()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:.9rem;padding:0;flex-shrink:0">✕</button>
+            </div>
+            <div class="cont-field">
+              <label class="cont-label" id="cont-texto-label">Texto base</label>
+              <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
+            </div>
           </div>
 
           <!-- 3. FORMATO INSTAGRAM -->
@@ -883,6 +950,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 var DOORSTEP_URL = 'https://fykbogojkcqokvopnmkz.supabase.co'
 var DOORSTEP_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5a2JvZ29qa2Nxb2t2b3BubWt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTc2MDgsImV4cCI6MjA3MzMzMzYwOH0.rih9rJONycxXm-FQ-HANFunSsiMT0KOubF0F9QgLNOw'
 var EGO_EDGE = 'https://zphasvfopnbzwnaidsnw.supabase.co/functions/v1/query-leads'
+var NOTICIAS_URL = 'https://kddjmksicdbudyyxqbfs.supabase.co'
+var NOTICIAS_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkZGpta3NpY2RidWR5eXhxYmZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTM1MzYsImV4cCI6MjA5MDI2OTUzNn0.PVOCfAHHRvk7DBjUqUaSrTmUD8klltpSpe5P9jij_rY'
+var sbNews = null
+function getNewsClient() {
+  if (!sbNews) sbNews = supabase.createClient(NOTICIAS_URL, NOTICIAS_KEY)
+  return sbNews
+}
 
 var sb = supabase.createClient(DOORSTEP_URL, DOORSTEP_ANON)
 var _profile = null
@@ -1293,18 +1367,201 @@ var REDE_CFG = {
   youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
 }
 var _fonteMode = 'manual'
+var _noticiaShortCode = null
+var _noticiaCategoria = null
+var _noticiaRow = null
+var _newsCat = 'figueira'
+var _newsDias = 7
+var _newsShowAll = false
+var _newsSelected = null
+var _newsRows = []
+var _newsPubMap = {}
+
+var NOTICIAS_TABELAS = { figueira: 'noticias', imoveis: 'noticias_imoveis', ia: 'noticias_ia' }
+var NOTICIAS_FONTES = {
+  figueira: ['Casino da Figueira', 'Diário As Beiras', 'Diário de Coimbra', 'Figueira da Foz', 'Figueira na Hora'],
+  imoveis: ['ECO Economia', 'Imovirtual', 'negocios.pt'],
+  ia: ['Canaltech', 'Google DeepMind', 'OpenAI', 'Pplware', 'TecMundo', 'thebriefoficial']
+}
 
 function fonteSet(mode) {
   _fonteMode = mode
   document.getElementById('fonte-manual').className = 'fonte-btn' + (mode === 'manual' ? ' active' : '')
   document.getElementById('fonte-noticia').className = 'fonte-btn' + (mode === 'noticia' ? ' active' : '')
-  document.getElementById('fonte-noticia-extra').style.display = mode === 'noticia' ? '' : 'none'
-  var lbl = document.getElementById('cont-texto-label')
-  if (lbl) lbl.textContent = mode === 'noticia' ? 'Texto da notícia' : 'Texto base'
+  document.getElementById('fonte-texto-area').style.display = mode === 'noticia' ? 'none' : ''
+  document.getElementById('fonte-noticia-panel').style.display = mode === 'noticia' ? '' : 'none'
+  if (mode === 'noticia' && !_newsRows.length) noticiaLoad()
+}
+
+// ── Notícias ─────────────────────────────────────────────────────────────────
+function noticiaSetCat(cat) {
+  _newsCat = cat; _newsSelected = null
+  ;['figueira','imoveis','ia'].forEach(function(c) {
+    var el = document.getElementById('ncat-' + c)
+    if (el) el.className = 'noticia-cat-btn' + (c === cat ? ' active' : '')
+  })
+  var sel = document.getElementById('noticia-fonte-sel')
+  if (sel) {
+    sel.innerHTML = '<option value="">Todas as fontes</option>'
+    NOTICIAS_FONTES[cat].forEach(function(f) {
+      var o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o)
+    })
+  }
+  noticiaLoad()
+}
+
+function noticiaSetDias(d) {
+  _newsDias = d
+  ;[1,3,7,30].forEach(function(x) {
+    var el = document.getElementById('np-' + x)
+    if (el) el.className = 'noticia-period-btn' + (x === d ? ' active' : '')
+  })
+  noticiaLoad()
+}
+
+function noticiaToggleAll() {
+  _newsShowAll = !_newsShowAll
+  var btn = document.getElementById('noticia-all-btn')
+  if (btn) btn.className = 'noticia-all-btn' + (_newsShowAll ? ' active' : '')
+  noticiaRenderCards()
+}
+
+async function noticiaLoad() {
+  var countEl = document.getElementById('noticia-count')
+  var listEl = document.getElementById('noticia-cards-list')
+  if (listEl) listEl.innerHTML = '<div class="noticia-loading">A carregar...</div>'
+  var client = getNewsClient()
+  try {
+    // 1. Load publications map for this category
+    var { data: pubData } = await client.from('publicacoes').select('short_code, rede_social')
+      .eq('categoria', _newsCat).eq('estado', 'publicado')
+    _newsPubMap = {}
+    ;(pubData || []).forEach(function(p) {
+      if (!_newsPubMap[p.short_code]) _newsPubMap[p.short_code] = []
+      _newsPubMap[p.short_code].push(p.rede_social)
+    })
+
+    // 2. Load news
+    var dataLimite = new Date()
+    dataLimite.setDate(dataLimite.getDate() - _newsDias)
+    var fonte = document.getElementById('noticia-fonte-sel')?.value || ''
+    var query = client.from(NOTICIAS_TABELAS[_newsCat])
+      .select('id, short_code, titulo, resumo, imagem_url, fonte, likes, data_post')
+      .gte('data_post', dataLimite.toISOString().split('T')[0])
+      .order('data_post', { ascending: false })
+      .order('likes', { ascending: false, nullsFirst: false })
+      .limit(60)
+    if (fonte) query = query.eq('fonte', fonte)
+    var { data, error } = await query
+    if (error) throw error
+    _newsRows = data || []
+    noticiaRenderCards()
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<div class="noticia-loading" style="color:#dc2626">Erro: ' + e.message + '</div>'
+    if (countEl) countEl.textContent = '⚠️ Erro ao carregar'
+  }
+}
+
+function noticiaGetStatus(shortCode) {
+  var redes = []
+  ;['instagram','facebook','linkedin','youtube'].forEach(function(r) {
+    var el = document.getElementById('cb-' + r)
+    if (el && el.checked) redes.push(r)
+  })
+  if (!redes.length) return 'none'
+  var pub = _newsPubMap[shortCode] || []
+  var count = redes.filter(function(r) { return pub.indexOf(r) !== -1 }).length
+  if (count === 0) return 'none'
+  return count >= redes.length ? 'full' : 'partial'
+}
+
+function noticiaFormatDate(d) {
+  if (!d) return ''
+  var diff = Math.floor((new Date() - new Date(d)) / 86400000)
+  if (diff === 0) return 'hoje'
+  if (diff === 1) return 'ontem'
+  if (diff < 7) return 'há ' + diff + ' dias'
+  return new Date(d).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })
+}
+
+function noticiaRenderCards() {
+  var listEl = document.getElementById('noticia-cards-list')
+  var countEl = document.getElementById('noticia-count')
+  if (!listEl) return
+  var search = (document.getElementById('noticia-search')?.value || '').toLowerCase().trim()
+  var filtered = _newsRows.filter(function(r) {
+    if (search && (r.titulo || '').toLowerCase().indexOf(search) === -1) return false
+    if (!_newsShowAll && noticiaGetStatus(r.short_code) === 'full') return false
+    return true
+  })
+  var naoPubl = _newsRows.filter(function(r) { return noticiaGetStatus(r.short_code) !== 'full' }).length
+  if (countEl) countEl.textContent = '📰 ' + naoPubl + ' notícia' + (naoPubl !== 1 ? 's' : '') + ' por publicar'
+    + (filtered.length !== naoPubl ? ' · ' + filtered.length + ' visíveis' : '')
+  if (!filtered.length) {
+    listEl.innerHTML = '<div class="noticia-loading">Sem notícias' + (search ? ' para "' + search + '"' : '') + '.</div>'
+    return
+  }
+  listEl.innerHTML = filtered.map(function(r) {
+    var status = noticiaGetStatus(r.short_code)
+    var isPerm = r.imagem_url && r.imagem_url.indexOf('supabase.co/storage') !== -1
+    var imgHtml = r.imagem_url
+      ? '<img class="noticia-card-img" src="' + r.imagem_url + '" onerror="this.style.display=\'none\'" alt="" loading="lazy">'
+      : '<div class="noticia-card-img" style="display:flex;align-items:center;justify-content:center;font-size:1.4rem">📰</div>'
+    var badges = status === 'full' ? '<span class="badge-publicada">✓ Publicada</span>'
+               : status === 'partial' ? '<span class="badge-parcial">◑ Parcial</span>' : ''
+    var likes = r.likes ? ' · ❤️ ' + r.likes : ''
+    var isSel = r.short_code === _newsSelected
+    return '<div class="noticia-card' + (isSel ? ' selected' : '') + '" onclick="noticiaSelect(\'' + r.short_code + '\')">'
+      + imgHtml
+      + '<div class="noticia-card-body">'
+      + '<div class="noticia-card-title">' + (r.titulo || '') + '</div>'
+      + '<div class="noticia-card-meta">' + (r.fonte || '') + ' · ' + noticiaFormatDate(r.data_post) + likes + '</div>'
+      + (badges ? '<div class="noticia-card-badges">' + badges + '</div>' : '')
+      + '</div></div>'
+  }).join('')
+}
+
+function noticiaSelect(shortCode) {
+  _newsSelected = shortCode
+  var row = _newsRows.find(function(r) { return r.short_code === shortCode })
+  var lbl = document.getElementById('noticia-sel-label')
+  if (lbl) lbl.textContent = row ? '"' + (row.titulo || '').slice(0, 55) + (row.titulo.length > 55 ? '…' : '') + '"' : '—'
+  var btn = document.getElementById('noticia-usar-btn')
+  if (btn) btn.disabled = false
+  noticiaRenderCards()
+}
+
+function noticiaUsar() {
+  if (!_newsSelected) return
+  var row = _newsRows.find(function(r) { return r.short_code === _newsSelected })
+  if (!row) return
+  _noticiaShortCode = row.short_code
+  _noticiaCategoria = _newsCat
+  _noticiaRow = row
+  // Populate text
   var ta = document.getElementById('cont-texto')
-  if (ta) ta.placeholder = mode === 'noticia'
-    ? 'Cola aqui o texto do artigo ou notícia de imprensa...'
-    : 'Cola aqui a ficha do imóvel, artigo ou ideia...'
+  if (ta) ta.value = (row.titulo || '') + '\n\n' + (row.resumo || '')
+  // Use image if permanent
+  var isPerm = row.imagem_url && row.imagem_url.indexOf('supabase.co/storage') !== -1
+  if (isPerm) {
+    _aiImgFinal = row.imagem_url
+    if (!_imgUrls.length) _imgUrls = [row.imagem_url]
+    var thumb = document.getElementById('ai-img-thumb')
+    if (thumb) thumb.src = row.imagem_url
+    aiImgSetState('result')
+    imgCheckInstagram()
+  }
+  // Show indicator + textarea, hide panel
+  var indTxt = document.getElementById('noticia-indicator-text')
+  if (indTxt) indTxt.textContent = (row.titulo || '').slice(0, 70) + ' · ' + (row.fonte || '')
+  document.getElementById('noticia-indicator').style.display = ''
+  document.getElementById('fonte-texto-area').style.display = ''
+  document.getElementById('fonte-noticia-panel').style.display = 'none'
+}
+
+function noticiaLimpar() {
+  _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
+  document.getElementById('noticia-indicator').style.display = 'none'
 }
 
 var _igFormato = 'unico'
@@ -2481,6 +2738,8 @@ async function contGuardar(agendar) {
     payload['imagem_gerada_url'] = _aiImgFinal
     payload['prompt_imagem'] = (document.getElementById('ai-img-prompt-ta').value || _aiImgPrompt).trim() || null
   }
+  payload['noticia_short_code'] = _noticiaShortCode || null
+  payload['noticia_categoria'] = _noticiaCategoria || null
   redes.forEach(function(r) {
     var d = _contGerado[r]; if (!d) return
     var isYt = r === 'youtube'
@@ -2534,12 +2793,31 @@ async function contGuardar(agendar) {
         await fetch(N8N_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(wBody) })
       } catch(we) { console.warn('webhook n8n falhou', we) }
     }
+    // Registar em publicacoes se o conteúdo veio de uma notícia
+    if (_noticiaShortCode && _noticiaCategoria) {
+      try {
+        var newsClient = getNewsClient()
+        for (var ri = 0; ri < redes.length; ri++) {
+          await newsClient.from('publicacoes').upsert({
+            short_code: _noticiaShortCode,
+            categoria: _noticiaCategoria,
+            rede_social: redes[ri],
+            estado: status,
+            publicado_em: agendar && data ? new Date(data).toISOString() : new Date().toISOString()
+          }, { onConflict: 'short_code,rede_social' })
+        }
+      } catch(pe) { console.warn('publicacoes upsert failed', pe) }
+    }
     alert(agendar ? '✅ Conteúdo agendado!' : '✅ Rascunho guardado!')
     document.getElementById('cont-texto').value = ''
     document.getElementById('cont-data').value = ''
     document.getElementById('cont-results').style.display = 'none'
     _contGerado = null
     imgReset()
+    // Reset notícia state
+    _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
+    var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
+    fonteSet('manual')
   } catch(e) {
     alert('Erro ao guardar: ' + e.message)
   }
