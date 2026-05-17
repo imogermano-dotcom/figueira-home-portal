@@ -4828,12 +4828,22 @@ async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
     edgeUrl: EDGE_UPLOAD
   })
 
+  // Warmup — acorda o worker Deno antes do primeiro chunk (evita cold-start 504)
+  if (progLbl) progLbl.textContent = 'A preparar ligação…'
+  try {
+    await fetch(EDGE_UPLOAD, { method: 'GET' })
+    console.log('[upload-video] warmup ok')
+  } catch(e) {
+    console.warn('[upload-video] warmup falhou (não crítico):', e.message)
+  }
+  await new Promise(function(r) { setTimeout(r, 2000) })
+
   // Helper: envia um chunk via XHR e devolve Promise com o resultado JSON
   function _sendChunk(chunkBlob, chunkIdx) {
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest()
       xhr.open('POST', EDGE_UPLOAD, true)
-      xhr.timeout = 300000  // 5 min por chunk
+      xhr.timeout = 600000  // 10 min por chunk (cold start incluído)
 
       // Headers
       xhr.setRequestHeader('Authorization',  'Bearer ' + session.access_token)
