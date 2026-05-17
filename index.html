@@ -466,6 +466,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ag-date-input:focus{border-color:#2d6a9f}
 .ag-sm-btn{padding:5px 12px;border:1.5px solid #2d6a9f;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#2d6a9f;transition:all .2s}
 .ag-sm-btn:hover{background:#2d6a9f;color:#fff}
+/* Agendamento panel — preview tabs */
+.ag-prev-tabs{display:flex;gap:0;border-bottom:1px solid #e0e6f0;margin:12px -20px 0;padding:0 20px;overflow-x:auto}
+.ag-prev-tab{padding:8px 12px;border:none;background:none;font-size:.8rem;font-weight:600;cursor:pointer;color:#6b7280;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.ag-prev-tab.active{color:#1a3c5e;border-bottom-color:#1a3c5e}
+.ag-prev-tab:hover:not(.active){color:#374151}
+.ag-prev-body{padding:12px 0}
+.ag-prev-panel{display:none}
+.ag-prev-panel.active{display:block}
 @media(max-width:700px){
   .ag-metrics{grid-template-columns:repeat(2,1fr)}
   .ag-cal-cell{min-height:56px}
@@ -2939,6 +2947,8 @@ var _agView = 'cal'
 var _agFilter = ''
 var _agDate = new Date()
 var _agPanelId = null
+var _agPrevCarIdx = 0
+var _agPrevCarData = []
 var _agChannel = null
 var _agInited = false
 
@@ -3161,21 +3171,9 @@ function agOpenPanel(id) {
   })
   html += '</div>'
 
-  // Text preview
-  if (r.texto_base) {
-    html += '<div class="ag-panel-section">'
-    html += '<div class="ag-panel-label">Texto base</div>'
-    html += '<div class="ag-panel-text">' + esc((r.texto_base||'').slice(0, 400)) + (r.texto_base && r.texto_base.length > 400 ? '…' : '') + '</div>'
-    html += '</div>'
-  }
-
-  // Image preview
-  var imgUrl = r.imagem_gerada_url || (r.imagens_urls && r.imagens_urls[0])
-  if (imgUrl) {
-    html += '<div class="ag-panel-section">'
-    html += '<img src="' + esc(imgUrl) + '" style="width:100%;border-radius:8px;max-height:180px;object-fit:cover">'
-    html += '</div>'
-  }
+  // Preview tabs por rede
+  _agPrevCarIdx = 0
+  html += agBuildPreviewTabs(r)
 
   // Actions
   html += '<div class="ag-panel-actions">'
@@ -3185,6 +3183,7 @@ function agOpenPanel(id) {
   if (mainStatus === 'agendado') {
     html += '<button class="cont-btn secondary" style="font-size:.8rem;padding:7px 14px" onclick="agCancelarAgendamento(\'' + id + '\')">↩ Cancelar Agend.</button>'
   }
+  html += '<button class="cont-btn secondary" style="font-size:.8rem;padding:7px 14px" onclick="agEditar(\'' + id + '\')">✏️ Editar</button>'
   if (isRascunho) {
     html += '<button class="cont-btn secondary" style="font-size:.8rem;padding:7px 14px;color:#dc2626;border-color:#dc2626" onclick="agApagar(\'' + id + '\')">🗑 Apagar</button>'
   }
@@ -3199,6 +3198,239 @@ function agClosePanel() {
   document.getElementById('ag-panel').classList.remove('open')
   document.getElementById('ag-panel-overlay').classList.remove('open')
   _agPanelId = null
+}
+
+function agEditar(id) {
+  agClosePanel()
+  showTab('conteudos')
+}
+
+// ── Agendamento panel previews ────────────────────────────────────────────────
+var AG_PREV_NETS = { instagram: '📸 Instagram', facebook: '👥 Facebook', linkedin: '💼 LinkedIn', youtube: '▶️ YouTube' }
+var AG_PREV_GRADS = ['linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)','linear-gradient(135deg,#1a3c5e,#2d6a9f)','linear-gradient(135deg,#134e4a,#0d9488)','linear-gradient(135deg,#7c3aed,#db2777)','linear-gradient(135deg,#b45309,#d97706)','linear-gradient(135deg,#1e40af,#0ea5e9)','linear-gradient(135deg,#166534,#16a34a)','linear-gradient(135deg,#9f1239,#e11d48)']
+
+function agPrevGetImg(r, aspect) {
+  var url = r.imagem_gerada_url || (r.imagens_urls && r.imagens_urls[0])
+  if (url) return '<img class="prev-img" src="' + esc(url) + '" style="aspect-ratio:' + aspect + ';object-fit:cover;width:100%">'
+  return '<div class="prev-img-placeholder prev-no-img" style="aspect-ratio:' + aspect + '">🖼️</div>'
+}
+
+function agPrevBuildHtml(rede, r) {
+  if (rede === 'instagram') {
+    var hashText = r.hashtags_instagram || ''
+    var tagsHtml = hashText.trim()
+      ? hashText.trim().split(/\s+/).map(function(t) { return '<span style="color:#00376b">' + esc(t) + '</span>' }).join(' ')
+      : ''
+    var igHead = '<div class="prev-ig-head">'
+      + '<div class="prev-avatar">MG</div>'
+      + '<div><div class="prev-ig-name">miguelgermano</div><div class="prev-ig-loc">Figueira da Foz</div></div>'
+      + '<span class="prev-ig-dots">···</span>'
+      + '</div>'
+
+    if (r.formato_instagram === 'carrossel') {
+      var slideUrls = r.slides_compostos_urls || []
+      var slideTexts = (r.slides_instagram || []).map(function(s) { return s.texto || '' })
+      _agPrevCarIdx = 0
+      _agPrevCarData = slideUrls.length ? slideUrls : slideTexts
+      var total = _agPrevCarData.length
+      var slideHtml = ''
+      if (total) {
+        var first = _agPrevCarData[0]
+        if (first && (first.startsWith('http') || first.startsWith('/'))) {
+          slideHtml = '<img src="' + esc(first) + '" alt="" style="width:100%;display:block">'
+        } else {
+          var bg = r.imagem_gerada_url || (r.imagens_urls && r.imagens_urls[0])
+          slideHtml = (bg ? '<img src="' + esc(bg) + '" alt="">' : '')
+            + '<div class="prev-c-gradient" style="' + (bg ? '' : 'background:' + AG_PREV_GRADS[0]) + '"></div>'
+            + '<div class="prev-c-text">' + esc(first || '') + '</div>'
+        }
+      }
+      var dotsHtml = _agPrevCarData.map(function(_, i) {
+        return '<div class="prev-ig-cdot' + (i === 0 ? ' on' : '') + '"></div>'
+      }).join('')
+      return '<div style="display:flex;justify-content:center">'
+        + '<div class="prev-ig">'
+        + igHead
+        + '<div class="prev-c-wrap">'
+          + '<div class="prev-c-slide" id="ag-prev-c-slide">' + slideHtml + '</div>'
+          + (total > 1 ? '<button class="prev-c-nav prev" onclick="agPrevCarNav(-1,' + total + ')">‹</button>' : '')
+          + (total > 1 ? '<button class="prev-c-nav next" onclick="agPrevCarNav(1,' + total + ')">›</button>' : '')
+          + '<div class="prev-c-pos" id="ag-prev-c-pos">1 / ' + total + '</div>'
+        + '</div>'
+        + '<div class="prev-ig-cdots" id="ag-prev-c-dots">' + dotsHtml + '</div>'
+        + '<div class="prev-ig-actions">❤️ 💬 ✈️ <span class="prev-ig-save">🔖</span></div>'
+        + '<div class="prev-ig-likes">1.243 gostos</div>'
+        + '<div class="prev-ig-caption"><strong>miguelgermano</strong> <span class="prev-ig-more">... mais</span></div>'
+        + (tagsHtml ? '<div class="prev-ig-tags">' + tagsHtml + '</div>' : '')
+        + '<div class="prev-ig-comments">Ver todos os 24 comentários</div>'
+        + '</div></div>'
+    }
+    // Post único
+    var mainText = r.conteudo_instagram || ''
+    var lines = mainText.split('\n')
+    var caption3 = lines.slice(0, 3).join('\n')
+    var hasMore = lines.length > 3 || mainText.length > 180
+    if (mainText.length > 180) caption3 = mainText.slice(0, 180)
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-ig">'
+      + igHead
+      + '<div class="prev-ig-img-wrap">' + agPrevGetImg(r, '1/1') + '</div>'
+      + '<div class="prev-ig-actions">❤️ 💬 ✈️ <span class="prev-ig-save">🔖</span></div>'
+      + '<div class="prev-ig-likes">1.243 gostos</div>'
+      + '<div class="prev-ig-caption"><strong>miguelgermano</strong>'
+        + esc(caption3).replace(/\n/g, '<br>')
+        + (hasMore ? ' <span class="prev-ig-more">... mais</span>' : '')
+      + '</div>'
+      + (tagsHtml ? '<div class="prev-ig-tags">' + tagsHtml + '</div>' : '')
+      + '<div class="prev-ig-comments">Ver todos os 24 comentários</div>'
+      + '</div></div>'
+  }
+
+  if (rede === 'facebook') {
+    var fbRaw = r.conteudo_facebook || ''
+    var fbText = fbRaw.length > 280 ? fbRaw.slice(0, 280) : fbRaw
+    var fbMore = fbRaw.length > 280
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-fb">'
+      + '<div class="prev-fb-head">'
+        + '<div class="prev-avatar">MG</div>'
+        + '<div><div class="prev-fb-name">Miguel Germano</div>'
+        + '<div class="prev-fb-meta">Figueira Home · 2h · 🌐</div></div>'
+        + '<span class="prev-fb-more">···</span>'
+      + '</div>'
+      + '<div class="prev-fb-img-wrap">' + agPrevGetImg(r, '16/9') + '</div>'
+      + '<div class="prev-fb-text">' + esc(fbText).replace(/\n/g, '<br>') + (fbMore ? ' <span class="prev-fb-more-link">Ver mais</span>' : '') + '</div>'
+      + '<div class="prev-fb-reaction-bar">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="display:flex">'
+            + '<div class="prev-fb-reaction-icon ri-like">👍</div>'
+            + '<div class="prev-fb-reaction-icon ri-love">❤️</div>'
+            + '<div class="prev-fb-reaction-icon ri-haha">😂</div>'
+          + '</div>156'
+        + '</div>'
+        + '<span>12 comentários · 4 partilhas</span>'
+      + '</div>'
+      + '<div class="prev-fb-actions">'
+        + '<button class="prev-fb-act-btn">👍 Gosto</button>'
+        + '<button class="prev-fb-act-btn">💬 Comentar</button>'
+        + '<button class="prev-fb-act-btn">↗ Partilhar</button>'
+      + '</div>'
+      + '</div></div>'
+  }
+
+  if (rede === 'linkedin') {
+    var liRaw = r.conteudo_linkedin || ''
+    var liText = liRaw.length > 260 ? liRaw.slice(0, 260) : liRaw
+    var liMore = liRaw.length > 260
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-li">'
+      + '<div class="prev-li-head">'
+        + '<div class="prev-avatar">MG</div>'
+        + '<div style="flex:1">'
+          + '<div class="prev-li-name">Miguel Germano</div>'
+          + '<div class="prev-li-title">Consultor Imobiliário · Figueira Home</div>'
+          + '<div class="prev-li-meta">1h · 🌐</div>'
+        + '</div>'
+        + '<span class="prev-li-follow">+ Seguir</span>'
+      + '</div>'
+      + '<div class="prev-li-img-wrap">' + agPrevGetImg(r, '4/3') + '</div>'
+      + '<div class="prev-li-text">' + esc(liText).replace(/\n/g, '<br>') + (liMore ? ' <span class="prev-li-more">...ver mais</span>' : '') + '</div>'
+      + '<div class="prev-li-reactions">'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+          + '<div style="display:flex">'
+            + '<div class="prev-li-ri lri-like">👍</div>'
+            + '<div class="prev-li-ri lri-love">❤️</div>'
+            + '<div class="prev-li-ri lri-insightful">💡</div>'
+          + '</div>42'
+        + '</div>'
+        + '<span>8 comentários · 3 reposições</span>'
+      + '</div>'
+      + '<div class="prev-li-actions">'
+        + '<button class="prev-li-act-btn">👍 Reagir</button>'
+        + '<button class="prev-li-act-btn">💬 Comentar</button>'
+        + '<button class="prev-li-act-btn">↩ Partilhar</button>'
+        + '<button class="prev-li-act-btn">✉️ Enviar</button>'
+      + '</div>'
+      + '</div></div>'
+  }
+
+  if (rede === 'youtube') {
+    var ytText = r.conteudo_youtube || ''
+    var ytTitle = prevTrunc(ytText.split('\n')[0] || ytText, 80)
+    var ytDesc = prevTrunc(ytText, 120)
+    return '<div style="display:flex;justify-content:center">'
+      + '<div class="prev-yt">'
+      + '<div class="prev-yt-thumb-wrap">'
+        + agPrevGetImg(r, '16/9')
+        + '<div class="prev-yt-duration">1:30</div>'
+      + '</div>'
+      + '<div class="prev-yt-info">'
+        + '<div class="prev-avatar sm">MG</div>'
+        + '<div class="prev-yt-text">'
+          + '<div class="prev-yt-title">' + esc(ytTitle) + '</div>'
+          + '<div class="prev-yt-channel">Figueira Home</div>'
+          + '<div class="prev-yt-meta">2,3 mil visualizações · há 1 hora</div>'
+          + '<div class="prev-yt-desc">' + esc(ytDesc) + '</div>'
+        + '</div>'
+      + '</div>'
+      + '</div></div>'
+  }
+  return ''
+}
+
+function agBuildPreviewTabs(r) {
+  var nets = r.redes_seleccionadas || []
+  if (!nets.length) return ''
+  var tabsHtml = '<div class="ag-prev-tabs">'
+  nets.forEach(function(n, i) {
+    tabsHtml += '<button class="ag-prev-tab' + (i === 0 ? ' active' : '') + '" id="ag-tab-' + n
+      + '" onclick="agPrevTabSwitch(\'' + n + '\')">' + (AG_PREV_NETS[n] || n) + '</button>'
+  })
+  tabsHtml += '</div>'
+  var panelsHtml = ''
+  nets.forEach(function(n, i) {
+    panelsHtml += '<div class="ag-prev-panel' + (i === 0 ? ' active' : '') + '" id="ag-prev-panel-' + n + '">'
+      + agPrevBuildHtml(n, r) + '</div>'
+  })
+  return '<div class="ag-panel-section" style="padding-bottom:0;border-bottom:none">'
+    + tabsHtml
+    + '<div class="ag-prev-body">' + panelsHtml + '</div>'
+    + '</div>'
+}
+
+function agPrevTabSwitch(rede) {
+  var r = _agRows.find(function(x) { return x.id === _agPanelId })
+  if (!r) return
+  ;(r.redes_seleccionadas || []).forEach(function(n) {
+    var tab = document.getElementById('ag-tab-' + n)
+    var panel = document.getElementById('ag-prev-panel-' + n)
+    if (tab) tab.classList.toggle('active', n === rede)
+    if (panel) panel.classList.toggle('active', n === rede)
+  })
+  _agPrevCarIdx = 0
+}
+
+function agPrevCarNav(dir, total) {
+  _agPrevCarIdx = (_agPrevCarIdx + dir + total) % total
+  var slideEl = document.getElementById('ag-prev-c-slide')
+  if (slideEl) {
+    var item = _agPrevCarData[_agPrevCarIdx]
+    if (item && (item.startsWith('http') || item.startsWith('/'))) {
+      slideEl.innerHTML = '<img src="' + esc(item) + '" alt="" style="width:100%;display:block">'
+    } else {
+      var r = _agRows.find(function(x) { return x.id === _agPanelId })
+      var bg = r && (r.imagem_gerada_url || (r.imagens_urls && r.imagens_urls[0]))
+      slideEl.innerHTML = (bg ? '<img src="' + esc(bg) + '" alt="">' : '')
+        + '<div class="prev-c-gradient" style="' + (bg ? '' : 'background:' + AG_PREV_GRADS[_agPrevCarIdx % 8]) + '"></div>'
+        + '<div class="prev-c-text">' + esc(item || '') + '</div>'
+    }
+  }
+  var posEl = document.getElementById('ag-prev-c-pos')
+  if (posEl) posEl.textContent = (_agPrevCarIdx + 1) + ' / ' + total
+  var dotsEl = document.getElementById('ag-prev-c-dots')
+  if (dotsEl) dotsEl.querySelectorAll('.prev-ig-cdot').forEach(function(d, i) {
+    d.classList.toggle('on', i === _agPrevCarIdx)
+  })
 }
 
 async function agSaveDate(id) {
