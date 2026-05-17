@@ -251,6 +251,32 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .save-btn{padding:4px 12px;background:#1a3c5e;color:#fff;border:none;border-radius:6px;font-size:.78rem;cursor:pointer}
 .save-btn:hover{background:#2d6a9f}
 .save-ok{color:#15803d;font-size:.75rem;margin-left:6px}
+/* Instagram format toggle */
+.ig-fmt-row{display:none;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ig-fmt-row.show{display:flex}
+.ig-fmt-lbl{font-size:.78rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px}
+.ig-fmt-btn{padding:5px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
+.ig-fmt-btn.active{background:#c13584;color:#fff;border-color:#c13584}
+/* Slide editor */
+.slide-list{display:flex;flex-direction:column;gap:8px}
+.slide-item{display:flex;gap:8px;align-items:flex-start}
+.slide-num{width:22px;height:22px;border-radius:50%;background:#c13584;color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:6px}
+.slide-ta{flex:1;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-family:inherit;resize:none;outline:none;transition:border-color .2s;min-height:40px}
+.slide-ta:focus{border-color:#c13584}
+/* Carousel preview */
+.prev-carousel-wrap{overflow-x:auto;display:flex;gap:6px;padding:4px 0;-webkit-overflow-scrolling:touch}
+.prev-carousel-wrap::-webkit-scrollbar{height:4px}
+.prev-carousel-wrap::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}
+.prev-ig-slide{flex-shrink:0;width:180px;height:180px;border-radius:6px;overflow:hidden;position:relative;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
+.prev-ig-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.prev-ig-slide-gradient{position:absolute;inset:0;background:linear-gradient(transparent 35%,rgba(0,0,0,.7))}
+.prev-ig-slide-text{position:absolute;bottom:0;left:0;right:0;padding:8px;color:#fff;font-size:.68rem;font-weight:600;line-height:1.3}
+.prev-ig-slide-badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.55);color:#fff;font-size:.58rem;font-weight:700;padding:2px 5px;border-radius:8px}
+.prev-ig-cdots{display:flex;justify-content:center;gap:3px;margin-top:5px}
+.prev-ig-cdot{width:5px;height:5px;border-radius:50%;background:#dbdbdb}
+.prev-ig-cdot.on{background:#3897f0;width:14px;border-radius:3px}
+/* LinkedIn preview — 4:3 image */
+.prev-li-img-wrap{aspect-ratio:4/3;overflow:hidden}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -365,6 +391,12 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <label class="cont-rede-cb"><input type="checkbox" id="cb-linkedin" checked> 💼 LinkedIn</label>
               <label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked> ▶️ YouTube</label>
             </div>
+          </div>
+          <!-- Formato Instagram -->
+          <div class="ig-fmt-row" id="ig-fmt-row">
+            <span class="ig-fmt-lbl">Formato Instagram:</span>
+            <button class="ig-fmt-btn active" id="ig-fmt-unico" onclick="igSetFormato('unico')">Post Único</button>
+            <button class="ig-fmt-btn" id="ig-fmt-carrossel" onclick="igSetFormato('carrossel')">🎠 Carrossel</button>
           </div>
           <div class="cont-field">
             <label class="cont-label">Data de agendamento <span style="font-weight:400;text-transform:none;font-size:.75rem;color:#9ca3af">(opcional — deixa em branco para rascunho)</span></label>
@@ -841,6 +873,18 @@ var REDE_CFG = {
   linkedin:  { label: 'LinkedIn',  icon: '💼', cls: 'li' },
   youtube:   { label: 'YouTube',   icon: '▶️', cls: 'yt' }
 }
+var _igFormato = 'unico'
+
+function igSetFormato(fmt) {
+  _igFormato = fmt
+  document.getElementById('ig-fmt-unico').className = 'ig-fmt-btn' + (fmt === 'unico' ? ' active' : '')
+  document.getElementById('ig-fmt-carrossel').className = 'ig-fmt-btn' + (fmt === 'carrossel' ? ' active' : '')
+}
+
+function igUpdateFormatBar() {
+  var show = document.getElementById('cb-instagram').checked
+  document.getElementById('ig-fmt-row').className = 'ig-fmt-row' + (show ? ' show' : '')
+}
 
 // ── Image upload ─────────────────────────────────────────────────────────────
 function imgZoneClick(e) {
@@ -971,6 +1015,7 @@ function imgCheckInstagram() {
   var igChecked = document.getElementById('cb-instagram').checked
   var show = igChecked && _imgFiles.length === 0
   warn.style.display = show ? 'block' : 'none'
+  igUpdateFormatBar()
   return !show
 }
 
@@ -1019,7 +1064,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
@@ -1040,40 +1085,81 @@ function contRenderCards(redes) {
     if (!d) return
     var cfg = REDE_CFG[rede]
     var isYt = rede === 'youtube'
-    var mainText = isYt ? (d.description || '') : (d.caption || '')
-    var div = document.createElement('div')
-    div.className = 'cont-card ' + cfg.cls
-    div.id = 'card-' + rede
-    div.innerHTML =
-      '<div class="cont-card-header">'
-      + '<span class="cont-card-title">' + cfg.icon + ' ' + cfg.label + '</span>'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<span class="cont-word-count" id="wc-'+rede+'">' + countWords(mainText) + ' palavras</span>'
-      + '<button class="prev-toggle" id="ptoggle-'+rede+'" onclick="contTogglePreview(\''+rede+'\')">👁 Preview</button>'
-      + '</div></div>'
-      // Edit section
-      + '<div id="card-edit-'+rede+'">'
-      + '<div class="cont-field">'
-      + '<div class="cont-field-label"><span>' + (isYt ? 'Descrição' : 'Caption') + '</span>'
-      + '<button class="cont-copy-btn" onclick="contCopy(\'main-'+rede+'\',this)">📋 copiar</button></div>'
-      + '<textarea class="cont-textarea" id="main-'+rede+'" rows="6" oninput="contUpdateWc(\''+rede+'\',this.value)">' + esc(mainText) + '</textarea>'
-      + '</div>'
-      + (!isYt ? '<div class="cont-field">'
+    var isCarrossel = rede === 'instagram' && _igFormato === 'carrossel'
+    var mainText = isCarrossel ? '' : (isYt ? (d.description || '') : (d.caption || ''))
+    var wcText = isCarrossel
+      ? ((d.slides||[]).reduce(function(acc, s){ return acc + countWords(s.texto||'') }, 0)) + ' palavras'
+      : countWords(mainText) + ' palavras'
+
+    var editInner = ''
+
+    if (isCarrossel) {
+      var slides = d.slides || []
+      var slidesHtml = slides.map(function(s, i) {
+        return '<div class="slide-item">'
+          + '<div class="slide-num">' + s.ordem + '</div>'
+          + '<textarea class="slide-ta" id="slide-' + i + '" rows="2"'
+          + ' oninput="igSlideUpdate(' + i + ',this.value)">' + esc(s.texto||'') + '</textarea>'
+          + '</div>'
+      }).join('')
+      editInner +=
+        '<div class="cont-field">'
+        + '<div class="cont-field-label"><span>Slides (' + slides.length + ')</span></div>'
+        + '<div class="slide-list" id="slides-instagram">' + slidesHtml + '</div>'
+        + '</div>'
+    } else {
+      editInner +=
+        '<div class="cont-field">'
+        + '<div class="cont-field-label"><span>' + (isYt ? 'Descrição' : 'Caption') + '</span>'
+        + '<button class="cont-copy-btn" onclick="contCopy(\'main-'+rede+'\',this)">📋 copiar</button></div>'
+        + '<textarea class="cont-textarea" id="main-'+rede+'" rows="6" oninput="contUpdateWc(\''+rede+'\',this.value)">' + esc(mainText) + '</textarea>'
+        + '</div>'
+    }
+
+    if (!isYt) {
+      editInner +=
+        '<div class="cont-field">'
         + '<div class="cont-field-label"><span>Hashtags</span>'
         + '<button class="cont-copy-btn" onclick="contCopy(\'hash-'+rede+'\',this)">📋 copiar</button></div>'
         + '<textarea class="cont-textarea" id="hash-'+rede+'" rows="2" style="font-size:.78rem">' + esc(d.hashtags || '') + '</textarea>'
-        + '</div>' : '')
-      + '<div class="cont-field">'
+        + '</div>'
+    }
+
+    editInner +=
+      '<div class="cont-field">'
       + '<button class="cont-script-toggle" onclick="contToggleScript(\''+rede+'\')" id="stoggle-'+rede+'">▶ Script vídeo 90s <span id="swc-'+rede+'" style="margin-left:auto;font-size:.7rem;color:#9ca3af">' + countWords(d.video_script||'') + ' palavras</span></button>'
       + '<div class="cont-script-panel" id="script-panel-'+rede+'">'
       + '<div class="cont-field-label" style="margin-top:6px"><span>&nbsp;</span><button class="cont-copy-btn" onclick="contCopy(\'script-'+rede+'\',this)">📋 copiar</button></div>'
       + '<textarea class="cont-textarea" id="script-'+rede+'" rows="6">' + esc(d.video_script || '') + '</textarea>'
       + '</div></div>'
-      + '</div>'
-      // Preview section
+
+    var div = document.createElement('div')
+    div.className = 'cont-card ' + cfg.cls
+    div.id = 'card-' + rede
+    div.innerHTML =
+      '<div class="cont-card-header">'
+      + '<span class="cont-card-title">' + cfg.icon + ' ' + cfg.label + (isCarrossel ? ' <span style="font-size:.72rem;color:#c13584;font-weight:600">Carrossel</span>' : '') + '</span>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<span class="cont-word-count" id="wc-'+rede+'">' + wcText + '</span>'
+      + '<button class="prev-toggle" id="ptoggle-'+rede+'" onclick="contTogglePreview(\''+rede+'\')">👁 Preview</button>'
+      + '</div></div>'
+      + '<div id="card-edit-'+rede+'">' + editInner + '</div>'
       + '<div class="card-preview-section" id="card-preview-'+rede+'"></div>'
     wrap.appendChild(div)
   })
+}
+
+function igSlideUpdate(i, val) {
+  if (_contGerado && _contGerado.instagram && _contGerado.instagram.slides) {
+    if (_contGerado.instagram.slides[i]) _contGerado.instagram.slides[i].texto = val
+  }
+  var wcEl = document.getElementById('wc-instagram')
+  if (wcEl) {
+    var total = (_contGerado.instagram.slides || []).reduce(function(acc, s) {
+      return acc + countWords(s.texto || '')
+    }, 0)
+    wcEl.textContent = total + ' palavras'
+  }
 }
 
 function contTogglePreview(rede) {
@@ -1113,20 +1199,65 @@ function prevBuildHtml(rede) {
   var hashText = hashEl ? hashEl.value : ''
 
   if (rede === 'instagram') {
+    var tagsHtml = hashText.trim()
+      ? hashText.trim().split(/\s+/).map(function(t){ return '<span style="color:#00376b">'+esc(t)+'</span>' }).join(' ')
+      : ''
+    var igHead = '<div class="prev-ig-head">'
+      + '<div class="prev-avatar">MG</div>'
+      + '<div><div class="prev-ig-name">miguelgermano</div><div class="prev-ig-loc">Figueira da Foz</div></div>'
+      + '<span class="prev-ig-dots">···</span>'
+      + '</div>'
+
+    if (_igFormato === 'carrossel' && _contGerado && _contGerado.instagram && _contGerado.instagram.slides) {
+      var slides = _contGerado.instagram.slides || []
+      var gradients = [
+        'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',
+        'linear-gradient(135deg,#1a3c5e,#2d6a9f)',
+        'linear-gradient(135deg,#134e4a,#0d9488)',
+        'linear-gradient(135deg,#7c3aed,#db2777)',
+        'linear-gradient(135deg,#b45309,#d97706)',
+        'linear-gradient(135deg,#1e40af,#0ea5e9)',
+        'linear-gradient(135deg,#166534,#16a34a)',
+        'linear-gradient(135deg,#9f1239,#e11d48)'
+      ]
+      var slidesHtml = slides.map(function(s, i) {
+        var bg = _imgUrls[i] || _imgUrls[0] || null
+        var imgTag = bg ? '<img src="'+esc(bg)+'" alt="">' : ''
+        var gradient = gradients[i % gradients.length]
+        return '<div class="prev-ig-slide" style="background:'+gradient+'">'
+          + imgTag
+          + '<div class="prev-ig-slide-gradient"></div>'
+          + '<div class="prev-ig-slide-text">' + esc(s.texto || '') + '</div>'
+          + '<div class="prev-ig-slide-badge">' + s.ordem + '/' + slides.length + '</div>'
+          + '</div>'
+      }).join('')
+      var dotsHtml = slides.map(function(s, i) {
+        return '<div class="prev-ig-cdot' + (i === 0 ? ' on' : '') + '"></div>'
+      }).join('')
+      var firstSlideText = slides.length ? (slides[0].texto || '') : ''
+      var captionPreview = firstSlideText.length > 80 ? firstSlideText.slice(0, 80) + '…' : firstSlideText
+
+      return '<div style="display:flex;justify-content:center">'
+        + '<div class="prev-ig">'
+        + igHead
+        + '<div style="padding:8px 12px 4px"><div class="prev-carousel-wrap">' + slidesHtml + '</div>'
+        + '<div class="prev-ig-cdots">' + dotsHtml + '</div></div>'
+        + '<div class="prev-ig-actions">❤️ 💬 ✈️ <span class="prev-ig-save">🔖</span></div>'
+        + '<div class="prev-ig-likes">1.243 gostos</div>'
+        + '<div class="prev-ig-caption"><strong>miguelgermano</strong> ' + esc(captionPreview) + (slides.length > 1 ? ' <span class="prev-ig-more">... mais</span>' : '') + '</div>'
+        + (tagsHtml ? '<div class="prev-ig-tags">' + tagsHtml + '</div>' : '')
+        + '<div class="prev-ig-comments">Ver todos os 24 comentários</div>'
+        + '</div></div>'
+    }
+
+    // Post único
     var lines = mainText.split('\n')
     var caption3 = lines.slice(0, 3).join('\n')
     var hasMore  = lines.length > 3 || mainText.length > 180
     if (mainText.length > 180) caption3 = mainText.slice(0, 180)
-    var tagsHtml = hashText.trim()
-      ? hashText.trim().split(/\s+/).map(function(t){ return '<span style="color:#00376b">'+esc(t)+'</span>' }).join(' ')
-      : ''
     return '<div style="display:flex;justify-content:center">'
       + '<div class="prev-ig">'
-      + '<div class="prev-ig-head">'
-        + '<div class="prev-avatar">MG</div>'
-        + '<div><div class="prev-ig-name">miguelgermano</div><div class="prev-ig-loc">Figueira da Foz</div></div>'
-        + '<span class="prev-ig-dots">···</span>'
-      + '</div>'
+      + igHead
       + '<div class="prev-ig-img-wrap">' + prevGetImg('1/1') + '</div>'
       + '<div class="prev-ig-actions">❤️ 💬 ✈️ <span class="prev-ig-save">🔖</span></div>'
       + '<div class="prev-ig-likes">1.243 gostos</div>'
@@ -1270,17 +1401,31 @@ async function contGuardar(agendar) {
   redes.forEach(function(r) {
     var d = _contGerado[r]; if (!d) return
     var isYt = r === 'youtube'
+    var isIgCarrossel = r === 'instagram' && _igFormato === 'carrossel'
     var mainEl = document.getElementById('main-'+r)
     var hashEl = document.getElementById('hash-'+r)
     var scriptEl = document.getElementById('script-'+r)
-    if (isYt) {
+    if (isIgCarrossel) {
+      var slidesData = (d.slides || []).map(function(s, i) {
+        var ta = document.getElementById('slide-'+i)
+        return { ordem: s.ordem, texto: ta ? ta.value : (s.texto||'') }
+      })
+      payload['formato_instagram'] = 'carrossel'
+      payload['slides_instagram'] = slidesData
+      payload['hashtags_instagram'] = hashEl ? hashEl.value : (d.hashtags||'')
+      payload['script_instagram'] = scriptEl ? scriptEl.value : (d.video_script||'')
+      payload['status_instagram'] = status
+    } else if (isYt) {
       payload['conteudo_youtube'] = mainEl ? mainEl.value : (d.description||'')
+      payload['script_youtube'] = scriptEl ? scriptEl.value : (d.video_script||'')
+      payload['status_youtube'] = status
     } else {
+      if (r === 'instagram') payload['formato_instagram'] = 'unico'
       payload['conteudo_'+r] = mainEl ? mainEl.value : (d.caption||'')
       payload['hashtags_'+r] = hashEl ? hashEl.value : (d.hashtags||'')
+      payload['script_'+r] = scriptEl ? scriptEl.value : (d.video_script||'')
+      payload['status_'+r] = status
     }
-    payload['script_'+r] = scriptEl ? scriptEl.value : (d.video_script||'')
-    payload['status_'+r] = status
   })
   var savBtn = agendar ? document.getElementById('cont-agendar-btn') : document.getElementById('cont-rascunho-btn')
   savBtn.disabled = true; savBtn.textContent = '⏳ A guardar...'
@@ -1398,12 +1543,13 @@ sb.auth.onAuthStateChange(function(event, session) {
   if (session) loadApp()
 })
 
-// Aviso Instagram ao desmarcar/marcar
+// Aviso Instagram ao desmarcar/marcar + format bar
 document.addEventListener('DOMContentLoaded', function() {
   var cb = document.getElementById('cb-instagram')
-  if (cb) cb.addEventListener('change', function() {
-    imgCheckInstagram()
-  })
+  if (cb) {
+    cb.addEventListener('change', function() { imgCheckInstagram() })
+    igUpdateFormatBar()
+  }
 })
 </script>
 </body>
