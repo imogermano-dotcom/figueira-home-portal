@@ -4789,126 +4789,94 @@ async function bibUploadSubmit() {
 }
 
 async function bibUploadVideoSDK(file, path, progBar, progLbl, meta) {
-  // S3 Multipart Upload via Supabase S3 API (não passa pelo proxy Cloudflare)
-  // Partes de 10 MB → sem limite de 50 MB do Cloudflare
-  // Fluxo: get-s3-upload-url → PUT partes S3 → complete-s3-upload
-  var INIT_FN     = DOORSTEP_URL + '/functions/v1/get-s3-upload-url'
-  var COMPLETE_FN = DOORSTEP_URL + '/functions/v1/complete-s3-upload'
-  var PART_SIZE   = 10 * 1024 * 1024  // 10 MB
+  // Upload directo para Cloudflare R2 via URL pre-assinado (AWS SigV4)
+  // Sem proxy Cloudflare → sem limite de 100 MB → ficheiros grandes OK
+  // Fluxo: get-r2-upload-url (edge fn) → XHR PUT directo para R2 → publicUrl
+  var R2_FN = DOORSTEP_URL + '/functions/v1/get-r2-upload-url'
 
   var { data: { session } } = await sb.auth.getSession()
-  if (!session) { console.warn('[upload-s3] sem sessão'); return null }
+  if (!session) { console.warn('[upload-r2] sem sessão'); return null }
 
-  var mimeType    = file.type || 'video/mp4'
-  var totalParts  = Math.ceil(file.size / PART_SIZE)
+  var mimeType = file.type || 'video/mp4'
 
-  console.log('[upload-s3] início S3 multipart', {
-    nome: file.name, tamanho: Math.round(file.size/1024/1024) + 'MB',
-    partes: totalParts, path: path
+  console.log('[upload-r2] início R2 upload directo', {
+    nome: file.name, tamanho: Math.round(file.size/1024/1024) + 'MB', path: path
   })
 
-  // ── 1. Iniciar multipart upload (edge fn, < 1s) ───────────────────────────
-  if (progLbl) progLbl.textContent = 'A iniciar upload S3…'
-  var initData
+  // ── 1. Obter URL pre-assinado (edge fn, < 1 s) ────────────────────────────
+  if (progLbl) progLbl.textContent = 'A preparar upload…'
+  var signedUrl, publicUrl
   try {
-    var r = await fetch(INIT_FN, {
+    var r = await fetch(R2_FN, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ filePath: path, fileType: mimeType, fileSize: file.size })
     })
-    initData = await r.json()
-    if (!r.ok || !initData.uploadId) throw new Error(initData.error || 'Init falhou ' + r.status)
+    var rData = await r.json()
+    if (!r.ok || !rData.signedUrl) throw new Error(rData.error || 'get-r2-upload-url falhou ' + r.status)
+    signedUrl = rData.signedUrl
+    publicUrl = rData.publicUrl
   } catch(e) {
-    console.error('[upload-s3] init erro:', e.message)
+    console.error('[upload-r2] erro ao obter URL:', e.message)
     if (progBar) progBar.style.background = '#ef4444'
     if (progLbl) progLbl.textContent = '✗ ' + e.message
     return null
   }
 
-  var uploadId   = initData.uploadId
-  var s3Endpoint = initData.s3Endpoint
-  var bucket     = initData.bucket
-  console.log('[upload-s3] uploadId:', uploadId, '— a enviar', totalParts, 'partes')
+  console.log('[upload-r2] URL assinado obtido, a enviar ficheiro directamente para R2…')
 
-  // ── 2. Enviar partes directamente para S3 com Bearer token ────────────────
-  var etags = []
+  // ── 2. PUT directo para R2 com progresso real ─────────────────────────────
+  var uploadOk = await new Promise(function(resolve) {
+    var xhr = new XMLHttpRequest()
+    xhr.open('PUT', signedUrl, true)
+    xhr.setRequestHeader('Content-Type', mimeType)
+    xhr.timeout = 1800000  // 30 minutos (ficheiros grandes)
 
-  function _uploadPart(partBlob, partNumber) {
-    return new Promise(function(resolve, reject) {
-      var url = s3Endpoint + '/' + bucket + '/' + path +
-        '?partNumber=' + partNumber + '&uploadId=' + encodeURIComponent(uploadId)
-      var xhr = new XMLHttpRequest()
-      xhr.open('PUT', url, true)
-      xhr.setRequestHeader('Authorization', 'Bearer ' + session.access_token)
-      xhr.setRequestHeader('Content-Type',  'application/octet-stream')
-      xhr.timeout = 300000  // 5 min por parte
-
-      xhr.upload.onprogress = function(ev) {
-        if (ev.lengthComputable && progBar && progLbl) {
-          var done = (partNumber - 1) + ev.loaded / ev.total
-          var pct  = Math.round((done / totalParts) * 100)
-          progBar.style.width = pct + '%'
-          progLbl.textContent = 'A carregar… ' + pct + '% (parte ' + partNumber + '/' + totalParts + ')'
-        }
+    xhr.upload.onprogress = function(ev) {
+      if (ev.lengthComputable && progBar && progLbl) {
+        var pct = Math.round((ev.loaded / ev.total) * 100)
+        progBar.style.width = pct + '%'
+        progLbl.textContent = 'A carregar… ' + pct + '%' +
+          ' (' + Math.round(ev.loaded/1024/1024) + '/' + Math.round(ev.total/1024/1024) + ' MB)'
       }
-      xhr.onload = function() {
-        console.log('[upload-s3] parte ' + partNumber + ' status=' + xhr.status,
-          'ETag=' + xhr.getResponseHeader('ETag'))
-        if (xhr.status >= 200 && xhr.status < 300) {
-          var etag = xhr.getResponseHeader('ETag') || xhr.getResponseHeader('etag') || ''
-          resolve(etag)
-        } else {
-          reject(new Error('Parte ' + partNumber + ' HTTP ' + xhr.status + ': ' + xhr.responseText.slice(0, 150)))
-        }
-      }
-      xhr.onerror   = function() { reject(new Error('Erro de rede na parte ' + partNumber)) }
-      xhr.onabort   = function() { reject(new Error('Abortado na parte ' + partNumber)) }
-      xhr.ontimeout = function() { reject(new Error('Timeout na parte ' + partNumber + ' (>5 min)')) }
-      xhr.send(partBlob)
-    })
-  }
-
-  for (var i = 0; i < totalParts; i++) {
-    var start = i * PART_SIZE
-    var end   = Math.min(start + PART_SIZE, file.size)
-    var partBlob = file.slice(start, end)
-    var partNumber = i + 1
-
-    var etag
-    try {
-      etag = await _uploadPart(partBlob, partNumber)
-    } catch(e) {
-      console.error('[upload-s3] parte ' + partNumber + ' falhou:', e.message)
-      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-      if (progLbl) progLbl.textContent = '✗ ' + e.message
-      return null
     }
-    etags.push({ partNumber: partNumber, etag: etag })
-    console.log('[upload-s3] parte ' + partNumber + '/' + totalParts + ' ok ✓ ETag=' + etag)
-  }
+    xhr.onload = function() {
+      console.log('[upload-r2] XHR status=' + xhr.status)
+      if (xhr.status === 200 || xhr.status === 204) {
+        resolve(true)
+      } else {
+        console.error('[upload-r2] R2 rejeitou HTTP ' + xhr.status, xhr.responseText.slice(0, 300))
+        if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+        if (progLbl) progLbl.textContent = '✗ R2 erro HTTP ' + xhr.status
+        resolve(false)
+      }
+    }
+    xhr.onerror   = function() {
+      console.error('[upload-r2] erro de rede')
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ Erro de rede'
+      resolve(false)
+    }
+    xhr.onabort   = function() {
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ Upload cancelado'
+      resolve(false)
+    }
+    xhr.ontimeout = function() {
+      console.error('[upload-r2] timeout (>30 min)')
+      if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
+      if (progLbl) progLbl.textContent = '✗ Timeout (>30 min)'
+      resolve(false)
+    }
+    xhr.send(file)
+  })
 
-  // ── 3. Finalizar multipart upload ─────────────────────────────────────────
-  if (progLbl) progLbl.textContent = 'A finalizar upload…'
-  var completeData
-  try {
-    var rc = await fetch(COMPLETE_FN, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uploadId: uploadId, filePath: path, etags: etags })
-    })
-    completeData = await rc.json()
-    if (!rc.ok || !completeData.url) throw new Error(completeData.error || 'Complete falhou ' + rc.status)
-  } catch(e) {
-    console.error('[upload-s3] complete erro:', e.message)
-    if (progBar) { progBar.style.width = '0%'; progBar.style.background = '#ef4444' }
-    if (progLbl) progLbl.textContent = '✗ ' + e.message
-    return null
-  }
+  if (!uploadOk) return null
 
   if (progBar) progBar.style.width = '100%'
   if (progLbl) progLbl.textContent = '✅ Upload concluído!'
-  console.log('[upload-s3] concluído:', completeData.url)
-  return completeData.url
+  console.log('[upload-r2] concluído:', publicUrl)
+  return publicUrl
 }
 function bibGetVideoMeta(file) {
   return new Promise(function(resolve) {
