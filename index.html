@@ -113,13 +113,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .cont-btn.primary{background:#1a3c5e;color:#fff}.cont-btn.primary:hover{background:#2d6a9f}.cont-btn.primary:disabled{opacity:.6;cursor:not-allowed}
 .cont-btn.secondary{background:#fff;color:#1a3c5e;border:1.5px solid #1a3c5e}.cont-btn.secondary:hover{background:#f0f4f8}.cont-btn.secondary:disabled{opacity:.6;cursor:not-allowed}
 /* Image upload */
-.img-upload-zone{border:2px dashed #d1d5db;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.img-upload-zone{border:2px dashed #d1d5db;border-radius:10px;padding:20px;text-align:center;transition:all .2s;background:#fafafa;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .img-upload-zone:hover,.img-upload-zone.drag-over{border-color:#2d6a9f;background:#f0f5ff}
 .img-upload-zone.has-files{border-style:solid;border-color:#2d6a9f;background:#f7fbff;justify-content:flex-start;align-items:flex-start;padding:14px}
-.img-upload-prompt{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%}
-.img-upload-icon{font-size:1.8rem}
-.img-upload-hint{font-size:.78rem;color:#9ca3af}
-.img-upload-hint span{color:#2d6a9f;font-weight:600}
+.img-upload-prompt{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.img-src-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.img-src-btn{padding:7px 16px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+.img-src-btn:hover{background:#f0f5ff;border-color:#2d6a9f;color:#1a3c5e}
+.img-upload-hint{font-size:.75rem;color:#9ca3af}
+.bib-asset-ind{font-size:.78rem;color:#1d4ed8;padding:5px 10px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;gap:6px;margin-top:5px;border:1px solid #bfdbfe}
+.bib-asset-ind .bib-asset-clear{background:none;border:none;cursor:pointer;font-size:.8rem;color:#6b7280;padding:0 2px;margin-left:auto;line-height:1}
+.bib-asset-ind .bib-asset-clear:hover{color:#ef4444}
 .img-previews{display:flex;flex-wrap:wrap;gap:8px;width:100%}
 .img-preview-item{position:relative;width:80px;height:80px;border-radius:6px;overflow:hidden;border:1.5px solid #e0e6f0;flex-shrink:0}
 .img-preview-item img{width:100%;height:100%;object-fit:cover}
@@ -809,16 +813,24 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <!-- Manual upload -->
             <input type="file" id="img-file-input" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="imgOnFileInput(this)">
             <div class="img-upload-zone" id="img-upload-zone"
-              onclick="imgZoneClick(event)"
               ondragover="imgDragOver(event)"
               ondragleave="imgDragLeave(event)"
               ondrop="imgDrop(event)">
               <div class="img-upload-prompt" id="img-upload-prompt">
-                <span class="img-upload-icon">🖼️</span>
-                <span style="font-size:.85rem;font-weight:600;color:#4b5563">Arrasta as imagens ou <span style="color:#2d6a9f">clica para seleccionar</span></span>
-                <span class="img-upload-hint">Drag &amp; drop · até 10 imagens</span>
+                <div class="img-src-btns">
+                  <button class="img-src-btn" onclick="bibOpenPickModal('upload')">📚 Escolher da Biblioteca</button>
+                  <button class="img-src-btn" onclick="document.getElementById('img-file-input').click()">⬆️ Fazer Upload</button>
+                </div>
+                <span class="img-upload-hint">Ou arrasta imagens aqui · até 10</span>
               </div>
               <div class="img-previews" id="img-previews" style="display:none"></div>
+            </div>
+            <div id="bib-asset-ind" style="display:none">
+              <div class="bib-asset-ind">
+                <span>📚 Da biblioteca ·</span>
+                <span id="bib-asset-label" style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                <button class="bib-asset-clear" onclick="imgClearBibAsset()" title="Remover">✕</button>
+              </div>
             </div>
             <div class="img-progress-bar-wrap" id="img-progress-wrap" style="display:none">
               <div class="img-progress-bar" id="img-progress-bar" style="width:0%"></div>
@@ -1034,7 +1046,15 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <div class="bib-pick-box">
       <h3>📷 Escolher da Biblioteca</h3>
       <div class="bib-pick-filters">
-        <input type="text" class="bib-search" style="max-width:160px" id="bib-pick-search" placeholder="Pesquisar..." oninput="bibLoadPick()">
+        <input type="text" class="bib-search" style="max-width:140px" id="bib-pick-search" placeholder="Pesquisar..." oninput="bibLoadPick()">
+        <select class="bib-select" id="bib-pick-cat" onchange="bibLoadPick()">
+          <option value="">Todas as categorias</option>
+          <option value="noticias_imoveis">🏠 Imobiliário</option>
+          <option value="noticias_figueira">🏖️ Figueira</option>
+          <option value="recrutamento">👥 Recrutamento</option>
+          <option value="clientes_vendedores">🏷️ Vendedores</option>
+          <option value="clientes_compradores">🔑 Compradores</option>
+        </select>
         <select class="bib-select" id="bib-pick-tipo" onchange="bibLoadPick()">
           <option value="">📸+🎬 Todos</option>
           <option value="imagem">📸 Fotos</option>
@@ -1552,6 +1572,10 @@ var _contGerado = null
 var _histRows = []
 var _imgFiles = []   // File objects pendentes
 var _imgUrls  = []   // URLs públicos já carregados
+var _imgFromBib = null       // { id, url, descricao, categoria } — imagem da biblioteca
+var _bibliotecaAssetId = null // id do asset da biblioteca activo
+var _bibAssetIds = []         // todos os ids de assets deste conteúdo (para asset_ids na BD)
+var _bibPickContext = 'ai'    // 'ai' | 'upload'
 var _aiImgUrl       = null   // URL Supabase da imagem IA (antes de overlay)
 var _aiImgFinal     = null   // URL final após overlay logo
 var _cropSettings   = null   // {panX, panY, scale} — set by crop editor
@@ -2023,7 +2047,8 @@ function imgRenderPreviews() {
   var zone = document.getElementById('img-upload-zone')
   var prompt = document.getElementById('img-upload-prompt')
   var previews = document.getElementById('img-previews')
-  if (!_imgFiles.length) {
+  var hasContent = _imgFiles.length > 0 || !!_imgFromBib
+  if (!hasContent) {
     zone.classList.remove('has-files')
     prompt.style.display = ''
     previews.style.display = 'none'
@@ -2034,6 +2059,15 @@ function imgRenderPreviews() {
   prompt.style.display = 'none'
   previews.style.display = 'flex'
   previews.innerHTML = ''
+  // Biblioteca image preview
+  if (_imgFromBib) {
+    var bibItem = document.createElement('div')
+    bibItem.className = 'img-preview-item'
+    bibItem.style.outline = '2px solid #2d6a9f'
+    bibItem.innerHTML = '<img src="' + esc(_imgFromBib.url) + '" alt="">'
+      + '<button class="img-preview-remove" onclick="imgClearBibAsset()" title="Remover da biblioteca">✕</button>'
+    previews.appendChild(bibItem)
+  }
   _imgFiles.forEach(function(f, i) {
     var item = document.createElement('div')
     item.className = 'img-preview-item'
@@ -2045,7 +2079,8 @@ function imgRenderPreviews() {
       + '<button class="img-preview-remove" onclick="imgRemove(' + i + ')" title="Remover">✕</button>'
     previews.appendChild(item)
   })
-  if (_imgFiles.length < 10) {
+  var totalShown = (_imgFromBib ? 1 : 0) + _imgFiles.length
+  if (totalShown < 10 && !_imgFromBib) {
     var addMore = document.createElement('div')
     addMore.className = 'img-add-more'
     addMore.title = 'Adicionar mais imagens'
@@ -2104,6 +2139,30 @@ async function imgUploadAll() {
     progressWrap.style.display = 'none'
     progressText.textContent = ''
   }, 2000)
+
+  // Save uploaded images to biblioteca (fire-and-forget)
+  if (_imgUrls.length) {
+    _bibAssetIds = []
+    for (var j = 0; j < _imgUrls.length; j++) {
+      try {
+        var { data: bibRow } = await sb.from('biblioteca_imagens').insert({
+          user_id: userId,
+          url: _imgUrls[j],
+          origem: 'upload',
+          tipo: 'imagem',
+          categoria: _contCategoria || null
+        }).select('id').single()
+        if (bibRow && bibRow.id) _bibAssetIds.push(bibRow.id)
+      } catch(bibErr) { console.warn('[bib] save upload error', bibErr) }
+    }
+    if (_bibAssetIds.length) {
+      _bibliotecaAssetId = _bibAssetIds[0]
+      var ind = document.getElementById('bib-asset-ind')
+      var lbl = document.getElementById('bib-asset-label')
+      if (lbl) lbl.textContent = _bibAssetIds.length + ' imagem(ns) guardada(s) na biblioteca'
+      if (ind) ind.style.display = ''
+    }
+  }
 }
 
 function imgCheckInstagram() {
@@ -2115,13 +2174,30 @@ function imgCheckInstagram() {
   igUpdateFormatBar()
 }
 
+function imgClearBibAsset() {
+  _imgFromBib = null
+  _bibliotecaAssetId = null
+  _bibAssetIds = []
+  // Remove bib URL from _imgUrls if it was the only one
+  if (!_imgFiles.length) _imgUrls = []
+  var ind = document.getElementById('bib-asset-ind')
+  if (ind) ind.style.display = 'none'
+  imgRenderPreviews()
+  imgCheckInstagram()
+}
+
 function imgReset() {
   _imgFiles = []
   _imgUrls = []
+  _imgFromBib = null
+  _bibliotecaAssetId = null
+  _bibAssetIds = []
   imgRenderPreviews()
   document.getElementById('img-progress-wrap').style.display = 'none'
   document.getElementById('img-progress-text').textContent = ''
   document.getElementById('img-warn-instagram').style.display = 'none'
+  var ind = document.getElementById('bib-asset-ind')
+  if (ind) ind.style.display = 'none'
   aiImgReset()
 }
 
@@ -3151,7 +3227,8 @@ async function contGuardar(agendar) {
     redes_seleccionadas: redes,
     data_agendada: agendar && data ? new Date(data).toISOString() : null,
     imagens_urls: _imgUrls.length ? _imgUrls : [],
-    user_id: _currentUserId || null
+    user_id: _currentUserId || null,
+    asset_ids: _bibAssetIds.length ? _bibAssetIds : null
   }
   if (_aiImgFinal) {
     payload['imagem_gerada_url'] = _aiImgFinal
@@ -3228,6 +3305,16 @@ async function contGuardar(agendar) {
           }, { onConflict: 'short_code,rede_social' })
         }
       } catch(pe) { console.warn('publicacoes upsert failed', pe) }
+    }
+    // Actualizar utilizada_em nos assets da biblioteca
+    if (_bibAssetIds.length && saved && saved.id) {
+      for (var ai = 0; ai < _bibAssetIds.length; ai++) {
+        try {
+          var { data: bibAsset } = await sb.from('biblioteca_imagens').select('utilizada_em').eq('id', _bibAssetIds[ai]).single()
+          var arr = (bibAsset && bibAsset.utilizada_em) ? bibAsset.utilizada_em.concat([saved.id]) : [saved.id]
+          await sb.from('biblioteca_imagens').update({ utilizada_em: arr }).eq('id', _bibAssetIds[ai])
+        } catch(ue) { console.warn('utilizada_em update error', ue) }
+      }
     }
     alert(agendar ? '✅ Conteúdo agendado!' : '✅ Rascunho guardado!')
     document.getElementById('cont-texto').value = ''
@@ -4574,12 +4661,19 @@ async function bibSaveIaImage(url, prompt, _unused) {
 // ── Biblioteca Pick Modal ─────────────────────────────────────────────────────
 var _bibPickRows = []
 
-async function bibOpenPickModal() {
+async function bibOpenPickModal(context) {
+  _bibPickContext = context || 'ai'
   _bibPickSelected = null
   document.getElementById('bib-pick-use-btn').disabled = true
   document.getElementById('bib-pick-count').textContent = '—'
   document.getElementById('bib-pick-search').value = ''
   document.getElementById('bib-pick-origem').value = ''
+  var catSel = document.getElementById('bib-pick-cat')
+  if (catSel) catSel.value = ''
+  var tipoSel = document.getElementById('bib-pick-tipo')
+  if (tipoSel) tipoSel.value = ''
+  // In upload context: pre-select current content category for convenience
+  if (_bibPickContext === 'upload' && _contCategoria && catSel) catSel.value = _contCategoria
   document.getElementById('bib-pick-modal').classList.add('open')
   await bibLoadPick()
 }
@@ -4592,15 +4686,15 @@ function bibClosePickModal() {
 async function bibLoadPick() {
   var grid = document.getElementById('bib-pick-grid')
   grid.innerHTML = '<div class="bib-pick-empty">A carregar...</div>'
-  var { data: { user } } = await sb.auth.getUser()
-  if (!user) return
   var search = (document.getElementById('bib-pick-search').value || '').toLowerCase().trim()
   var origem = document.getElementById('bib-pick-origem').value
   var tipo   = (document.getElementById('bib-pick-tipo') || {}).value || ''
-  var query = sb.from('biblioteca_imagens').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(300)
+  var cat    = (document.getElementById('bib-pick-cat') || {}).value || ''
+  var query = sb.from('biblioteca_imagens').select('*').order('created_at', { ascending: false }).limit(300)
   if (origem === 'ia') query = query.eq('origem', 'ia')
   else if (origem === 'upload') query = query.eq('origem', 'upload')
   if (tipo) query = query.eq('tipo', tipo)
+  if (cat) query = query.eq('categoria', cat)
   var { data } = await query
   _bibPickRows = (data || []).filter(function(r) {
     if (!search) return true
@@ -4642,10 +4736,30 @@ function bibPickConfirm() {
   var r = _bibPickRows.find(function(x) { return x.id === _bibPickSelected })
   if (!r) return
   bibClosePickModal()
+
+  // Video: same behaviour regardless of context
   if ((r.tipo || 'imagem') === 'video') {
     bibUseVideoInPost(r)
     return
   }
+
+  if (_bibPickContext === 'upload') {
+    // Add image directly to previews (no crop editor)
+    _imgFromBib = { id: r.id, url: r.url, descricao: r.descricao, categoria: r.categoria }
+    _bibliotecaAssetId = r.id
+    _bibAssetIds = [r.id]
+    _imgUrls = [r.url]
+    imgRenderPreviews()
+    // Show indicator
+    var ind = document.getElementById('bib-asset-ind')
+    var lbl = document.getElementById('bib-asset-label')
+    if (lbl) lbl.textContent = r.descricao || catLabel(r.categoria) || '—'
+    if (ind) ind.style.display = ''
+    imgCheckInstagram()
+    return
+  }
+
+  // Default AI context: open crop editor
   _cropSettings = null
   cropOpen(r.url, r)
 }
