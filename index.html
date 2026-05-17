@@ -1161,49 +1161,54 @@ async function aiImgRegenerate() {
   btn.disabled = false
 }
 
-function aiImgOverlayAndUpload(supabaseUrl, session) {
+function drawLogoCorner(ctx, logoImg, canvasSize, maxW, pad) {
+  var lw = Math.min(maxW, logoImg.naturalWidth || maxW)
+  var lh = Math.round(lw * (logoImg.naturalHeight || lw) / (logoImg.naturalWidth || lw))
+  var lx = canvasSize - lw - pad
+  var ly = canvasSize - lh - pad
+  var bgPad = 8, r = 8
+  var rx = lx - bgPad, ry = ly - bgPad, rw = lw + bgPad * 2, rh = lh + bgPad * 2
+  ctx.save()
+  ctx.globalAlpha = 0.80
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.moveTo(rx + r, ry)
+  ctx.lineTo(rx + rw - r, ry); ctx.arcTo(rx + rw, ry, rx + rw, ry + r, r)
+  ctx.lineTo(rx + rw, ry + rh - r); ctx.arcTo(rx + rw, ry + rh, rx + rw - r, ry + rh, r)
+  ctx.lineTo(rx + r, ry + rh); ctx.arcTo(rx, ry + rh, rx, ry + rh - r, r)
+  ctx.lineTo(rx, ry + r); ctx.arcTo(rx, ry, rx + r, ry, r)
+  ctx.closePath()
+  ctx.fill()
+  ctx.globalAlpha = 1
+  ctx.drawImage(logoImg, lx, ly, lw, lh)
+  ctx.restore()
+}
+
+async function aiImgOverlayAndUpload(supabaseUrl, session) {
+  var canvas = document.createElement('canvas')
+  canvas.width = 1024; canvas.height = 1024
+  var ctx = canvas.getContext('2d')
+
+  var img
+  try { img = await loadImg(supabaseUrl) } catch(e) { return supabaseUrl }
+  ctx.drawImage(img, 0, 0, 1024, 1024)
+
+  try {
+    var logo = await loadImg('/logo-figueirahome.png')
+    drawLogoCorner(ctx, logo, 1024, 80, 16)
+  } catch(e) {}  // no logo — continue without
+
   return new Promise(function(resolve) {
-    var canvas = document.createElement('canvas')
-    canvas.width = 1024; canvas.height = 1024
-    var ctx = canvas.getContext('2d')
-
-    var img = new Image()
-    img.crossOrigin = 'anonymous'
-
-    img.onerror = function() { resolve(supabaseUrl) }  // CORS failed — use original
-
-    img.onload = function() {
-      ctx.drawImage(img, 0, 0, 1024, 1024)
-
-      var logo = new Image()
-      logo.crossOrigin = 'anonymous'
-
-      var uploadCanvas = function() {
-        canvas.toBlob(async function(blob) {
-          if (!blob) { resolve(supabaseUrl); return }
-          var path = session.user.id + '/ai_final/' + Date.now() + '.jpg'
-          var { error } = await sb.storage.from('conteudos-imagens').upload(path, blob, {
-            contentType: 'image/jpeg', upsert: true
-          })
-          if (error) { resolve(supabaseUrl); return }
-          var { data: pub } = sb.storage.from('conteudos-imagens').getPublicUrl(path)
-          resolve(pub.publicUrl)
-        }, 'image/jpeg', 0.92)
-      }
-
-      logo.onload = function() {
-        var lw = Math.round(1024 * 0.16)  // 16% of canvas width
-        var margin = 18
-        ctx.globalAlpha = 0.88
-        ctx.drawImage(logo, 1024 - lw - margin, 1024 - lw - margin, lw, lw)
-        ctx.globalAlpha = 1
-        uploadCanvas()
-      }
-      logo.onerror = function() { uploadCanvas() }  // No logo — upload without it
-      logo.src = '/logo-figueirahome.png'
-    }
-
-    img.src = supabaseUrl
+    canvas.toBlob(async function(blob) {
+      if (!blob) { resolve(supabaseUrl); return }
+      var path = session.user.id + '/ai_final/' + Date.now() + '.jpg'
+      var { error } = await sb.storage.from('conteudos-imagens').upload(path, blob, {
+        contentType: 'image/jpeg', upsert: true
+      })
+      if (error) { resolve(supabaseUrl); return }
+      var { data: pub } = sb.storage.from('conteudos-imagens').getPublicUrl(path)
+      resolve(pub.publicUrl)
+    }, 'image/jpeg', 0.92)
   })
 }
 
@@ -1270,15 +1275,9 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
     ctx.fillStyle = '#0A3D62'
     ctx.fillRect(0, 0, S, S)
 
-    if (logoImg) {
-      var lw = Math.round(S * 0.60)
-      var lh = Math.round(lw * logoImg.naturalHeight / logoImg.naturalWidth)
-      ctx.drawImage(logoImg, (S - lw) / 2, Math.round(S * 0.20), lw, lh)
-    } else {
-      ctx.font = 'bold 64px "Segoe UI",Arial,sans-serif'
-      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'
-      ctx.fillText('Figueira Home', cx, Math.round(S * 0.40))
-    }
+    ctx.font = 'bold 64px "Segoe UI",Arial,sans-serif'
+    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'
+    ctx.fillText('Figueira Home', cx, Math.round(S * 0.35))
 
     ctx.textAlign = 'center'
     ctx.font = 'bold 54px "Segoe UI",Arial,sans-serif'
@@ -1291,6 +1290,8 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
     ctx.globalAlpha = 0.75
     ctx.fillText('@figueirahome', cx, Math.round(S * 0.88))
     ctx.globalAlpha = 1
+
+    if (logoImg) { drawLogoCorner(ctx, logoImg, S, 80, 16) }
 
   } else {
     // ── Image + overlay slide ─────────────────────────────────────────────
@@ -1322,15 +1323,7 @@ async function carrosselComporSlide(slide, idx, total, bgImg, logoImg, session) 
       ctx.globalAlpha = 1
     }
 
-    // Logo bottom-right
-    if (logoImg) {
-      var lw3 = isFirst ? Math.round(S * 0.18) : Math.round(S * 0.13)
-      var lh3 = Math.round(lw3 * logoImg.naturalHeight / logoImg.naturalWidth)
-      var mg  = 22
-      ctx.globalAlpha = 0.90
-      ctx.drawImage(logoImg, S - lw3 - mg, S - lh3 - mg, lw3, lh3)
-      ctx.globalAlpha = 1
-    }
+    if (logoImg) { drawLogoCorner(ctx, logoImg, S, 80, 16) }
   }
 
   return new Promise(function(resolve) {
