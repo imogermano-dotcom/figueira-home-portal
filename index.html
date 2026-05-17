@@ -130,7 +130,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .img-progress-bar-wrap{margin-top:8px;background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;width:100%}
 .img-progress-bar{height:100%;background:#2d6a9f;border-radius:4px;transition:width .3s}
 .img-progress-text{font-size:.74rem;color:#6b7280;margin-top:4px}
-.img-warn{font-size:.75rem;color:#dc2626;margin-top:6px;display:none}
+.img-warn{font-size:.75rem;color:#b45309;background:#fefce8;border:1px solid #fde68a;border-radius:6px;padding:5px 10px;margin-top:6px;display:none}
 .cont-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:16px;margin-bottom:16px}
 .cont-card{border-radius:10px;border:1.5px solid #e0e6f0;padding:16px}
 .cont-card.ig{border-color:#f9a8d4;background:#fff9fb}
@@ -383,7 +383,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <!-- AI Image -->
             <div class="ai-img-box" id="ai-img-box">
               <div id="ai-img-initial">
-                <div class="ai-img-hint">🤖 <span>Imagem gerada automaticamente com IA ao criar o conteúdo</span></div>
+                <div class="ai-img-hint">🤖 <span>Gera uma imagem com IA para este conteúdo</span></div>
+                <button class="ai-regen-btn" id="ai-gerar-manual-btn" onclick="aiImgGerarManual()" style="margin-top:8px">✨ Gerar com IA</button>
               </div>
               <div id="ai-img-loading" style="display:none">
                 <div class="ai-img-status"><div class="ai-img-spinner"></div><span>A criar imagem com IA...</span></div>
@@ -421,7 +422,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <div class="img-progress-bar" id="img-progress-bar" style="width:0%"></div>
             </div>
             <div class="img-progress-text" id="img-progress-text"></div>
-            <div class="img-warn" id="img-warn-instagram">⚠️ Instagram seleccionado — é necessária pelo menos 1 imagem.</div>
+            <div class="img-warn" id="img-warn-instagram">⚠️ Sem imagem — o post Instagram pode não publicar.</div>
           </div>
 
           <div class="cont-field">
@@ -1059,10 +1060,10 @@ async function imgUploadAll() {
 function imgCheckInstagram() {
   var warn = document.getElementById('img-warn-instagram')
   var igChecked = document.getElementById('cb-instagram').checked
-  var show = igChecked && _imgFiles.length === 0
+  var hasImg = _imgFiles.length > 0 || !!_aiImgFinal || _imgUrls.length > 0
+  var show = igChecked && !hasImg
   warn.style.display = show ? 'block' : 'none'
   igUpdateFormatBar()
-  return !show
 }
 
 function imgReset() {
@@ -1090,29 +1091,39 @@ async function aiImgGerar(textoBase, session) {
     var r = await fetch(EDGE_IMAGEM, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ prompt_tema: textoBase })
+      body: JSON.stringify({ texto_base: textoBase })
     })
     var data = await r.json()
-    if (!r.ok || !data.success) throw new Error(data.error || 'Erro ao gerar imagem')
+    if (!r.ok || data.error) throw new Error(data.error || 'Erro ao gerar imagem')
 
-    _aiImgUrl    = data.url
-    _aiImgPrompt = data.prompt
-    document.getElementById('ai-img-prompt-ta').value = data.prompt
+    _aiImgUrl    = data.imagem_url
+    _aiImgPrompt = data.prompt || ''
+    document.getElementById('ai-img-prompt-ta').value = data.prompt || ''
 
     // Canvas overlay with logo, then re-upload
-    var finalUrl = await aiImgOverlayAndUpload(data.url, session)
+    var finalUrl = await aiImgOverlayAndUpload(data.imagem_url, session)
     _aiImgFinal = finalUrl
 
     document.getElementById('ai-img-thumb').src = finalUrl
     aiImgSetState('result')
+    imgCheckInstagram()
 
     // Make it available as first image if no manual uploads
     if (!_imgUrls.length) _imgUrls = [finalUrl]
   } catch(e) {
     console.warn('aiImgGerar error:', e.message)
     aiImgSetState('initial')
-    // Non-fatal — text content is still shown
   }
+}
+
+async function aiImgGerarManual() {
+  var texto = document.getElementById('cont-texto').value.trim()
+  if (!texto) { alert('Introduz primeiro o texto base.'); return }
+  var btn = document.getElementById('ai-gerar-manual-btn')
+  if (btn) btn.disabled = true
+  var { data: { session } } = await sb.auth.getSession()
+  await aiImgGerar(texto, session)
+  if (btn) btn.disabled = false
 }
 
 async function aiImgRegenerate() {
@@ -1129,12 +1140,12 @@ async function aiImgRegenerate() {
       body: JSON.stringify({ prompt_override: prompt })
     })
     var data = await r.json()
-    if (!r.ok || !data.success) throw new Error(data.error || 'Erro ao regenerar imagem')
+    if (!r.ok || data.error) throw new Error(data.error || 'Erro ao regenerar imagem')
 
-    _aiImgUrl    = data.url
+    _aiImgUrl    = data.imagem_url
     _aiImgPrompt = prompt
 
-    var finalUrl = await aiImgOverlayAndUpload(data.url, session)
+    var finalUrl = await aiImgOverlayAndUpload(data.imagem_url, session)
     _aiImgFinal = finalUrl
     document.getElementById('ai-img-thumb').src = finalUrl
 
@@ -1390,7 +1401,7 @@ async function contGerar() {
   if (!texto) { alert('Introduz o texto base.'); return }
   var redes = contGetRedes()
   if (!redes.length) { alert('Selecciona pelo menos uma rede.'); return }
-  if (!imgCheckInstagram()) return
+  imgCheckInstagram()
   var btn = document.getElementById('cont-gerar-btn')
   btn.disabled = true
   document.getElementById('cont-results').style.display = 'none'
@@ -1413,14 +1424,6 @@ async function contGerar() {
     _contGerado = data.conteudo
     contRenderCards(redes)
     document.getElementById('cont-results').style.display = ''
-    // Generate AI image
-    btn.textContent = '🖼️ A criar imagem com IA...'
-    await aiImgGerar(texto, session)
-    // Compose carousel slides (canvas per slide) if applicable
-    if (redes.includes('instagram') && _igFormato === 'carrossel' && _contGerado && _contGerado.instagram) {
-      btn.textContent = '🎨 A compor slides...'
-      await carrosselComporTodos(session)
-    }
   } catch(e) {
     aiImgSetState('initial')
     alert('Erro ao gerar: ' + e.message)
