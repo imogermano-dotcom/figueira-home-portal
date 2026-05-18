@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Feedback IA — EGO</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f1f5f9;--surface:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;--accent:#6366f1;--green:#22c55e;--red:#ef4444;--orange:#f97316}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Header */
+header{background:linear-gradient(135deg,#1a3c5e,#2d6a9f);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{font-size:1.05rem;font-weight:700}
+header h1 span{color:#a5b4fc}
+.header-right{display:flex;align-items:center;gap:10px}
+.badge-total{background:rgba(255,255,255,.18);padding:3px 12px;border-radius:20px;font-size:.8rem;font-weight:600}
+.config-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:6px;font-size:.82rem;cursor:pointer;transition:background .2s}
+.config-btn:hover{background:rgba(255,255,255,.22)}
+
+/* Toolbar */
+.toolbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.refresh-btn{padding:6px 16px;background:#f1f5f9;border:1.5px solid var(--border);border-radius:6px;font-size:.82rem;cursor:pointer;transition:background .2s}
+.refresh-btn:hover{background:#e2e8f0}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;padding:16px 24px}
+.stat-card{background:var(--surface);border-radius:10px;padding:14px 16px;border:1px solid var(--border)}
+.stat-card .label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px}
+.stat-card .value{font-size:1.6rem;font-weight:800}
+.stat-card.red .value{color:var(--red)}
+.stat-card.orange .value{color:var(--orange)}
+.stat-card.green .value{color:var(--green)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;padding:0 24px 32px}
+.state-msg{grid-column:1/-1;text-align:center;padding:48px;color:var(--muted);font-size:.9rem}
+
+/* Card */
+.card{background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:16px;transition:opacity .2s}
+.card.resolved{opacity:.6}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.pill-status{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.pill-pending{background:#fef2f2;color:var(--red)}
+.pill-resolved{background:#f0fdf4;color:var(--green)}
+.pill-zero{background:#fff7ed;color:var(--orange)}
+.card-id{font-size:.73rem;color:var(--muted);font-weight:600}
+.card-date{font-size:.72rem;color:var(--muted);margin-left:auto}
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px}
+.section-text{font-size:.85rem;color:var(--text);line-height:1.5;margin-bottom:12px}
+.section-esperado{font-size:.85rem;color:#4f46e5;font-style:italic;line-height:1.5;margin-bottom:12px}
+.notas-area{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:.83rem;font-family:inherit;background:#f8fafc;outline:none;resize:vertical;min-height:60px;transition:border-color .2s,box-shadow .2s;margin-bottom:10px}
+.notas-area:focus{border-color:var(--accent)}
+.notas-area.saved{border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+.card-footer{display:flex;gap:8px;flex-wrap:wrap}
+.btn-save{padding:6px 14px;background:#f1f5f9;border:1.5px solid var(--border);border-radius:6px;font-size:.8rem;cursor:pointer;transition:background .2s}
+.btn-save:hover{background:#e2e8f0}
+.btn-resolve{padding:6px 14px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-resolve:hover{background:#16a34a}
+.btn-reopen{padding:6px 14px;background:#f1f5f9;border:1.5px solid var(--border);border-radius:6px;font-size:.8rem;cursor:pointer;transition:background .2s}
+.btn-reopen:hover{background:#fee2e2;border-color:#fca5a5;color:var(--red)}
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 Painel de Feedback <span>EGO IA</span></h1>
+  <div class="header-right">
+    <span class="badge-total" id="badge-total">— registos</span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="pills">
+    <button class="pill active" onclick="setFiltro('todos',this)">Todos</button>
+    <button class="pill" onclick="setFiltro('pendente',this)">Por resolver</button>
+    <button class="pill" onclick="setFiltro('zero',this)">Sem resultados</button>
+    <button class="pill" onclick="setFiltro('resolvido',this)">Resolvidos</button>
+  </div>
+  <button class="refresh-btn" onclick="load()">↺ Atualizar</button>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="label">Total</div><div class="value" id="s-total">—</div></div>
+  <div class="stat-card red"><div class="label">Por resolver</div><div class="value" id="s-pendente">—</div></div>
+  <div class="stat-card orange"><div class="label">0 resultados</div><div class="value" id="s-zero">—</div></div>
+  <div class="stat-card green"><div class="label">Resolvidos</div><div class="value" id="s-resolvido">—</div></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+var allRows = [];
+var filtroAtivo = 'todos';
+
+function getConfig(){
+  return {
+    url: 'https://zphasvfopnbzwnaidsnw.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc4Mjc3OCwiZXhwIjoyMDkwMzU4Nzc4fQ.xKzl1SEO7btOTEDDmsetc3NYQMqb894wBZsL-z96Bsc'
+  };
+}
+
+async function load(){
+  var c = getConfig();
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '<div class="state-msg">A carregar…</div>';
+  try{
+    var r = await fetch(c.url+'/rest/v1/feedback_queries?select=*&order=criado_em.desc&limit=500',{
+      headers:{'apikey':c.key,'Authorization':'Bearer '+c.key}
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status+' — verifica a key em ⚙️ Config');
+    allRows = await r.json();
+    updateStats();
+    renderGrid();
+  }catch(err){
+    grid.innerHTML='<div class="state-msg" style="color:#ef4444">Erro: '+err.message+'</div>';
+  }
+}
+
+function updateStats(){
+  var pendente = allRows.filter(function(r){return !r.resolvido}).length;
+  var zero = allRows.filter(function(r){return r.resultado_count===0}).length;
+  var resolvido = allRows.filter(function(r){return r.resolvido}).length;
+  document.getElementById('badge-total').textContent = allRows.length + ' registos';
+  document.getElementById('s-total').textContent = allRows.length;
+  document.getElementById('s-pendente').textContent = pendente;
+  document.getElementById('s-zero').textContent = zero;
+  document.getElementById('s-resolvido').textContent = resolvido;
+}
+
+function setFiltro(f, el){
+  filtroAtivo = f;
+  document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  renderGrid();
+}
+
+function filteredRows(){
+  if(filtroAtivo==='pendente') return allRows.filter(function(r){return !r.resolvido});
+  if(filtroAtivo==='zero') return allRows.filter(function(r){return r.resultado_count===0});
+  if(filtroAtivo==='resolvido') return allRows.filter(function(r){return r.resolvido});
+  return allRows;
+}
+
+function renderGrid(){
+  var rows = filteredRows();
+  var grid = document.getElementById('grid');
+  if(!rows.length){ grid.innerHTML='<div class="state-msg">Nenhum item para este filtro.</div>'; return; }
+  grid.innerHTML = '';
+  rows.forEach(function(row){ grid.appendChild(buildCard(row)); });
+}
+
+function buildCard(row){
+  var div = document.createElement('div');
+  div.className = 'card' + (row.resolvido ? ' resolved' : '');
+  div.id = 'card-'+row.id;
+
+  var isZero = row.resultado_count === 0 && !row.resolvido;
+  var pillClass = row.resolvido ? 'pill-resolved' : (isZero ? 'pill-zero' : 'pill-pending');
+  var pillLabel = row.resolvido ? '✓ Resolvido' : (isZero ? '⚠ 0 resultados' : '● Por resolver');
+  var dataHora = row.criado_em ? new Date(row.criado_em).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+
+  var html = '<div class="card-top">'
+    + '<span class="pill-status '+pillClass+'">'+pillLabel+'</span>'
+    + '<span class="card-id">#'+row.id+'</span>'
+    + '<span class="card-date">'+dataHora+'</span>'
+    + '</div>';
+
+  html += '<div class="section-label">Pergunta</div>';
+  html += '<div class="section-text">'+esc(row.query_texto)+'</div>';
+
+  if(row.resposta_ia){
+    html += '<div class="section-label">Resposta IA (resumo)</div>';
+    html += '<div class="section-text">'+esc(row.resposta_ia)+'</div>';
+  }
+
+  html += '<div class="section-label">O que esperava</div>';
+  html += '<div class="section-esperado">'+esc(row.esperado||'—')+'</div>';
+
+  html += '<div class="section-label">Notas dev (causa / fix)</div>';
+  html += '<textarea class="notas-area" id="notas-'+row.id+'">'+esc(row.notas_dev||'')+'</textarea>';
+
+  html += '<div class="card-footer">'
+    + '<button class="btn-save" onclick="guardarNotas('+row.id+')">💾 Guardar notas</button>';
+
+  if(!row.resolvido){
+    html += '<button class="btn-resolve" onclick="toggleResolvido('+row.id+',true)">✓ Marcar resolvido</button>';
+  } else {
+    html += '<button class="btn-reopen" onclick="toggleResolvido('+row.id+',false)">↩ Reabrir</button>';
+  }
+  html += '</div>';
+
+  div.innerHTML = html;
+  return div;
+}
+
+async function guardarNotas(id){
+  var c = getConfig();
+  var notas = document.getElementById('notas-'+id).value;
+  try{
+    var r = await fetch(c.url+'/rest/v1/feedback_queries?id=eq.'+id,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','apikey':c.key,'Authorization':'Bearer '+c.key,'Prefer':'return=minimal'},
+      body:JSON.stringify({notas_dev:notas||null})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var ta = document.getElementById('notas-'+id);
+    ta.classList.add('saved');
+    setTimeout(function(){ ta.classList.remove('saved'); }, 1200);
+    var row = allRows.find(function(r){return r.id===id;});
+    if(row) row.notas_dev = notas || null;
+  }catch(err){ alert('Erro ao guardar: '+err.message); }
+}
+
+async function toggleResolvido(id, estado){
+  var c = getConfig();
+  try{
+    var r = await fetch(c.url+'/rest/v1/feedback_queries?id=eq.'+id,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','apikey':c.key,'Authorization':'Bearer '+c.key,'Prefer':'return=minimal'},
+      body:JSON.stringify({resolvido:estado, resolvido_em: estado ? new Date().toISOString() : null})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var row = allRows.find(function(r){return r.id===id;});
+    if(row){ row.resolvido=estado; row.resolvido_em=estado?new Date().toISOString():null; }
+    updateStats();
+    var cardEl = document.getElementById('card-'+id);
+    if(cardEl) cardEl.replaceWith(buildCard(row));
+  }catch(err){ alert('Erro: '+err.message); }
+}
+
+function esc(s){
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+load();
+</script>
+</body>
+</html>
