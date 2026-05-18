@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel Feedback IA — EGO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f1f5f9;--surface:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;--accent:#6366f1;--green:#22c55e;--red:#ef4444;--orange:#f97316}
@@ -94,6 +95,10 @@ header h1 span{color:#a5b4fc}
 <div class="grid" id="grid"></div>
 
 <script>
+var DOORSTEP_URL = 'https://fykbogojkcqokvopnmkz.supabase.co'
+var DOORSTEP_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5a2JvZ29qa2Nxb2t2b3BubWt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTc2MDgsImV4cCI6MjA3MzMzMzYwOH0.rih9rJONycxXm-FQ-HANFunSsiMT0KOubF0F9QgLNOw'
+var sb = supabase.createClient(DOORSTEP_URL, DOORSTEP_ANON)
+
 var allRows = [];
 var filtroAtivo = 'todos';
 
@@ -238,7 +243,20 @@ function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-load();
+async function init(){
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '<div class="state-msg">A verificar acesso…</div>';
+  var { data: { user } } = await sb.auth.getUser();
+  if (!user) { window.location.href = '/index.html'; return; }
+  var { data: profile } = await sb.from('profiles').select('role').eq('user_id', user.id).single();
+  if (!profile || profile.role !== 'admin') {
+    grid.innerHTML = '<div class="state-msg" style="color:#ef4444">⛔ Acesso reservado a administradores.</div>';
+    return;
+  }
+  load();
+}
+
+init();
 </script>
 </body>
 </html>
