@@ -564,6 +564,31 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   .ag-cal-cell{min-height:56px}
   .ag-panel{width:100%;right:-100%}
 }
+
+/* Feedback IA */
+.feedback-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1.5px solid #e2e8f0;border-radius:6px;background:#fff;color:#94a3b8;font-size:.78rem;font-family:inherit;cursor:pointer;transition:all .2s}
+.feedback-btn:hover{color:#ef4444;background:#fef2f2;border-color:#fecaca}
+.feedback-btn svg{flex-shrink:0}
+#feedback-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center}
+#feedback-overlay.open{display:flex;animation:fdFadeIn .15s ease}
+@keyframes fdFadeIn{from{opacity:0}to{opacity:1}}
+#feedback-modal{background:#fff;width:min(520px,94vw);border-radius:12px;padding:28px 32px 24px;animation:fdSlideUp .2s ease}
+@keyframes fdSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#feedback-modal h3{font-size:1rem;color:#1e293b;margin-bottom:4px}
+.fd-subtitle{font-size:.8rem;color:#64748b;margin-bottom:18px}
+.fd-field{margin-bottom:14px}
+.fd-field label{display:block;font-size:.72rem;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.fd-field input,.fd-field textarea{width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:.86rem;font-family:inherit;background:#f8fafc;outline:none;transition:border-color .2s}
+.fd-field input:focus,.fd-field textarea:focus{border-color:#6366f1}
+.fd-field textarea{min-height:80px;resize:vertical}
+.fd-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.fd-btn-cancel{padding:8px 18px;border:1.5px solid #e2e8f0;border-radius:7px;background:#fff;color:#475569;font-size:.86rem;cursor:pointer}
+.fd-btn-cancel:hover{background:#f8fafc}
+.fd-btn-submit{padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:.86rem;font-weight:600;cursor:pointer;transition:background .2s}
+.fd-btn-submit:hover{background:#4f46e5}
+.fd-btn-submit:disabled{background:#a5b4fc;cursor:not-allowed}
+#feedback-toast{position:fixed;bottom:28px;right:28px;background:#22c55e;color:#fff;font-size:.88rem;font-weight:600;padding:12px 20px;border-radius:8px;z-index:9999;opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none}
+#feedback-toast.show{opacity:1;transform:none}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -627,6 +652,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </div>
       </div>
       <div id="results"></div>
+      <div id="feedback-bar" style="margin-top:16px"></div>
     </main>
   </div>
 
@@ -1296,6 +1322,7 @@ async function doSearch() {
   var res = document.getElementById('results')
   btn.disabled = true; btn.textContent = 'A pesquisar...'
   res.innerHTML = '<div class="loading">🔍 A analisar a pergunta e pesquisar oportunidades...</div>'
+  var fb = document.getElementById('feedback-bar'); if(fb) fb.innerHTML = ''
   var oldCtrl = document.getElementById('results-controls')
   if (oldCtrl) oldCtrl.remove()
 
@@ -1456,6 +1483,7 @@ function renderResults(data, q) {
 
   if (!results.length) {
     res.innerHTML = '<div style="padding:16px;color:#6b7280">Nenhum resultado para: <em>'+esc(q)+'</em></div>'
+    var fb0 = document.getElementById('feedback-bar'); if(fb0 && window.FeedbackIA){ fb0.innerHTML=''; fb0.appendChild(FeedbackIA.mostrarBotao(q,'',0)) }
     return
   }
 
@@ -1497,6 +1525,7 @@ function renderResults(data, q) {
   results.forEach(function(r) { h += buildCardHtml(r) })
   res.innerHTML = h
   renderControls()
+  var fb1 = document.getElementById('feedback-bar'); if(fb1 && window.FeedbackIA){ fb1.innerHTML=''; fb1.appendChild(FeedbackIA.mostrarBotao(q, descr, results.length)) }
 }
 
 function buildCardHtml(r) {
@@ -5213,6 +5242,97 @@ document.addEventListener('DOMContentLoaded', function() {
     igUpdateFormatBar()
   }
 })
+</script>
+
+<!-- Feedback IA -->
+<div id="feedback-overlay">
+  <div id="feedback-modal" role="dialog" aria-modal="true">
+    <h3>😕 Reportar resposta incorreta</h3>
+    <p class="fd-subtitle">Ajuda-nos a melhorar — descreve o que esperavas obter.</p>
+    <div class="fd-field">
+      <label>A tua pergunta</label>
+      <input type="text" id="fd-query" readonly>
+    </div>
+    <div class="fd-field">
+      <label>Resposta recebida (resumo)</label>
+      <textarea id="fd-resposta" rows="3" readonly></textarea>
+    </div>
+    <div class="fd-field">
+      <label>O que esperavas obter? <span style="color:#ef4444">*</span></label>
+      <textarea id="fd-esperado" placeholder="Ex: esperava ver clientes que contactaram ontem..." rows="3"></textarea>
+    </div>
+    <div class="fd-footer">
+      <button class="fd-btn-cancel" id="fd-cancel">Cancelar</button>
+      <button class="fd-btn-submit" id="fd-submit">Enviar feedback</button>
+    </div>
+  </div>
+</div>
+<div id="feedback-toast">✅ Feedback enviado — obrigado!</div>
+
+<script>
+(function(){
+var EGO_FB_URL='https://zphasvfopnbzwnaidsnw.supabase.co';
+var EGO_FB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODI3NzgsImV4cCI6MjA5MDM1ODc3OH0.tzA42a3Ual4iOKs8riE1x5YoUzBtpSOJ_iQf5GgqjoA';
+var _fdState={query:'',resposta:'',count:0};
+
+function abrirModal(query,resposta,count){
+  _fdState={query:query,resposta:resposta,count:count};
+  document.getElementById('fd-query').value=query;
+  document.getElementById('fd-resposta').value=resposta||'';
+  document.getElementById('fd-esperado').value='';
+  document.getElementById('fd-esperado').style.borderColor='';
+  var btn=document.getElementById('fd-submit');
+  btn.disabled=false; btn.textContent='Enviar feedback';
+  document.getElementById('feedback-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('fd-esperado').focus();},200);
+}
+
+function fecharModal(){
+  document.getElementById('feedback-overlay').classList.remove('open');
+}
+
+document.getElementById('feedback-overlay').addEventListener('click',function(e){if(e.target===this)fecharModal();});
+document.getElementById('fd-cancel').addEventListener('click',fecharModal);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharModal();});
+
+document.getElementById('fd-submit').addEventListener('click',async function(){
+  var esperado=document.getElementById('fd-esperado').value.trim();
+  if(!esperado){
+    document.getElementById('fd-esperado').style.borderColor='#ef4444';
+    document.getElementById('fd-esperado').focus();
+    return;
+  }
+  var btn=this;
+  btn.disabled=true; btn.textContent='A enviar…';
+  try{
+    var r=await fetch(EGO_FB_URL+'/rest/v1/feedback_queries',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':EGO_FB_KEY,'Authorization':'Bearer '+EGO_FB_KEY,'Prefer':'return=minimal'},
+      body:JSON.stringify({query_texto:_fdState.query,resposta_ia:_fdState.resposta||null,resultado_count:_fdState.count,esperado:esperado})
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    fecharModal();
+    var t=document.getElementById('feedback-toast');
+    t.classList.add('show');
+    setTimeout(function(){t.classList.remove('show');},3500);
+  }catch(err){
+    alert('Erro ao enviar feedback: '+err.message);
+    btn.disabled=false; btn.textContent='Enviar feedback';
+  }
+});
+
+window.FeedbackIA={
+  mostrarBotao:function(query,resposta,count){
+    var btn=document.createElement('button');
+    btn.className='feedback-btn';
+    btn.title='Esta resposta não está correta?';
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg> Reportar resposta incorreta';
+    btn.addEventListener('click',function(){abrirModal(query,resposta,count);});
+    return btn;
+  },
+  abrirModal:abrirModal
+};
+})();
 </script>
 </body>
 </html>
