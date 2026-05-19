@@ -1010,7 +1010,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <div class="formato-row li-row" id="row-li">
                 <div class="formato-rede-label li">💼 LinkedIn</div>
                 <div class="formato-opcoes">
-                  <button class="formato-btn li-btn selected" onclick="selectFormato('li','imagem',this)">🖼 Imagem+Texto</button>
+                  <button class="formato-btn li-btn selected" onclick="selectFormato('li','texto_puro',this)">📝 Texto Puro</button>
+                  <button class="formato-btn li-btn" onclick="selectFormato('li','imagem',this)">🖼 Imagem+Texto</button>
                   <button class="formato-btn li-btn" onclick="selectFormato('li','video',this)">🎬 Vídeo</button>
                 </div>
               </div>
@@ -1975,9 +1976,9 @@ var _fonteMode = 'manual'
 var _perfilConteudo = 'polemico'
 // ── Redes Sociais + Formatos (novo UI de pills) ───────────────────────────────
 var redesActivas    = { ig:true,  fb:true,  li:true,  tt:false, yt:true  }
-var formatoRede     = { ig:'imagem', fb:'imagem', li:'imagem', tt:'video', yt:'video' }
+var formatoRede     = { ig:'imagem', fb:'imagem', li:'texto_puro', tt:'video', yt:'video' }
 var nomesRedes      = { ig:'Instagram', fb:'Facebook', li:'LinkedIn', tt:'TikTok', yt:'YouTube' }
-var defaultFormatos = { ig:'imagem', fb:'imagem', li:'imagem', tt:'video', yt:'video' }
+var defaultFormatos = { ig:'imagem', fb:'imagem', li:'texto_puro', tt:'video', yt:'video' }
 // ─────────────────────────────────────────────────────────────────────────────
 var _isVideoPost    = false  // true quando um vídeo da biblioteca está seleccionado
 var _vidBibId       = null   // id do registo em biblioteca_imagens
@@ -3183,7 +3184,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') } })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
