@@ -1059,6 +1059,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 
           <!-- 8. BOTÃO -->
           <button class="cont-btn primary" id="cont-gerar-btn" onclick="contGerar()">✨ Gerar Conteúdo</button>
+          <button id="btnEnviarProducao" onclick="contEnviarProducao()"
+            style="display:none;width:100%;padding:12px;background:#fff;color:#7c3aed;border:2px solid #7c3aed;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s;"
+            onmouseover="this.style.background='#faf5ff'" onmouseout="this.style.background='#fff'">
+            🎬 Enviar para Produção
+          </button>
         </div>
 
         <div id="cont-results" style="display:none">
@@ -1166,6 +1171,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button class="bib-tipo-btn" onclick="bibSetTipo('imagem')">📸 Fotos</button>
           <button class="bib-tipo-btn" onclick="bibSetTipo('video')">🎬 Vídeos</button>
         </div>
+        <div id="bibFiltrosVideo" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
+          <span style="font-size:.72rem;font-weight:600;color:#9ca3af;align-self:center;margin-right:4px;">ESTADO:</span>
+          <button class="bib-tipo-btn active" id="bibStatusBtn-todos" onclick="bibSetStatusVideo('')">Todos</button>
+          <button class="bib-tipo-btn" id="bibStatusBtn-pronto" onclick="bibSetStatusVideo('pronto')">✅ Prontos</button>
+          <button class="bib-tipo-btn" id="bibStatusBtn-aguarda_video" onclick="bibSetStatusVideo('aguarda_video')">📝 Aguarda vídeo</button>
+          <button class="bib-tipo-btn" id="bibStatusBtn-aguarda_texto" onclick="bibSetStatusVideo('aguarda_texto')">🎬 Aguarda texto</button>
+        </div>
         <div class="bib-filters">
           <input type="text" class="bib-search" id="bib-search" placeholder="Pesquisar..." oninput="bibSearch(this.value)">
           <select class="bib-select" id="bib-filter-origem" onchange="bibSetOrigem(this.value)">
@@ -1209,6 +1221,10 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <select class="bib-form-input" id="bib-upload-cat">
           <option value="">— Sem categoria —</option>
         </select>
+      </div>
+      <div class="bib-form-row" id="bib-titulo-row" style="display:none">
+        <label class="bib-form-label">Título <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
+        <input type="text" class="bib-form-input" id="bib-upload-titulo" placeholder="Ex: Por que os jovens estão a comprar mais casas em 2025">
       </div>
       <div class="bib-form-row">
         <label class="bib-form-label">Descrição (opcional)</label>
@@ -3653,6 +3669,7 @@ async function contGuardar(agendar) {
   try {
     var { data: saved, error } = await sb.from('conteudos_sociais').insert(payload).select().single()
     if (error) throw error
+    if (saved && saved.id) window._ultimoConteudoId = saved.id
     if (agendar && data) {
       try {
         var wBody = { id: saved.id, data_agendada: saved.data_agendada, redes: redes }
@@ -4526,9 +4543,10 @@ function bibRender() {
     if (_bibFilter.origem === 'ia' && r.origem !== 'ia') return false
     if (_bibFilter.origem === 'upload' && r.origem !== 'upload') return false
     if (_bibFilter.categoria && r.categoria !== _bibFilter.categoria) return false
+    if (_bibStatusVideoFilter && tipo === 'video' && (r.status_video || 'pronto') !== _bibStatusVideoFilter) return false
     if (_bibFilter.search) {
       var q = _bibFilter.search.toLowerCase()
-      var hay = ((r.descricao || '') + ' ' + (r.categoria || '') + ' ' + (r.tags || []).join(' ')).toLowerCase()
+      var hay = ((r.titulo || '') + ' ' + (r.descricao || '') + ' ' + (r.categoria || '') + ' ' + (r.tags || []).join(' ')).toLowerCase()
       if (!hay.includes(q)) return false
     }
     return true
@@ -4545,27 +4563,7 @@ function bibRender() {
       ? '<span class="bib-item-badge bib-badge-ia">🤖 IA</span>'
       : '<span class="bib-item-badge bib-badge-upload">📁 Upload</span>'
     if (tipo === 'video') {
-      var durBadge = r.duracao_segundos ? '<span class="bib-video-dur">' + bibFmtDur(r.duracao_segundos) + '</span>' : ''
-      var thumbSrc = r.thumbnail_url || ''
-      var mediaHtml = thumbSrc
-        ? '<img src="' + esc(thumbSrc) + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
-        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.4rem;background:#1a1a2e">🎬</div>'
-      var fmtBadgeTxt = r.formato_video === 'vertical_9_16' ? '📱 Vertical'
-        : r.formato_video === 'horizontal_16_9' ? '🖥️ Horizontal' : '🎬 Vídeo'
-      var fmtBadgeBg = r.formato_video === 'vertical_9_16' ? 'background:#1d4ed8'
-        : r.formato_video === 'horizontal_16_9' ? 'background:#15803d' : 'background:rgba(0,0,0,.72)'
-      return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')" style="background:#1a1a2e">'
-        + mediaHtml
-        + '<span class="bib-video-badge" style="' + fmtBadgeBg + '">' + fmtBadgeTxt + '</span>'
-        + durBadge
-        + '<div class="bib-item-overlay">'
-        + badge
-        + '<div class="bib-item-actions">'
-        + '<button class="bib-action-btn" onclick="event.stopPropagation();bibUseInPost(\'' + r.id + '\')">✅ Usar</button>'
-        + '<button class="bib-action-btn" onclick="event.stopPropagation();bibDownload(\'' + r.id + '\')">⬇</button>'
-        + '<button class="bib-action-btn" style="color:#dc2626" onclick="event.stopPropagation();bibDelete(\'' + r.id + '\')">🗑</button>'
-        + '</div></div>'
-        + '</div>'
+      return bibRenderCardVideo(r)
     }
     return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')">'
       + '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
@@ -4591,6 +4589,11 @@ function bibSetTipo(val) {
   document.querySelectorAll('.bib-tipo-btn').forEach(function(b) {
     b.className = 'bib-tipo-btn' + (b.textContent.includes(val === '' ? 'Todos' : val === 'imagem' ? 'Fotos' : 'Vídeos') ? ' active' : '')
   })
+  var filtrosVideo = document.getElementById('bibFiltrosVideo')
+  if (filtrosVideo) {
+    filtrosVideo.style.display = val === 'video' ? 'flex' : 'none'
+    if (val !== 'video') { _bibStatusVideoFilter = ''; bibSetStatusVideo('') }
+  }
   bibRender()
 }
 
@@ -4625,16 +4628,24 @@ function bibOpenModal(id) {
   var mediaHtml = tipo === 'video'
     ? '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;border-radius:10px;max-height:340px;background:#000"></video>'
     : '<img src="' + esc(r.url) + '" style="width:100%;border-radius:10px;max-height:360px;object-fit:contain;background:#f0f2f5">'
+  var extraVideo = tipo === 'video' ? bibModalVideoExtra(r) : ''
   var html = '<div style="display:flex;flex-direction:column;gap:14px">'
     + mediaHtml
     + (meta ? '<p style="font-size:.8rem;color:#6b7280">' + esc(meta) + '</p>' : '')
     + (r.prompt_ia ? '<p style="font-size:.76rem;color:#6b7280;background:#f9fafb;border-left:3px solid #d1d5db;padding:7px 10px;border-radius:0 6px 6px 0">' + esc(r.prompt_ia) + '</p>' : '')
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + '<button class="cont-btn primary" onclick="bibUseInPost(\'' + r.id + '\');bibModalClose()">✅ Usar no Gerador</button>'
-    + '<button class="cont-btn secondary" onclick="bibDownload(\'' + r.id + '\')">⬇️ Download</button>'
-    + '<button class="cont-btn secondary" style="color:#dc2626;border-color:#dc2626" onclick="bibDelete(\'' + r.id + '\');bibModalClose()">🗑️ Eliminar</button>'
-    + '<button class="cont-btn secondary" onclick="bibModalClose()">Fechar</button>'
-    + '</div></div>'
+    + extraVideo
+    + (tipo !== 'video' ? '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      + '<button class="cont-btn primary" onclick="bibUseInPost(\'' + r.id + '\');bibModalClose()">✅ Usar no Gerador</button>'
+      + '<button class="cont-btn secondary" onclick="bibDownload(\'' + r.id + '\')">⬇️ Download</button>'
+      + '<button class="cont-btn secondary" style="color:#dc2626;border-color:#dc2626" onclick="bibDelete(\'' + r.id + '\');bibModalClose()">🗑️ Eliminar</button>'
+      + '<button class="cont-btn secondary" onclick="bibModalClose()">Fechar</button>'
+      + '</div>' : '')
+    + (tipo === 'video' ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">'
+      + '<button class="cont-btn secondary" onclick="bibDownload(\'' + r.id + '\')">⬇️ Download</button>'
+      + '<button class="cont-btn secondary" style="color:#dc2626;border-color:#dc2626" onclick="bibDelete(\'' + r.id + '\');bibModalClose()">🗑️ Eliminar</button>'
+      + '<button class="cont-btn secondary" onclick="bibModalClose()">Fechar</button>'
+      + '</div>' : '')
+    + '</div>'
   document.getElementById('hist-modal-box').innerHTML = html
   document.getElementById('hist-modal').style.display = 'flex'
 }
@@ -4851,8 +4862,13 @@ async function bibRenderUploadPreviews() {
   }).join('')
   var hasVideo = !!_bibUploadFiles.find(function(f) { return _bibIsVideo(f) })
   var roteiroRow = document.getElementById('bib-roteiro-row')
+  var tituloRow = document.getElementById('bib-titulo-row')
   if (roteiroRow) roteiroRow.style.display = hasVideo ? '' : 'none'
-  if (!hasVideo) { var rt = document.getElementById('bib-upload-roteiro'); if (rt) rt.value = '' }
+  if (tituloRow) tituloRow.style.display = hasVideo ? '' : 'none'
+  if (!hasVideo) {
+    var rt = document.getElementById('bib-upload-roteiro'); if (rt) rt.value = ''
+    var ti = document.getElementById('bib-upload-titulo'); if (ti) ti.value = ''
+  }
 
   if (fmtDiv) {
     var vidFile = _bibUploadFiles.find(function(f) { return _bibIsVideo(f) })
@@ -4975,13 +4991,17 @@ async function bibUploadSubmit() {
       var formatoFinal = fmtOverride || vidMeta.formato || null
 
       var roteiroVal = (document.getElementById('bib-upload-roteiro') || {}).value
+      var tituloVal  = (document.getElementById('bib-upload-titulo')  || {}).value
+      var roteiroFinal = (roteiroVal && roteiroVal.trim()) ? roteiroVal.trim() : null
       var insertPayload = {
         user_id:           user.id,
         url:               vidUrl,
         thumbnail_url:     thumbUrl || null,
         categoria:         cat,
+        titulo:            (tituloVal && tituloVal.trim()) ? tituloVal.trim() : null,
         descricao:         desc || null,
-        roteiro:           (roteiroVal && roteiroVal.trim()) ? roteiroVal.trim() : null,
+        roteiro:           roteiroFinal,
+        status_video:      roteiroFinal ? 'pronto' : 'aguarda_texto',
         origem:            'upload',
         tipo:              'video',
         duracao_segundos:  vidMeta.duracao || null,
@@ -5710,6 +5730,10 @@ function toggleRede(rede, el) {
   if (row) row.style.display = redesActivas[rede] ? 'flex' : 'none'
   // Actualizar aviso de roteiro
   atualizarAvisoRoteiro()
+  // Mostrar botão Enviar para Produção se alguma rede tem formato vídeo activo
+  var temVideo = Object.keys(redesActivas).some(function(r) { return redesActivas[r] && formatoRede[r] === 'video' })
+  var btnProd = document.getElementById('btnEnviarProducao')
+  if (btnProd) btnProd.style.display = temVideo ? 'block' : 'none'
 }
 
 function selectFormato(rede, formato, btn) {
@@ -5728,6 +5752,10 @@ function selectFormato(rede, formato, btn) {
     var igFmt = formato === 'carrossel' ? 'carrossel' : 'unico'
     igSetFormato(igFmt)
   }
+  // Mostrar botão Enviar para Produção se alguma rede tem formato vídeo activo
+  var temVideoSF = Object.keys(redesActivas).some(function(r) { return redesActivas[r] && formatoRede[r] === 'video' })
+  var btnProdSF = document.getElementById('btnEnviarProducao')
+  if (btnProdSF) btnProdSF.style.display = temVideoSF ? 'block' : 'none'
 }
 
 function atualizarAvisoRoteiro() {
@@ -5799,6 +5827,219 @@ function syncPillsFromCheckboxes() {
 
 // Override da função antiga (substituída pelo novo UI)
 igUpdateFormatBar = function() {}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Vídeos Pendentes ─────────────────────────────────────────────────────────
+
+var _bibStatusVideoFilter = '' // '' | 'pronto' | 'aguarda_video' | 'aguarda_texto'
+
+function bibSetStatusVideo(status) {
+  _bibStatusVideoFilter = status
+  document.querySelectorAll('#bibFiltrosVideo .bib-tipo-btn').forEach(function(b) {
+    b.classList.remove('active')
+  })
+  var btnId = 'bibStatusBtn-' + (status || 'todos')
+  var activBtn = document.getElementById(btnId)
+  if (activBtn) activBtn.classList.add('active')
+  bibRender()
+}
+
+function bibRenderCardVideo(item) {
+  var statusMap = {
+    pronto:        { icon: '✅', label: 'Pronto',         cor: '#059669', bg: '#ecfdf5' },
+    aguarda_video: { icon: '📝', label: 'Aguarda vídeo',  cor: '#d97706', bg: '#fffbeb' },
+    aguarda_texto: { icon: '🎬', label: 'Aguarda texto',  cor: '#2563eb', bg: '#eff6ff' },
+  }
+  var sv = item.status_video || 'pronto'
+  var st = statusMap[sv] || statusMap['pronto']
+  var titulo = item.titulo || item.descricao || 'Sem título'
+  var dur = item.duracao_segundos
+    ? (item.duracao_segundos < 60
+        ? item.duracao_segundos + 's'
+        : Math.floor(item.duracao_segundos / 60) + 'm' + (item.duracao_segundos % 60 ? item.duracao_segundos % 60 + 's' : ''))
+    : ''
+  var fmtBadge = item.formato_video === 'vertical_9_16'
+    ? '<span class="bib-video-badge" style="background:#1d4ed8">📱 Vertical</span>'
+    : item.formato_video === 'horizontal_16_9'
+      ? '<span class="bib-video-badge" style="background:#059669">🖥️ Horizontal</span>'
+      : '<span class="bib-video-badge" style="background:#111">🎬 Vídeo</span>'
+  var mediaHtml = (item.thumbnail_url && item.url)
+    ? '<img src="' + esc(item.thumbnail_url) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">'
+    : '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#6b7280;padding:8px">'
+      + '<div style="font-size:2rem">🎬</div>'
+      + '<div style="font-size:11px;text-align:center;color:#9ca3af">' + esc(titulo.slice(0, 40)) + '</div>'
+      + '</div>'
+  var btnAcao = sv === 'aguarda_video'
+    ? '<button onclick="event.stopPropagation();bibAssociarVideo(\'' + item.id + '\')" style="font-size:11px;padding:4px 10px;background:#fff7ed;border:1px solid #f59e0b;color:#d97706;border-radius:6px;cursor:pointer;font-weight:600">📹 Associar vídeo</button>'
+    : sv === 'aguarda_texto'
+      ? '<button onclick="event.stopPropagation();bibAssociarTexto(\'' + item.id + '\')" style="font-size:11px;padding:4px 10px;background:#eff6ff;border:1px solid #3b82f6;color:#2563eb;border-radius:6px;cursor:pointer;font-weight:600">📝 Associar texto</button>'
+      : '<button onclick="event.stopPropagation();bibUseInPost(\'' + item.id + '\')" style="font-size:11px;padding:4px 10px;background:#ecfdf5;border:1px solid #10b981;color:#059669;border-radius:6px;cursor:pointer;font-weight:600">✅ Usar</button>'
+  return '<div class="bib-item" onclick="bibOpenModal(\'' + item.id + '\')" style="background:#1a1a2e;position:relative;cursor:pointer;">'
+    + mediaHtml
+    + fmtBadge
+    + (dur ? '<span class="bib-video-dur">' + dur + '</span>' : '')
+    // Status badge top-right
+    + '<div style="position:absolute;top:6px;right:6px;background:' + st.bg + ';color:' + st.cor + ';font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;pointer-events:none">' + st.icon + ' ' + st.label + '</div>'
+    // Title bar bottom
+    + '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:20px 8px 8px;pointer-events:none">'
+    + '<div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(titulo) + '</div>'
+    + '</div>'
+    // Overlay
+    + '<div class="bib-item-overlay">'
+    + '<div style="display:flex;flex-direction:column;gap:6px;align-items:center;">'
+    + btnAcao
+    + '<div style="display:flex;gap:6px">'
+    + '<button onclick="event.stopPropagation();bibDownload(\'' + item.id + '\')" style="font-size:11px;padding:4px 8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;cursor:pointer">⬇</button>'
+    + '<button onclick="event.stopPropagation();bibDelete(\'' + item.id + '\')" style="font-size:11px;padding:4px 8px;background:rgba(220,38,38,.2);border:1px solid rgba(220,38,38,.4);color:#fca5a5;border-radius:6px;cursor:pointer">🗑</button>'
+    + '</div></div></div>'
+    + '</div>'
+}
+
+function bibModalVideoExtra(item) {
+  if (!item || item.tipo !== 'video') return ''
+  var statusMap = {
+    pronto:        { icon: '✅', label: 'Pronto para publicar', cor: '#059669' },
+    aguarda_video: { icon: '📝', label: 'Aguarda vídeo',        cor: '#d97706' },
+    aguarda_texto: { icon: '🎬', label: 'Aguarda texto',        cor: '#2563eb' },
+  }
+  var sv = item.status_video || 'pronto'
+  var st = statusMap[sv] || statusMap['pronto']
+  var assocBtn = sv === 'aguarda_video'
+    ? '<button onclick="bibAssociarVideo(\'' + item.id + '\')" style="width:100%;padding:10px;background:#fff7ed;border:1.5px solid #f59e0b;color:#d97706;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">📹 Associar vídeo da Biblioteca</button>'
+    : sv === 'aguarda_texto'
+      ? '<button onclick="bibAssociarTexto(\'' + item.id + '\')" style="width:100%;padding:10px;background:#eff6ff;border:1.5px solid #3b82f6;color:#2563eb;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">📝 Associar texto gerado</button>'
+      : '<button onclick="bibUseInPost(\'' + item.id + '\');bibModalClose()" style="width:100%;padding:10px;background:#ecfdf5;border:1.5px solid #10b981;color:#059669;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">✅ Usar neste conteúdo</button>'
+  return '<div style="background:#f9fafb;border-radius:8px;padding:12px;display:flex;align-items:center;gap:8px">'
+    + '<span style="font-size:15px">' + st.icon + '</span>'
+    + '<span style="font-size:.82rem;font-weight:600;color:' + st.cor + '">' + st.label + '</span>'
+    + (item.conteudo_id ? '<span style="font-size:.72rem;color:#9ca3af;margin-left:auto">Associado a conteúdo</span>' : '')
+    + '</div>'
+    // Título editável
+    + '<div>'
+    + '<label style="font-size:.72rem;font-weight:600;color:#9ca3af;display:block;margin-bottom:4px;text-transform:uppercase">Título</label>'
+    + '<input id="bibModalTitulo" type="text" value="' + esc(item.titulo || '') + '" placeholder="Título do vídeo ou roteiro"'
+    + ' style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.82rem;color:#374151;box-sizing:border-box"'
+    + ' onchange="bibUpdateCampo(\'' + item.id + '\', \'titulo\', this.value)">'
+    + '</div>'
+    // Roteiro editável
+    + '<div>'
+    + '<label style="font-size:.72rem;font-weight:600;color:#9ca3af;display:block;margin-bottom:4px;text-transform:uppercase">Roteiro <span style="font-weight:400;text-transform:none">(opcional)</span></label>'
+    + '<textarea id="bibModalRoteiro" rows="5" placeholder="Cola aqui o texto falado no vídeo..."'
+    + ' style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.82rem;color:#374151;resize:vertical;line-height:1.6;box-sizing:border-box"'
+    + ' onchange="bibUpdateCampo(\'' + item.id + '\', \'roteiro\', this.value)">' + esc(item.roteiro || '') + '</textarea>'
+    + '<div style="display:flex;gap:8px;margin-top:6px">'
+    + '<button onclick="bibGerarRoteiroIA(\'' + item.id + '\')" style="font-size:.76rem;padding:5px 12px;background:#fff;border:1px solid #8b5cf6;color:#7c3aed;border-radius:6px;cursor:pointer">✨ Gerar com IA</button>'
+    + '<label style="font-size:.76rem;padding:5px 12px;background:#fff;border:1px solid #e5e7eb;color:#374151;border-radius:6px;cursor:pointer">📄 Carregar .txt<input type="file" accept=".txt" style="display:none" onchange="bibCarregarFicheiroRoteiro(\'' + item.id + '\', this)"></label>'
+    + '</div>'
+    + '</div>'
+    + assocBtn
+}
+
+async function bibUpdateCampo(id, campo, valor) {
+  var update = {}
+  update[campo] = valor
+  // Se actualiza roteiro, recalcular status_video
+  if (campo === 'roteiro' && valor && valor.trim()) {
+    update['status_video'] = 'pronto'
+  }
+  var { error } = await sb.from('biblioteca_imagens').update(update).eq('id', id)
+  if (error) console.error('[bibUpdateCampo]', error)
+  else {
+    // Actualizar _bibRows em memória
+    var row = _bibRows.find(function(x) { return x.id === id })
+    if (row) { row[campo] = valor; if (update.status_video) row.status_video = update.status_video }
+    bibRender()
+  }
+}
+
+async function bibGerarRoteiroIA(id) {
+  var titulo = (document.getElementById('bibModalTitulo') || {}).value || ''
+  if (!titulo.trim()) { alert('Adiciona um título primeiro para gerar o roteiro.'); return }
+  var btn = event && event.target
+  if (btn) { btn.textContent = '⏳ A gerar...'; btn.disabled = true }
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    var resp = await fetch(DOORSTEP_URL + '/functions/v1/gerar-conteudo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ texto_base: titulo, redes: ['youtube'], youtube_duracao_segundos: 60, youtube_palavras_alvo: 130 })
+    })
+    var dados = await resp.json()
+    var roteiro = (dados.conteudo && dados.conteudo.youtube && dados.conteudo.youtube.video_script) || ''
+    if (roteiro) {
+      var ta = document.getElementById('bibModalRoteiro')
+      if (ta) ta.value = roteiro
+      await bibUpdateCampo(id, 'roteiro', roteiro)
+    } else { alert('Não foi possível gerar o roteiro. Tenta novamente.') }
+  } catch(err) {
+    console.error('[bibGerarRoteiroIA]', err)
+    alert('Erro ao gerar roteiro: ' + err.message)
+  } finally {
+    if (btn) { btn.textContent = '✨ Gerar com IA'; btn.disabled = false }
+  }
+}
+
+function bibCarregarFicheiroRoteiro(id, input) {
+  var file = input.files && input.files[0]
+  if (!file) return
+  var reader = new FileReader()
+  reader.onload = function(e) {
+    var texto = e.target.result
+    var ta = document.getElementById('bibModalRoteiro')
+    if (ta) ta.value = texto
+    if (texto && texto.trim()) bibUpdateCampo(id, 'roteiro', texto.trim())
+  }
+  reader.readAsText(file)
+}
+
+async function bibAssociarVideo(conteudoItemId) {
+  alert('Funcionalidade em desenvolvimento: selecciona o vídeo na Biblioteca e usa "✅ Usar" para associar.')
+}
+
+async function bibAssociarTexto(videoId) {
+  alert('Funcionalidade em desenvolvimento: abre o Gerador, gera conteúdo e usa "🎬 Enviar para Produção".')
+}
+
+async function bibLigarVideoATexto(conteudoId, videoId) {
+  var results = await Promise.all([
+    sb.from('biblioteca_imagens').update({ conteudo_id: conteudoId, status_video: 'pronto' }).eq('id', videoId),
+    sb.from('conteudos_sociais').update({ video_id: videoId, status_producao: 'pronto' }).eq('id', conteudoId)
+  ])
+  if (results[0].error) console.error('[bibLigar] biblioteca:', results[0].error)
+  if (results[1].error) console.error('[bibLigar] conteudos:', results[1].error)
+  bibLoad()
+}
+
+async function contEnviarProducao() {
+  var textoBase = (document.getElementById('cont-texto') || {}).value || ''
+  var scriptYt = (_contGerado && _contGerado.youtube && _contGerado.youtube.video_script) || ''
+  var scriptEl = document.getElementById('script-youtube')
+  if (scriptEl && scriptEl.value) scriptYt = scriptEl.value
+  if (!scriptYt) { alert('Gera o conteúdo com formato Vídeo primeiro antes de enviar para produção.'); return }
+  var titulo = textoBase.split('\n')[0].slice(0, 80) || 'Vídeo sem título'
+  var btn = document.getElementById('btnEnviarProducao')
+  if (btn) { btn.textContent = '⏳ A guardar...'; btn.disabled = true }
+  try {
+    var { data: { session } } = await sb.auth.getSession()
+    var { data: bibItem, error: bibError } = await sb.from('biblioteca_imagens').insert({
+      tipo: 'video', titulo: titulo, roteiro: scriptYt,
+      status_video: 'aguarda_video', origem: 'ia',
+      user_id: session.user.id, url: ''
+    }).select().single()
+    if (bibError) throw bibError
+    if (window._ultimoConteudoId) {
+      await sb.from('conteudos_sociais').update({ status_producao: 'aguarda_video', video_id: bibItem.id }).eq('id', window._ultimoConteudoId)
+    }
+    if (btn) { btn.textContent = '✓ Enviado para Produção!'; btn.style.background = '#faf5ff' }
+    setTimeout(function() {
+      if (btn) { btn.textContent = '🎬 Enviar para Produção'; btn.style.background = '#fff'; btn.disabled = false }
+    }, 3000)
+  } catch(e) {
+    console.error('[contEnviarProducao]', e)
+    alert('Erro ao enviar para produção: ' + e.message)
+    if (btn) { btn.textContent = '🎬 Enviar para Produção'; btn.disabled = false }
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 </script>
 
