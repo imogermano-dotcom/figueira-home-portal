@@ -299,6 +299,23 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .fonte-btn{padding:7px 18px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.83rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
 .fonte-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
 .fonte-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.pesquisa-resultado-card{padding:11px 13px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.pesquisa-resultado-card:hover{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08)}
+.pesquisa-resultado-card .card-titulo{font-size:.84rem;font-weight:600;color:#111827;margin-bottom:3px;line-height:1.4}
+.pesquisa-resultado-card .card-meta{display:flex;align-items:center;gap:7px;font-size:.75rem;color:#6b7280;margin-bottom:5px;flex-wrap:wrap}
+.pesquisa-resultado-card .card-fonte{font-weight:500;color:#3b82f6}
+.pesquisa-resultado-card .card-snippet{font-size:.8rem;color:#4b5563;line-height:1.5}
+.card-relevancia{display:inline-block;font-size:.7rem;padding:2px 7px;border-radius:20px;font-weight:500}
+.card-relevancia.alta{background:#dcfce7;color:#166534}
+.card-relevancia.media{background:#fef9c3;color:#854d0e}
+.card-relevancia.baixa{background:#f1f5f9;color:#64748b}
+.resumo-titulo{font-size:.95rem;font-weight:700;color:#111827;margin-bottom:5px}
+.resumo-meta{font-size:.75rem;color:#6b7280;margin-bottom:10px}
+.resumo-texto{font-size:.83rem;color:#374151;line-height:1.6;margin-bottom:12px}
+.resumo-pontos{list-style:none;padding:0;margin:0 0 12px}
+.resumo-pontos li{font-size:.8rem;color:#374151;padding:5px 0 5px 18px;border-bottom:1px solid #f1f5f9;position:relative}
+.resumo-pontos li::before{content:"•";position:absolute;left:5px;color:#3b82f6}
+.resumo-relevancia{font-size:.8rem;color:#065f46;background:#ecfdf5;padding:9px 11px;border-radius:6px;line-height:1.5}
 .perfil-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .perfil-btn{padding:6px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
 .perfil-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
@@ -681,6 +698,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="fonte-row">
               <button class="fonte-btn active" id="fonte-manual" onclick="fonteSet('manual')">✍️ Texto Manual</button>
               <button class="fonte-btn" id="fonte-noticia" onclick="fonteSet('noticia')">📰 Notícia</button>
+              <button class="fonte-btn" id="fonte-pesquisa" onclick="fonteSet('pesquisa')">🔍 Pesquisar na Web</button>
             </div>
           </div>
           <!-- Painel de notícias (visível só quando fonte = notícia) -->
@@ -717,6 +735,40 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                 <span id="noticia-sel-label" style="font-size:.77rem;color:#9ca3af;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Nenhuma notícia seleccionada</span>
                 <button class="cont-btn primary" id="noticia-usar-btn" onclick="noticiaUsar()" disabled style="padding:6px 16px;font-size:.82rem;white-space:nowrap;flex-shrink:0">Usar esta notícia →</button>
               </div>
+            </div>
+          </div>
+
+          <!-- Painel de pesquisa web (visível só quando fonte = pesquisa) -->
+          <div id="fonte-pesquisa-panel" style="display:none;margin-top:10px">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="inputPesquisaWeb" type="text"
+                placeholder="Ex: preços imobiliário Figueira da Foz 2025"
+                style="flex:1;padding:9px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none;transition:border-color .2s;"
+                onkeydown="if(event.key==='Enter') pesquisarNoticias()"
+                onfocus="this.style.borderColor='#3b82f6'"
+                onblur="this.style.borderColor='#d1d5db'"/>
+              <button onclick="pesquisarNoticias()"
+                style="padding:9px 16px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:.84rem;cursor:pointer;white-space:nowrap;transition:background .2s;"
+                onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                Pesquisar
+              </button>
+            </div>
+            <div id="pesquisaWebLoading" style="display:none;text-align:center;padding:20px;color:#6b7280;font-size:.85rem;">
+              <div style="font-size:22px;margin-bottom:6px;">🔍</div>A pesquisar notícias…
+            </div>
+            <div id="pesquisaWebErro" style="display:none;padding:10px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:.83rem;margin-top:10px;"></div>
+            <div id="pesquisaWebResultados" style="display:none;margin-top:10px;">
+              <div style="font-size:.75rem;color:#6b7280;margin-bottom:6px;" id="pesquisaWebTotal"></div>
+              <div id="pesquisaWebLista" style="display:flex;flex-direction:column;gap:7px;"></div>
+            </div>
+            <div id="pesquisaWebResumo" style="display:none;margin-top:14px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+              <button onclick="fecharResumo()" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:.8rem;padding:0;margin-bottom:10px;">← Voltar aos resultados</button>
+              <div id="pesquisaWebResumoConteudo"></div>
+              <button id="btnUsarNoticia" onclick="usarNoticiaWeb()"
+                style="display:none;margin-top:14px;width:100%;padding:11px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:background .2s;"
+                onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                ✓ Usar esta notícia como base
+              </button>
             </div>
           </div>
 
@@ -1848,8 +1900,10 @@ function fonteSet(mode) {
   _fonteMode = mode
   document.getElementById('fonte-manual').className = 'fonte-btn' + (mode === 'manual' ? ' active' : '')
   document.getElementById('fonte-noticia').className = 'fonte-btn' + (mode === 'noticia' ? ' active' : '')
+  document.getElementById('fonte-pesquisa').className = 'fonte-btn' + (mode === 'pesquisa' ? ' active' : '')
   document.getElementById('fonte-texto-area').style.display = mode === 'noticia' ? 'none' : ''
   document.getElementById('fonte-noticia-panel').style.display = mode === 'noticia' ? '' : 'none'
+  document.getElementById('fonte-pesquisa-panel').style.display = mode === 'pesquisa' ? '' : 'none'
   if (mode === 'noticia' && !_newsRows.length) noticiaLoad()
 }
 
@@ -5251,6 +5305,130 @@ document.addEventListener('DOMContentLoaded', function() {
     igUpdateFormatBar()
   }
 })
+
+// ── Pesquisa Web ──────────────────────────────────────────────────────────────
+var _pesquisaWebResultados = []
+var _pesquisaWebResumoActual = {}
+
+async function pesquisarNoticias() {
+  var query = (document.getElementById('inputPesquisaWeb').value || '').trim()
+  if (!query) return
+  document.getElementById('pesquisaWebErro').style.display = 'none'
+  document.getElementById('pesquisaWebResultados').style.display = 'none'
+  document.getElementById('pesquisaWebResumo').style.display = 'none'
+  document.getElementById('pesquisaWebLoading').style.display = 'block'
+  try {
+    var sess = (await sb.auth.getSession()).data.session
+    var resp = await fetch(DOORSTEP_URL + '/functions/v1/pesquisar-noticias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sess.access_token },
+      body: JSON.stringify({ query: query, modo: 'lista' })
+    })
+    if (!resp.ok) { var e = await resp.json(); throw new Error(e.error || 'Erro ' + resp.status) }
+    var dados = await resp.json()
+    _pesquisaWebResultados = dados.resultados || []
+    document.getElementById('pesquisaWebLoading').style.display = 'none'
+    _pesquisaRenderLista(dados)
+  } catch(e) {
+    document.getElementById('pesquisaWebLoading').style.display = 'none'
+    var el = document.getElementById('pesquisaWebErro')
+    el.textContent = 'Erro na pesquisa: ' + e.message
+    el.style.display = 'block'
+  }
+}
+
+function _pesquisaRenderLista(dados) {
+  var lista = document.getElementById('pesquisaWebLista')
+  var total = document.getElementById('pesquisaWebTotal')
+  var res = dados.resultados || []
+  total.textContent = res.length + ' fonte' + (res.length !== 1 ? 's' : '') + ' encontrada' + (res.length !== 1 ? 's' : '')
+  lista.innerHTML = res.map(function(r, i) {
+    var rel = r.relevancia === 'alta' ? 'alta' : r.relevancia === 'média' ? 'media' : 'baixa'
+    var relLabel = r.relevancia === 'alta' ? '⭐ Alta' : r.relevancia === 'média' ? 'Média' : 'Baixa'
+    return '<div class="pesquisa-resultado-card" onclick="verResumoFonte(' + i + ')" role="button" tabindex="0">' +
+      '<div class="card-titulo">' + _esc(r.titulo || 'Sem título') + '</div>' +
+      '<div class="card-meta">' +
+        (r.fonte ? '<span class="card-fonte">' + _esc(r.fonte) + '</span>' : '') +
+        (r.data ? '<span>· ' + _esc(r.data) + '</span>' : '') +
+        (r.relevancia ? '<span class="card-relevancia ' + rel + '">' + relLabel + '</span>' : '') +
+      '</div>' +
+      (r.snippet ? '<div class="card-snippet">' + _esc(r.snippet) + '</div>' : '') +
+    '</div>'
+  }).join('')
+  document.getElementById('pesquisaWebResultados').style.display = 'block'
+}
+
+async function verResumoFonte(i) {
+  var r = _pesquisaWebResultados[i]
+  if (!r) return
+  document.getElementById('pesquisaWebResultados').style.display = 'none'
+  var painelResumo = document.getElementById('pesquisaWebResumo')
+  var conteudo = document.getElementById('pesquisaWebResumoConteudo')
+  painelResumo.style.display = 'block'
+  document.getElementById('btnUsarNoticia').style.display = 'none'
+  conteudo.innerHTML = '<div style="text-align:center;padding:18px;color:#6b7280;font-size:.83rem;">' +
+    '<div style="font-size:20px;margin-bottom:6px;">⏳</div>A resumir notícia de <strong>' + _esc(r.fonte || r.url) + '</strong>…</div>'
+  try {
+    var sess = (await sb.auth.getSession()).data.session
+    var query = r.url || (r.titulo + ' ' + (r.fonte || ''))
+    var resp = await fetch(DOORSTEP_URL + '/functions/v1/pesquisar-noticias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sess.access_token },
+      body: JSON.stringify({ query: query, modo: 'resumo' })
+    })
+    if (!resp.ok) { var e = await resp.json(); throw new Error(e.error || 'Erro ' + resp.status) }
+    var resumo = await resp.json()
+    _pesquisaWebResumoActual = resumo
+    _pesquisaRenderResumo(resumo)
+  } catch(e) {
+    conteudo.innerHTML = '<div style="color:#dc2626;font-size:.83rem;padding:8px;">Erro ao resumir: ' + _esc(e.message) + '</div>'
+  }
+}
+
+function _pesquisaRenderResumo(resumo) {
+  var el = document.getElementById('pesquisaWebResumoConteudo')
+  el.innerHTML =
+    '<div class="resumo-titulo">' + _esc(resumo.titulo || 'Sem título') + '</div>' +
+    '<div class="resumo-meta">' +
+      (resumo.fonte ? '<strong>' + _esc(resumo.fonte) + '</strong>' : '') +
+      (resumo.data ? ' · ' + _esc(resumo.data) : '') +
+      (resumo.url ? ' · <a href="' + _esc(resumo.url) + '" target="_blank" rel="noopener" style="color:#3b82f6;font-size:.75rem;">Ver original ↗</a>' : '') +
+    '</div>' +
+    (resumo.resumo ? '<div class="resumo-texto">' + _esc(resumo.resumo) + '</div>' : '') +
+    (resumo.pontos_chave && resumo.pontos_chave.length ? '<ul class="resumo-pontos">' +
+      resumo.pontos_chave.map(function(p) { return '<li>' + _esc(p) + '</li>' }).join('') + '</ul>' : '') +
+    (resumo.relevancia_imobiliaria ? '<div class="resumo-relevancia">🏠 <strong>Relevância imobiliária:</strong> ' + _esc(resumo.relevancia_imobiliaria) + '</div>' : '')
+  document.getElementById('btnUsarNoticia').style.display = 'block'
+}
+
+function fecharResumo() {
+  document.getElementById('pesquisaWebResumo').style.display = 'none'
+  document.getElementById('pesquisaWebResultados').style.display = 'block'
+}
+
+function usarNoticiaWeb() {
+  var resumo = _pesquisaWebResumoActual
+  if (!resumo) return
+  var partes = []
+  if (resumo.titulo) partes.push(resumo.titulo)
+  if (resumo.resumo) partes.push(resumo.resumo)
+  if (resumo.pontos_chave && resumo.pontos_chave.length)
+    partes.push(resumo.pontos_chave.map(function(p) { return '• ' + p }).join('\n'))
+  var texto = partes.join('\n\n')
+  var campo = document.getElementById('cont-texto')
+  if (campo) { campo.value = texto; campo.dispatchEvent(new Event('input')) }
+  window._fonteWebActual = { titulo: resumo.titulo, fonte: resumo.fonte, url: resumo.url, data: resumo.data }
+  var btn = document.getElementById('btnUsarNoticia')
+  var orig = btn.textContent
+  btn.textContent = '✓ Notícia adicionada!'
+  btn.style.background = '#059669'
+  setTimeout(function() { btn.textContent = orig; btn.style.background = '#10b981' }, 2000)
+}
+
+function _esc(s) {
+  if (!s) return ''
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
 </script>
 
 <!-- Feedback IA -->
