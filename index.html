@@ -1330,8 +1330,15 @@ async function doSearch() {
 
   _allResults = []; _hasMore = false
   var body = { question: q }
-  if (_profile && _profile.role !== 'admin' && _profile.ego_responsavel) {
-    body.force_responsavel = _profile.ego_responsavel
+  var _isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+  if (_profile && !_isAdmin) {
+    if (_profile.ego_responsavel) {
+      body.force_responsavel = _profile.ego_responsavel
+    } else {
+      res.innerHTML = '<div class="err-box">⚠️ O teu perfil não tem o consultor eGO configurado. Pede ao administrador que defina o campo <strong>Consultor eGO</strong> nas Configurações.</div>'
+      btn.disabled = false; btn.textContent = 'Pesquisar'
+      return
+    }
   }
   _lastBody = body
 
