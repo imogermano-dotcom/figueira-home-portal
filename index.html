@@ -324,28 +324,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ig-fmt-row{display:none!important}
 /* Redes + Formato */
 .section-label{font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
-.rede-pill{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;border:2px solid #e5e7eb;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;color:#9ca3af;background:#fff}
-.rede-pill.ig.active{color:#e1306c;background:#fff0f6;border-color:#e1306c}
-.rede-pill.fb.active{color:#1877f2;background:#eff6ff;border-color:#1877f2}
-.rede-pill.li.active{color:#0a66c2;background:#eff6ff;border-color:#0a66c2}
-.rede-pill.tt.active{color:#010101;background:#f3f4f6;border-color:#010101}
-.rede-pill.yt.active{color:#ff0000;background:#fff0f0;border-color:#ff0000}
-.formato-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px}
-.formato-row.ig-row{border-color:#fce7f3;background:#fff8fb}
-.formato-row.fb-row{border-color:#dbeafe;background:#f8fbff}
-.formato-row.li-row{border-color:#dbeafe;background:#f8fbff}
-.formato-row.tt-row{border-color:#e5e7eb;background:#fafafa}
-.formato-row.yt-row{border-color:#fee2e2;background:#fff8f8;flex-direction:column}
-.formato-rede-label{font-size:.78rem;font-weight:700;min-width:95px;padding-top:3px}
-.formato-rede-label.ig{color:#e1306c}.formato-rede-label.fb{color:#1877f2}
-.formato-rede-label.li{color:#0a66c2}.formato-rede-label.tt{color:#010101}.formato-rede-label.yt{color:#ff0000}
+.rede-pill{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;border:2px solid #e5e7eb;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;color:#6b7280;background:#fff}
+.rede-pill.active{color:#fff;background:#0A3D62;border-color:#0A3D62}
+.formato-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fff}
+.formato-row.ig-row,.formato-row.fb-row,.formato-row.li-row,.formato-row.tt-row{background:#fff;border-color:#e5e7eb}
+.formato-row.yt-row{background:#fff;border-color:#e5e7eb;flex-direction:column}
+.formato-rede-label{font-size:.78rem;font-weight:700;min-width:95px;padding-top:3px;color:#0A3D62}
+.formato-rede-label.ig,.formato-rede-label.fb,.formato-rede-label.li,.formato-rede-label.tt,.formato-rede-label.yt{color:#0A3D62}
 .formato-opcoes{display:flex;gap:5px;flex-wrap:wrap}
 .formato-btn{padding:4px 11px;border-radius:20px;border:1.5px solid #e5e7eb;font-size:.75rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .15s}
-.formato-btn.ig-btn.selected{color:#e1306c;background:#fff0f6;border-color:#e1306c}
-.formato-btn.fb-btn.selected{color:#1877f2;background:#eff6ff;border-color:#1877f2}
-.formato-btn.li-btn.selected{color:#0a66c2;background:#eff6ff;border-color:#0a66c2}
-.formato-btn.tt-btn.selected{color:#010101;background:#f3f4f6;border-color:#010101}
-.formato-btn.yt-btn.selected{color:#ff0000;background:#fff0f0;border-color:#ff0000}
+.formato-btn:hover{background:#f9fafb}
+.formato-btn.ig-btn.selected,.formato-btn.fb-btn.selected,.formato-btn.li-btn.selected,.formato-btn.tt-btn.selected,.formato-btn.yt-btn.selected{color:#0A3D62;background:#FFF8E1;border-color:#F5C518;font-weight:700}
 .ig-fmt-lbl{font-size:.78rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px}
 .ig-fmt-btn{padding:5px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
 .ig-fmt-btn.active{background:#c13584;color:#fff;border-color:#c13584}
@@ -1028,17 +1017,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                   <div class="formato-rede-label yt">▶️ YouTube</div>
                   <button class="formato-btn yt-btn selected">🎬 Vídeo</button>
                 </div>
-                <div id="ytSliderBox" style="width:100%;padding:12px 14px;background:#fff0f0;border:1.5px solid #fca5a5;border-radius:8px;">
+                <div id="ytSliderBox" style="width:100%;padding:12px 14px;background:#FFFBF0;border:1.5px solid #F5C518;border-radius:8px;">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
                     <div>
                       <div style="font-size:.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Duração</div>
-                      <div style="font-size:.7rem;color:#ef4444;" id="ytPalavras">≈ 66 palavras</div>
+                      <div style="font-size:.7rem;color:#92714A;" id="ytPalavras">≈ 66 palavras</div>
                     </div>
-                    <div style="font-size:1.3rem;font-weight:800;color:#dc2626;" id="ytValor">30s</div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#0A3D62;" id="ytValor">30s</div>
                   </div>
                   <input type="range" id="ytSlider" min="15" max="180" step="15" value="30"
                     oninput="updateYtSlider(this.value)"
-                    style="width:100%;accent-color:#ef4444;margin-bottom:4px;">
+                    style="width:100%;accent-color:#0A3D62;margin-bottom:4px;">
                   <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#9ca3af;">
                     <span>15s</span><span>45s</span><span>1m</span><span>1m30</span><span>2m</span><span>2m30</span><span>3m</span>
                   </div>
@@ -1046,7 +1035,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               </div>
             </div>
             <!-- Aviso roteiro partilhado entre redes de vídeo -->
-            <div id="avisoRoteiro" style="display:none;align-items:center;gap:7px;padding:9px 12px;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;font-size:.76rem;color:#854d0e;margin-top:8px;">
+            <div id="avisoRoteiro" style="display:none;align-items:center;gap:7px;padding:9px 12px;background:#FFFBF0;border:1px solid #F5C518;border-radius:8px;font-size:.76rem;color:#92714A;margin-top:8px;">
               🎬 <span>O mesmo roteiro será usado em: <strong id="redesComVideo"></strong></span>
             </div>
           </div>
