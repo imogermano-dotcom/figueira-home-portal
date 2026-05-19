@@ -299,6 +299,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .fonte-btn{padding:7px 18px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.83rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
 .fonte-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
 .fonte-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+@keyframes slideInRight{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
 .pesquisa-resultado-card{padding:11px 13px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .pesquisa-resultado-card:hover{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08)}
 .pesquisa-resultado-card .card-titulo{font-size:.84rem;font-weight:600;color:#111827;margin-bottom:3px;line-height:1.4}
@@ -1111,6 +1112,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <label class="bib-form-label">Descrição (opcional)</label>
         <input type="text" class="bib-form-input" id="bib-upload-desc" placeholder="Ex: Vista da praia, Sala T3, Reel institucional...">
       </div>
+      <div class="bib-form-row" id="bib-roteiro-row" style="display:none">
+        <label class="bib-form-label">Roteiro <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
+        <textarea class="bib-form-input" id="bib-upload-roteiro" rows="5"
+          placeholder="Cola aqui o texto falado no vídeo...&#10;&#10;Será usado automaticamente como script YouTube no Gerador de Conteúdo."
+          style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"
+          onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor=''"></textarea>
+        <div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">💡 Ao usar este vídeo no Gerador, o roteiro preenche automaticamente o campo Script YouTube.</div>
+      </div>
       <div style="display:flex;gap:10px;margin-top:16px">
         <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
         <button type="button" class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
@@ -1866,6 +1875,7 @@ var _perfilConteudo = 'polemico'
 var _isVideoPost    = false  // true quando um vídeo da biblioteca está seleccionado
 var _vidBibId       = null   // id do registo em biblioteca_imagens
 var _vidBibUrl      = null   // url do vídeo
+var _vidBibRoteiro  = null   // roteiro/script do vídeo (preenche script-youtube após geração)
 var _vidBibThumb    = null   // thumbnail url
 var _vidBibFormato  = null   // 'vertical_9_16' | 'horizontal_16_9'
 var _noticiaShortCode = null
@@ -3076,6 +3086,11 @@ async function contGerar() {
     ))
     contRenderCards(redes)
     document.getElementById('cont-results').style.display = ''
+    // Se há roteiro guardado do vídeo seleccionado, preencher script-youtube agora que o campo existe
+    if (_vidBibRoteiro) {
+      preencherCampoYoutube(_vidBibRoteiro)
+      mostrarAvisoRoteiroAplicado((_vidBibId && _bibRows) ? ((_bibRows.find(function(x){return x.id===_vidBibId})||{}).descricao || '') : '')
+    }
 
     // Auto-compose carousel slides immediately after generation
     if (_igFormato === 'carrossel' && redes.indexOf('instagram') !== -1) {
@@ -3580,7 +3595,7 @@ async function contGuardar(agendar) {
     var ni = document.getElementById('noticia-indicator'); if (ni) ni.style.display = 'none'
     fonteSet('manual')
     // Reset video state
-    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null
+    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null; _vidBibRoteiro = null
     var aiWrap = document.getElementById('ai-img-wrap')
     if (aiWrap) aiWrap.innerHTML = ''
   } catch(e) {
@@ -3631,7 +3646,7 @@ async function contGuardarVideo(agendar) {
     document.getElementById('cont-results').style.display = 'none'
     _contGerado = null
     imgReset()
-    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null; _vidBibFormato = null
+    _isVideoPost = false; _vidBibId = null; _vidBibUrl = null; _vidBibThumb = null; _vidBibFormato = null; _vidBibRoteiro = null
     bibVideoResetRedes()
     _noticiaShortCode = null; _noticiaCategoria = null; _noticiaRow = null; _newsSelected = null
     _contCategoria = null
@@ -4557,6 +4572,7 @@ function bibUseVideoInPost(r) {
   _vidBibUrl = r.url
   _vidBibThumb = r.thumbnail_url || null
   _vidBibFormato = r.formato_video || null
+  _vidBibRoteiro = (r.roteiro && r.roteiro.trim()) ? r.roteiro.trim() : null
 
   // Configure network checkboxes based on video format
   var ativas = _vidBibFormato === 'vertical_9_16' ? ['instagram','facebook','linkedin','youtube']
@@ -4592,7 +4608,7 @@ function bibUseVideoInPost(r) {
     aiWrap.innerHTML = '<div style="position:relative;border-radius:12px;overflow:hidden;background:#000">'
       + '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;max-height:260px;display:block"></video>'
       + '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.7);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:8px;display:flex;align-items:center">🎬 Vídeo da Biblioteca' + fmtBadge + '</div>'
-      + '<button class="cont-btn secondary" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:.72rem" onclick="_isVideoPost=false;_vidBibId=null;_vidBibUrl=null;_vidBibThumb=null;_vidBibFormato=null;bibVideoResetRedes();aiImgSetState(\'idle\');document.getElementById(\'ai-img-wrap\').innerHTML=\'\'">✕ Remover</button>'
+      + '<button class="cont-btn secondary" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:.72rem" onclick="_isVideoPost=false;_vidBibId=null;_vidBibUrl=null;_vidBibThumb=null;_vidBibFormato=null;_vidBibRoteiro=null;bibVideoResetRedes();aiImgSetState(\'idle\');document.getElementById(\'ai-img-wrap\').innerHTML=\'\'">✕ Remover</button>'
       + '</div>'
   }
 
@@ -4704,6 +4720,11 @@ async function bibRenderUploadPreviews() {
     }
     return '<img class="bib-upload-thumb" src="' + URL.createObjectURL(f) + '" alt="">'
   }).join('')
+  var hasVideo = !!_bibUploadFiles.find(function(f) { return _bibIsVideo(f) })
+  var roteiroRow = document.getElementById('bib-roteiro-row')
+  if (roteiroRow) roteiroRow.style.display = hasVideo ? '' : 'none'
+  if (!hasVideo) { var rt = document.getElementById('bib-upload-roteiro'); if (rt) rt.value = '' }
+
   if (fmtDiv) {
     var vidFile = _bibUploadFiles.find(function(f) { return _bibIsVideo(f) })
     if (vidFile) {
@@ -4824,12 +4845,14 @@ async function bibUploadSubmit() {
       var fmtOverride = (document.getElementById('bib-fmt-override') || {}).value || null
       var formatoFinal = fmtOverride || vidMeta.formato || null
 
+      var roteiroVal = (document.getElementById('bib-upload-roteiro') || {}).value
       var insertPayload = {
         user_id:           user.id,
         url:               vidUrl,
         thumbnail_url:     thumbUrl || null,
         categoria:         cat,
         descricao:         desc || null,
+        roteiro:           (roteiroVal && roteiroVal.trim()) ? roteiroVal.trim() : null,
         origem:            'upload',
         tipo:              'video',
         duracao_segundos:  vidMeta.duracao || null,
@@ -4873,6 +4896,10 @@ async function bibUploadSubmit() {
   btn.disabled = false; btn.textContent = '⬆️ Guardar na Biblioteca'
   _bibUploadFiles = []
   document.getElementById('bib-upload-previews').innerHTML = ''
+  var roteiroEl = document.getElementById('bib-upload-roteiro')
+  if (roteiroEl) roteiroEl.value = ''
+  var roteiroRow = document.getElementById('bib-roteiro-row')
+  if (roteiroRow) roteiroRow.style.display = 'none'
   setTimeout(function() {
     msg.style.color = ''
     document.getElementById('bib-upload-modal').classList.remove('open')
@@ -5305,6 +5332,51 @@ document.addEventListener('DOMContentLoaded', function() {
     igUpdateFormatBar()
   }
 })
+
+// ── Roteiro de vídeo ─────────────────────────────────────────────────────────
+function preencherCampoYoutube(texto) {
+  // Tenta script-youtube primeiro (campo "Script vídeo 90s"), depois fallback
+  var candidatos = ['script-youtube', 'main-youtube', 'conteudoYoutube', 'campoYoutube', 'youtube_descricao']
+  var campo = null
+  for (var ci = 0; ci < candidatos.length; ci++) {
+    campo = document.getElementById(candidatos[ci])
+    if (campo) break
+  }
+  if (!campo) campo = document.querySelector('textarea[id*="youtube" i]')
+  if (campo) {
+    // Abrir o painel script se estiver fechado
+    var panel = document.getElementById('script-panel-youtube')
+    if (panel && panel.style.display === 'none') {
+      var toggle = document.getElementById('stoggle-youtube')
+      if (toggle) toggle.click()
+    }
+    campo.value = texto
+    campo.dispatchEvent(new Event('input', { bubbles: true }))
+    campo.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    campo.style.transition = 'border-color .3s, box-shadow .3s'
+    campo.style.borderColor = '#10b981'
+    campo.style.boxShadow = '0 0 0 3px rgba(16,185,129,.15)'
+    setTimeout(function() { campo.style.borderColor = ''; campo.style.boxShadow = '' }, 2500)
+  } else {
+    console.warn('[roteiro] Campo YouTube não encontrado — verificar id em preencherCampoYoutube()')
+  }
+}
+
+function mostrarAvisoRoteiroAplicado(tituloVideo) {
+  var ant = document.getElementById('avisoRoteiroAplicado')
+  if (ant) ant.remove()
+  var aviso = document.createElement('div')
+  aviso.id = 'avisoRoteiroAplicado'
+  aviso.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#fff;border:1px solid #d1fae5;border-left:4px solid #10b981;border-radius:8px;padding:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,.1);font-size:.82rem;color:#374151;max-width:300px;z-index:9999;animation:slideInRight .3s ease'
+  aviso.innerHTML = '<div style="font-weight:600;color:#065f46;margin-bottom:2px;">✓ Roteiro aplicado</div>'
+    + '<div style="color:#6b7280;font-size:.76rem;">O roteiro de <strong>' + _esc(tituloVideo || 'vídeo') + '</strong> foi colado no Script YouTube.</div>'
+  document.body.appendChild(aviso)
+  setTimeout(function() {
+    aviso.style.transition = 'opacity .4s'
+    aviso.style.opacity = '0'
+    setTimeout(function() { aviso.remove() }, 400)
+  }, 3500)
+}
 
 // ── Pesquisa Web ──────────────────────────────────────────────────────────────
 var _pesquisaWebResultados = []
