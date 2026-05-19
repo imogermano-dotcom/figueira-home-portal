@@ -803,6 +803,16 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <label class="cont-label" id="cont-texto-label">Texto base</label>
               <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
             </div>
+            <div id="enriquecerBox" style="margin-top:6px;margin-bottom:4px;">
+              <button id="btnEnriquecer" onclick="enriquecerNoticia()"
+                style="display:inline-flex;align-items:center;gap:6px;padding:6px 15px;background:#fff;border:1.5px solid #8b5cf6;color:#7c3aed;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;"
+                onmouseover="this.style.background='#faf5ff'" onmouseout="this.style.background='#fff'">
+                🔍 Enriquecer com IA
+              </button>
+              <span id="enriquecerLoading" style="display:none;align-items:center;gap:6px;font-size:.8rem;color:#7c3aed;margin-left:10px;">⏳ A enriquecer…</span>
+              <div id="enriquecerSucesso" style="display:none;margin-top:7px;padding:7px 11px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:.76rem;color:#166534;">✓ Texto enriquecido. Podes editar antes de gerar.</div>
+              <div id="enriquecerErro" style="display:none;margin-top:7px;padding:7px 11px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:.76rem;color:#dc2626;"></div>
+            </div>
           </div>
 
           <!-- 3. FORMATO INSTAGRAM -->
@@ -5332,6 +5342,65 @@ document.addEventListener('DOMContentLoaded', function() {
     igUpdateFormatBar()
   }
 })
+
+// ── Enriquecer notícia com IA ─────────────────────────────────────────────────
+async function enriquecerNoticia() {
+  var campo = document.getElementById('cont-texto')
+  if (!campo) return
+  var texto = (campo.value || '').trim()
+  if (!texto) {
+    var el = document.getElementById('enriquecerErro')
+    el.textContent = '⚠️ Adiciona primeiro um texto base antes de enriquecer.'
+    el.style.display = 'block'
+    return
+  }
+  document.getElementById('enriquecerSucesso').style.display = 'none'
+  document.getElementById('enriquecerErro').style.display = 'none'
+  document.getElementById('btnEnriquecer').style.display = 'none'
+  document.getElementById('enriquecerLoading').style.display = 'inline-flex'
+
+  try {
+    var sess = (await sb.auth.getSession()).data.session
+    // A edge function espera { titulo, resumo, categoria }
+    // Usamos o texto actual como título (primeiras 200 chars) e o resto como resumo
+    var titulo  = texto.slice(0, 200)
+    var resumo  = texto.length > 200 ? texto.slice(200) : ''
+    var catMap  = { imoveis: 'imoveis', figueira: 'figueira', ia: 'ia' }
+    var catEdge = catMap[_noticiaCategoria] || catMap[_contCategoria] || 'figueira'
+
+    var resp = await fetch(DOORSTEP_URL + '/functions/v1/enriquecer-noticia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sess.access_token },
+      body: JSON.stringify({ titulo: titulo, resumo: resumo, categoria: catEdge })
+    })
+    if (!resp.ok) throw new Error('Erro ' + resp.status)
+    var dados = await resp.json()
+    if (dados.error) throw new Error(dados.error)
+
+    // A função devolve { conteudo_enriquecido, pontos_chave, fontes }
+    var enriquecido = dados.conteudo_enriquecido
+    if (!enriquecido) throw new Error('Resposta vazia da edge function')
+
+    // Adicionar pontos-chave ao texto se existirem
+    if (dados.pontos_chave && dados.pontos_chave.length) {
+      enriquecido += '\n\nPontos-chave:\n' + dados.pontos_chave.map(function(p) { return '• ' + p }).join('\n')
+    }
+
+    campo.value = enriquecido
+    campo.dispatchEvent(new Event('input', { bubbles: true }))
+    document.getElementById('enriquecerLoading').style.display = 'none'
+    document.getElementById('btnEnriquecer').style.display = 'inline-flex'
+    document.getElementById('enriquecerSucesso').style.display = 'block'
+    setTimeout(function() { document.getElementById('enriquecerSucesso').style.display = 'none' }, 5000)
+  } catch(e) {
+    document.getElementById('enriquecerLoading').style.display = 'none'
+    document.getElementById('btnEnriquecer').style.display = 'inline-flex'
+    var elErr = document.getElementById('enriquecerErro')
+    elErr.textContent = '⚠️ ' + e.message
+    elErr.style.display = 'block'
+    setTimeout(function() { elErr.style.display = 'none' }, 6000)
+  }
+}
 
 // ── Roteiro de vídeo ─────────────────────────────────────────────────────────
 function preencherCampoYoutube(texto) {
