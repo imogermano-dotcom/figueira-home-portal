@@ -321,8 +321,31 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .perfil-btn{padding:6px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .2s}
 .perfil-btn:hover{border-color:#1a3c5e;color:#1a3c5e}
 .perfil-btn.active{background:#e55a2b;color:#fff;border-color:#e55a2b}
-.ig-fmt-row{display:none;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.ig-fmt-row.show{display:flex}
+.ig-fmt-row{display:none!important}
+/* Redes + Formato */
+.section-label{font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.rede-pill{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;border:2px solid #e5e7eb;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;color:#9ca3af;background:#fff}
+.rede-pill.ig.active{color:#e1306c;background:#fff0f6;border-color:#e1306c}
+.rede-pill.fb.active{color:#1877f2;background:#eff6ff;border-color:#1877f2}
+.rede-pill.li.active{color:#0a66c2;background:#eff6ff;border-color:#0a66c2}
+.rede-pill.tt.active{color:#010101;background:#f3f4f6;border-color:#010101}
+.rede-pill.yt.active{color:#ff0000;background:#fff0f0;border-color:#ff0000}
+.formato-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px}
+.formato-row.ig-row{border-color:#fce7f3;background:#fff8fb}
+.formato-row.fb-row{border-color:#dbeafe;background:#f8fbff}
+.formato-row.li-row{border-color:#dbeafe;background:#f8fbff}
+.formato-row.tt-row{border-color:#e5e7eb;background:#fafafa}
+.formato-row.yt-row{border-color:#fee2e2;background:#fff8f8;flex-direction:column}
+.formato-rede-label{font-size:.78rem;font-weight:700;min-width:95px;padding-top:3px}
+.formato-rede-label.ig{color:#e1306c}.formato-rede-label.fb{color:#1877f2}
+.formato-rede-label.li{color:#0a66c2}.formato-rede-label.tt{color:#010101}.formato-rede-label.yt{color:#ff0000}
+.formato-opcoes{display:flex;gap:5px;flex-wrap:wrap}
+.formato-btn{padding:4px 11px;border-radius:20px;border:1.5px solid #e5e7eb;font-size:.75rem;font-weight:600;cursor:pointer;background:#fff;color:#6b7280;transition:all .15s}
+.formato-btn.ig-btn.selected{color:#e1306c;background:#fff0f6;border-color:#e1306c}
+.formato-btn.fb-btn.selected{color:#1877f2;background:#eff6ff;border-color:#1877f2}
+.formato-btn.li-btn.selected{color:#0a66c2;background:#eff6ff;border-color:#0a66c2}
+.formato-btn.tt-btn.selected{color:#010101;background:#f3f4f6;border-color:#010101}
+.formato-btn.yt-btn.selected{color:#ff0000;background:#fff0f0;border-color:#ff0000}
 .ig-fmt-lbl{font-size:.78rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px}
 .ig-fmt-btn{padding:5px 14px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .2s}
 .ig-fmt-btn.active{background:#c13584;color:#fff;border-color:#c13584}
@@ -948,14 +971,82 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="img-warn" id="img-warn-instagram">⚠️ Sem imagem — o post Instagram pode não publicar.</div>
           </div>
 
-          <!-- 6. REDES SOCIAIS -->
+          <!-- 6. REDES SOCIAIS + FORMATO -->
+          <!-- Checkboxes originais ocultos — mantidos para retrocompat (bibVideoResetRedes, bibUseVideoInPost, contGetRedes) -->
+          <div style="display:none">
+            <span class="cont-rede-tip" id="tip-instagram"><label class="cont-rede-cb"><input type="checkbox" id="cb-instagram" checked></label></span>
+            <span class="cont-rede-tip" id="tip-facebook"><label class="cont-rede-cb"><input type="checkbox" id="cb-facebook" checked></label></span>
+            <span class="cont-rede-tip" id="tip-linkedin"><label class="cont-rede-cb"><input type="checkbox" id="cb-linkedin" checked></label></span>
+            <span class="cont-rede-tip" id="tip-youtube"><label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked></label></span>
+          </div>
           <div class="cont-field">
-            <label class="cont-label">Redes sociais</label>
-            <div class="cont-redes" id="cont-redes-wrap">
-              <span class="cont-rede-tip" id="tip-instagram"><label class="cont-rede-cb"><input type="checkbox" id="cb-instagram" checked> 📸 Instagram</label></span>
-              <span class="cont-rede-tip" id="tip-facebook"><label class="cont-rede-cb"><input type="checkbox" id="cb-facebook" checked> 👥 Facebook</label></span>
-              <span class="cont-rede-tip" id="tip-linkedin"><label class="cont-rede-cb"><input type="checkbox" id="cb-linkedin" checked> 💼 LinkedIn</label></span>
-              <span class="cont-rede-tip" id="tip-youtube"><label class="cont-rede-cb"><input type="checkbox" id="cb-youtube" checked> ▶️ YouTube</label></span>
+            <label class="cont-label">Redes Sociais</label>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="redesRow">
+              <div class="rede-pill ig active" id="pill-ig" onclick="toggleRede('ig',this)">📸 Instagram</div>
+              <div class="rede-pill fb active" id="pill-fb" onclick="toggleRede('fb',this)">👥 Facebook</div>
+              <div class="rede-pill li active" id="pill-li" onclick="toggleRede('li',this)">💼 LinkedIn</div>
+              <div class="rede-pill tt"        id="pill-tt" onclick="toggleRede('tt',this)">🎵 TikTok</div>
+              <div class="rede-pill yt active" id="pill-yt" onclick="toggleRede('yt',this)">▶️ YouTube</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px;" id="formatosLista">
+              <!-- Instagram -->
+              <div class="formato-row ig-row" id="row-ig">
+                <div class="formato-rede-label ig">📸 Instagram</div>
+                <div class="formato-opcoes">
+                  <button class="formato-btn ig-btn selected" onclick="selectFormato('ig','imagem',this)">🖼 Imagem+Texto</button>
+                  <button class="formato-btn ig-btn" onclick="selectFormato('ig','carrossel',this)">🎠 Carrossel</button>
+                  <button class="formato-btn ig-btn" onclick="selectFormato('ig','video',this)">🎬 Reels</button>
+                </div>
+              </div>
+              <!-- Facebook -->
+              <div class="formato-row fb-row" id="row-fb">
+                <div class="formato-rede-label fb">👥 Facebook</div>
+                <div class="formato-opcoes">
+                  <button class="formato-btn fb-btn selected" onclick="selectFormato('fb','imagem',this)">🖼 Imagem+Texto</button>
+                  <button class="formato-btn fb-btn" onclick="selectFormato('fb','video',this)">🎬 Vídeo</button>
+                </div>
+              </div>
+              <!-- LinkedIn -->
+              <div class="formato-row li-row" id="row-li">
+                <div class="formato-rede-label li">💼 LinkedIn</div>
+                <div class="formato-opcoes">
+                  <button class="formato-btn li-btn selected" onclick="selectFormato('li','imagem',this)">🖼 Imagem+Texto</button>
+                  <button class="formato-btn li-btn" onclick="selectFormato('li','video',this)">🎬 Vídeo</button>
+                </div>
+              </div>
+              <!-- TikTok -->
+              <div class="formato-row tt-row" id="row-tt" style="display:none">
+                <div class="formato-rede-label tt">🎵 TikTok</div>
+                <div class="formato-opcoes">
+                  <button class="formato-btn tt-btn selected" onclick="selectFormato('tt','video',this)">🎬 Vídeo</button>
+                </div>
+              </div>
+              <!-- YouTube -->
+              <div class="formato-row yt-row" id="row-yt">
+                <div style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px;">
+                  <div class="formato-rede-label yt">▶️ YouTube</div>
+                  <button class="formato-btn yt-btn selected">🎬 Vídeo</button>
+                </div>
+                <div id="ytSliderBox" style="width:100%;padding:12px 14px;background:#fff0f0;border:1.5px solid #fca5a5;border-radius:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                    <div>
+                      <div style="font-size:.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Duração</div>
+                      <div style="font-size:.7rem;color:#ef4444;" id="ytPalavras">≈ 66 palavras</div>
+                    </div>
+                    <div style="font-size:1.3rem;font-weight:800;color:#dc2626;" id="ytValor">30s</div>
+                  </div>
+                  <input type="range" id="ytSlider" min="15" max="180" step="15" value="30"
+                    oninput="updateYtSlider(this.value)"
+                    style="width:100%;accent-color:#ef4444;margin-bottom:4px;">
+                  <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#9ca3af;">
+                    <span>15s</span><span>45s</span><span>1m</span><span>1m30</span><span>2m</span><span>2m30</span><span>3m</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Aviso roteiro partilhado entre redes de vídeo -->
+            <div id="avisoRoteiro" style="display:none;align-items:center;gap:7px;padding:9px 12px;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;font-size:.76rem;color:#854d0e;margin-top:8px;">
+              🎬 <span>O mesmo roteiro será usado em: <strong id="redesComVideo"></strong></span>
             </div>
           </div>
 
@@ -1882,6 +1973,12 @@ var REDE_CFG = {
 }
 var _fonteMode = 'manual'
 var _perfilConteudo = 'polemico'
+// ── Redes Sociais + Formatos (novo UI de pills) ───────────────────────────────
+var redesActivas    = { ig:true,  fb:true,  li:true,  tt:false, yt:true  }
+var formatoRede     = { ig:'imagem', fb:'imagem', li:'imagem', tt:'video', yt:'video' }
+var nomesRedes      = { ig:'Instagram', fb:'Facebook', li:'LinkedIn', tt:'TikTok', yt:'YouTube' }
+var defaultFormatos = { ig:'imagem', fb:'imagem', li:'imagem', tt:'video', yt:'video' }
+// ─────────────────────────────────────────────────────────────────────────────
 var _isVideoPost    = false  // true quando um vídeo da biblioteca está seleccionado
 var _vidBibId       = null   // id do registo em biblioteca_imagens
 var _vidBibUrl      = null   // url do vídeo
@@ -3086,7 +3183,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
@@ -4573,6 +4670,7 @@ function bibVideoResetRedes() {
     if (lbl) lbl.className = 'cont-rede-cb'
     if (tip) tip.removeAttribute('data-tip')
   })
+  syncPillsFromCheckboxes()
 }
 
 function bibUseVideoInPost(r) {
@@ -4629,6 +4727,26 @@ function bibUseVideoInPost(r) {
   // Update fonte indicator
   var ni = document.getElementById('noticia-indicator')
   if (ni) ni.style.display = 'none'
+
+  // Sincronizar pills com os checkboxes actualizados
+  syncPillsFromCheckboxes()
+  // Forçar formato "video" nas redes activas que têm botão de vídeo
+  ;['ig','fb','li'].forEach(function(rede) {
+    if (!redesActivas[rede]) return
+    var rowEl = document.getElementById('row-' + rede)
+    if (!rowEl) return
+    // Procura botão de vídeo pelo texto ou onclick
+    var videoBtn = null
+    rowEl.querySelectorAll('.formato-btn').forEach(function(b) {
+      if ((b.getAttribute('onclick') || '').indexOf("'video'") !== -1 || b.textContent.indexOf('Reels') !== -1 || b.textContent.indexOf('Vídeo') !== -1) {
+        if (!videoBtn) videoBtn = b
+      }
+    })
+    if (videoBtn) selectFormato(rede, 'video', videoBtn)
+  })
+  // YouTube já é sempre vídeo — manter formatoRede.yt = 'video'
+  formatoRede.yt = 'video'
+  atualizarAvisoRoteiro()
 }
 
 function bibDownload(id) {
@@ -5334,13 +5452,15 @@ sb.auth.onAuthStateChange(function(event, session) {
   if (session) loadApp()
 })
 
-// Aviso Instagram ao desmarcar/marcar + format bar
+// Aviso Instagram ao desmarcar/marcar + format bar + init pills
 document.addEventListener('DOMContentLoaded', function() {
   var cb = document.getElementById('cb-instagram')
   if (cb) {
     cb.addEventListener('change', function() { imgCheckInstagram() })
     igUpdateFormatBar()
   }
+  syncPillsFromCheckboxes()
+  updateYtSlider(30)
 })
 
 // ── Enriquecer notícia com IA ─────────────────────────────────────────────────
@@ -5570,6 +5690,115 @@ function _esc(s) {
   if (!s) return ''
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
+
+// ── Redes Sociais + Formatos — funções do novo UI de pills ───────────────────
+
+function toggleRede(rede, el) {
+  redesActivas[rede] = !redesActivas[rede]
+  // Actualizar classe da pill
+  var pill = document.getElementById('pill-' + rede)
+  if (pill) {
+    pill.className = 'rede-pill ' + rede + (redesActivas[rede] ? ' active' : '')
+  }
+  // Sincronizar checkbox oculto (manter retrocompat)
+  var mapa = { ig:'instagram', fb:'facebook', li:'linkedin', tt:'tiktok', yt:'youtube' }
+  var cb = document.getElementById('cb-' + (mapa[rede] || rede))
+  if (cb) { cb.checked = redesActivas[rede]; cb.disabled = false }
+  // Mostrar/ocultar linha de formato
+  var row = document.getElementById('row-' + rede)
+  if (row) row.style.display = redesActivas[rede] ? 'flex' : 'none'
+  // Actualizar aviso de roteiro
+  atualizarAvisoRoteiro()
+}
+
+function selectFormato(rede, formato, btn) {
+  formatoRede[rede] = formato
+  // Actualizar classes dos botões nessa rede
+  var row = document.getElementById('row-' + rede)
+  if (row) {
+    var btns = row.querySelectorAll('.formato-btn')
+    btns.forEach(function(b) {
+      b.className = b.className.replace(' selected', '')
+    })
+  }
+  if (btn) btn.className += ' selected'
+  // Para Instagram: sincronizar _igFormato e mostrar/ocultar selector de template
+  if (rede === 'ig') {
+    var igFmt = formato === 'carrossel' ? 'carrossel' : 'unico'
+    igSetFormato(igFmt)
+  }
+}
+
+function atualizarAvisoRoteiro() {
+  var aviso = document.getElementById('avisoRoteiro')
+  var redesLabel = document.getElementById('redesComVideo')
+  if (!aviso || !redesLabel) return
+  if (!_isVideoPost) { aviso.style.display = 'none'; return }
+  var comVideo = Object.keys(redesActivas).filter(function(r) {
+    return redesActivas[r] && formatoRede[r] === 'video'
+  }).map(function(r) { return nomesRedes[r] }).join(', ')
+  if (comVideo) {
+    redesLabel.textContent = comVideo
+    aviso.style.display = 'flex'
+  } else {
+    aviso.style.display = 'none'
+  }
+}
+
+function updateYtSlider(val) {
+  var v = parseInt(val) || 30
+  var el = document.getElementById('ytValor')
+  var pw = document.getElementById('ytPalavras')
+  if (el) el.textContent = v < 60 ? v + 's' : Math.floor(v/60) + 'min' + (v%60 ? ' ' + (v%60) + 's' : '')
+  if (pw) pw.textContent = '≈ ' + Math.round(v * 2.2) + ' palavras'
+}
+
+function getDuracaoYt() {
+  var sl = document.getElementById('ytSlider')
+  return sl ? parseInt(sl.value) || 30 : 30
+}
+
+function getPalavrasYt() {
+  return Math.round(getDuracaoYt() * 2.2)
+}
+
+function getRedesActivas() {
+  // Devolve array de strings compatível com o backend existente
+  var mapa = { ig:'instagram', fb:'facebook', li:'linkedin', tt:'tiktok', yt:'youtube' }
+  return Object.keys(redesActivas).filter(function(r) { return redesActivas[r] })
+    .map(function(r) { return mapa[r] || r })
+}
+
+function getFormatoRede(rede) {
+  var mapInv = { instagram:'ig', facebook:'fb', linkedin:'li', tiktok:'tt', youtube:'yt' }
+  var k = mapInv[rede] || rede
+  return formatoRede[k] || 'imagem'
+}
+
+function syncPillsFromCheckboxes() {
+  // Lê checkboxes ocultos e sincroniza pills + linhas de formato
+  var mapa = { ig:'instagram', fb:'facebook', li:'linkedin', yt:'youtube' }
+  Object.keys(mapa).forEach(function(rede) {
+    var cb = document.getElementById('cb-' + mapa[rede])
+    if (!cb) return
+    var ativo = cb.checked && !cb.disabled
+    redesActivas[rede] = ativo
+    var pill = document.getElementById('pill-' + rede)
+    if (pill) pill.className = 'rede-pill ' + rede + (ativo ? ' active' : '')
+    var row = document.getElementById('row-' + rede)
+    if (row) row.style.display = ativo ? 'flex' : 'none'
+  })
+  // TikTok — não tem checkbox oculto, manter estado actual
+  var pillTt = document.getElementById('pill-tt')
+  if (pillTt) pillTt.className = 'rede-pill tt' + (redesActivas.tt ? ' active' : '')
+  var rowTt = document.getElementById('row-tt')
+  if (rowTt) rowTt.style.display = redesActivas.tt ? 'flex' : 'none'
+  atualizarAvisoRoteiro()
+}
+
+// Override da função antiga (substituída pelo novo UI)
+igUpdateFormatBar = function() {}
+// ─────────────────────────────────────────────────────────────────────────────
 </script>
 
 <!-- Feedback IA -->
