@@ -632,6 +632,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-agendamento" onclick="showTab('agendamento')">📅 Agendamento</button>
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
+    <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
 
   <!-- Pesquisa IA -->
@@ -1206,6 +1207,7 @@ async function loadApp() {
   if (isAdmin) {
     document.getElementById('tab-kpi').style.display = 'block'
     document.getElementById('tab-config').style.display = 'block'
+    document.getElementById('tab-feedback-admin').style.display = 'block'
     document.getElementById('admin-toggle').style.display = ''
     // Load all profiles to build color map
     var { data: allProfiles } = await sb.from('profiles').select('user_id,nome,email').order('nome')
