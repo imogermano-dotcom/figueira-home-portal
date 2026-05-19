@@ -5233,6 +5233,11 @@ async function bibOpenPickModal(context) {
   if (tipoSel) tipoSel.value = ''
   // In upload context: pre-select current content category for convenience
   if (_bibPickContext === 'upload' && _contCategoria && catSel) catSel.value = _contCategoria
+  // In associar_video context: pre-filter to videos only
+  if (_bibPickContext === 'associar_video' && tipoSel) tipoSel.value = 'video'
+  // Update confirm button label
+  var btnUse = document.getElementById('bib-pick-use-btn')
+  if (btnUse) btnUse.textContent = _bibPickContext === 'associar_video' ? '🔗 Associar este vídeo →' : 'Usar ficheiro →'
   document.getElementById('bib-pick-modal').classList.add('open')
   await bibLoadPick()
 }
@@ -5252,7 +5257,9 @@ async function bibLoadPick() {
   var query = sb.from('biblioteca_imagens').select('*').order('created_at', { ascending: false }).limit(300)
   if (origem === 'ia') query = query.eq('origem', 'ia')
   else if (origem === 'upload') query = query.eq('origem', 'upload')
-  if (tipo) query = query.eq('tipo', tipo)
+  // In associar_video context: force tipo=video regardless of select value
+  var tipoEfetivo = _bibPickContext === 'associar_video' ? 'video' : tipo
+  if (tipoEfetivo) query = query.eq('tipo', tipoEfetivo)
   if (cat) query = query.eq('categoria', cat)
   var { data } = await query
   _bibPickRows = (data || []).filter(function(r) {
@@ -5290,11 +5297,19 @@ function bibPickSelect(id) {
   document.getElementById('bib-pick-use-btn').disabled = false
 }
 
-function bibPickConfirm() {
+async function bibPickConfirm() {
   if (!_bibPickSelected) return
   var r = _bibPickRows.find(function(x) { return x.id === _bibPickSelected })
   if (!r) return
   bibClosePickModal()
+
+  // Associar vídeo a um item aguarda_video
+  if (_bibPickContext === 'associar_video') {
+    await bibLigarVideoATexto(_bibAssociarTargetId, r.id)
+    bibRender()
+    _mostrarToast('✅ Vídeo associado com sucesso!', '#059669')
+    return
+  }
 
   // Video: same behaviour regardless of context
   if ((r.tipo || 'imagem') === 'video') {
@@ -5981,12 +5996,75 @@ function bibCarregarFicheiroRoteiro(id, input) {
   reader.readAsText(file)
 }
 
-async function bibAssociarVideo(conteudoItemId) {
-  alert('Funcionalidade em desenvolvimento: selecciona o vídeo na Biblioteca e usa "✅ Usar" para associar.')
+// ID do item alvo guardado antes de abrir o picker
+var _bibAssociarTargetId = null
+
+function bibAssociarVideo(conteudoItemId) {
+  _bibAssociarTargetId = conteudoItemId
+  bibOpenPickModal('associar_video')
 }
 
 async function bibAssociarTexto(videoId) {
-  alert('Funcionalidade em desenvolvimento: abre o Gerador, gera conteúdo e usa "🎬 Enviar para Produção".')
+  _bibAssociarTargetId = videoId
+  await bibAbrirPickerConteudosPendentes(videoId)
+}
+
+async function bibAbrirPickerConteudosPendentes(videoId) {
+  var res = await sb.from('conteudos_sociais')
+    .select('id, texto_base, script_youtube, created_at, categoria')
+    .eq('status_producao', 'aguarda_video')
+    .order('created_at', { ascending: false })
+    .limit(50)
+  var conteudos = res.data || []
+  if (res.error || !conteudos.length) {
+    _mostrarToast('Não há conteúdos pendentes de vídeo.', '#6b7280')
+    return
+  }
+  var box = document.getElementById('hist-modal-box')
+  var overlay = document.getElementById('hist-modal')
+  if (!box || !overlay) return
+  box.innerHTML = '<div style="padding:24px;max-width:600px;margin:0 auto;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'
+    + '<h3 style="font-size:16px;font-weight:700;color:#0A3D62;margin:0;">📝 Conteúdos pendentes de vídeo</h3>'
+    + '<button onclick="document.getElementById(\'hist-modal\').style.display=\'none\'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280;">✕</button>'
+    + '</div>'
+    + '<p style="font-size:13px;color:#6b7280;margin-bottom:16px;">Selecciona o conteúdo a associar a este vídeo:</p>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;">'
+    + conteudos.map(function(c) {
+        var data = new Date(c.created_at).toLocaleDateString('pt-PT')
+        var preview = esc((c.texto_base || c.script_youtube || '').slice(0, 100))
+        return '<div onclick="bibConfirmarAssociacaoTexto(\'' + c.id + '\',\'' + videoId + '\')"'
+          + ' style="padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;background:#fff;transition:border-color .15s"'
+          + ' onmouseover="this.style.borderColor=\'#F5C518\'" onmouseout="this.style.borderColor=\'#e5e7eb\'">'
+          + '<div style="font-size:13px;font-weight:600;color:#0A3D62;margin-bottom:4px;">' + preview + '…</div>'
+          + '<div style="font-size:11px;color:#9ca3af;">' + esc(c.categoria || 'Sem categoria') + ' · ' + data + '</div>'
+          + '</div>'
+      }).join('')
+    + '</div></div>'
+  overlay.style.display = 'flex'
+}
+
+async function bibConfirmarAssociacaoTexto(conteudoId, videoId) {
+  document.getElementById('hist-modal').style.display = 'none'
+  await bibLigarVideoATexto(conteudoId, videoId)
+  bibRender()
+  _mostrarToast('✅ Conteúdo associado com sucesso!', '#059669')
+}
+
+function _mostrarToast(msg, cor) {
+  cor = cor || '#059669'
+  var t = document.createElement('div')
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#fff;'
+    + 'border:1px solid ' + cor + '30;border-left:4px solid ' + cor + ';'
+    + 'border-radius:8px;padding:12px 16px;font-size:13px;font-weight:600;color:#374151;'
+    + 'box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:9999;animation:slideInRight .3s ease;'
+  t.textContent = msg
+  document.body.appendChild(t)
+  setTimeout(function() {
+    t.style.transition = 'opacity .4s'
+    t.style.opacity = '0'
+    setTimeout(function() { t.remove() }, 400)
+  }, 3000)
 }
 
 async function bibLigarVideoATexto(conteudoId, videoId) {
