@@ -1723,7 +1723,11 @@ async function doSearch() {
     _hasMore = data.has_more === true
     renderResults(data, q)
   } catch(err) {
-    res.innerHTML = '<div class="err-box"><strong>Erro:</strong> ' + esc(err.message) + '</div>'
+    var errMsg = err.message || 'Erro desconhecido'
+    if (/529|overloaded|overloaded_error|sobrecarregada/i.test(errMsg)) {
+      errMsg = 'A IA está temporariamente sobrecarregada. Tenta de novo em alguns segundos. ⏳'
+    }
+    res.innerHTML = '<div class="err-box"><strong>Erro:</strong> ' + esc(errMsg) + '</div>'
   }
   btn.disabled = false; btn.textContent = 'Pesquisar'
 }
