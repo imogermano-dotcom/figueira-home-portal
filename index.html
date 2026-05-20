@@ -1189,49 +1189,97 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   <div class="bib-upload-modal" id="bib-upload-modal" onclick="if(event.target===this)bibCloseUpload()">
     <div class="bib-upload-box">
       <h3>⬆️ Adicionar à Biblioteca</h3>
-      <input type="file" id="bib-file-input" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/x-msvideo,video/*" multiple style="display:none" onchange="bibOnFileInput(this)">
-      <div class="bib-upload-zone" id="bib-upload-zone"
-        onclick="document.getElementById('bib-file-input').click()"
-        ondragover="event.preventDefault();this.classList.add('drag-over')"
-        ondragleave="this.classList.remove('drag-over')"
-        ondrop="event.preventDefault();this.classList.remove('drag-over');bibOnDrop(event)">
-        <div style="font-size:2rem;margin-bottom:8px">📁</div>
-        <div style="font-size:.88rem;font-weight:600;color:#4b5563">Clica ou arrasta ficheiros</div>
-        <div style="font-size:.76rem;color:#9ca3af;margin-top:4px">📸 JPG, PNG, WEBP · máx. 10MB &nbsp;|&nbsp; 🎬 MP4, MOV, AVI · máx. 500MB</div>
+
+      <!-- Toggle Vídeo / Texto -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        <button id="btnUploadTipoVideo" onclick="bibSetUploadTipo('video')"
+          style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;
+                 cursor:pointer;border:2px solid #0A3D62;background:#0A3D62;color:#fff;">
+          🎬 Vídeo
+        </button>
+        <button id="btnUploadTipoTexto" onclick="bibSetUploadTipo('texto')"
+          style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;
+                 cursor:pointer;border:2px solid #e5e7eb;background:#fff;color:#6b7280;">
+          📝 Texto (aguarda vídeo)
+        </button>
       </div>
-      <div class="bib-upload-previews" id="bib-upload-previews"></div>
-      <div id="bib-vid-format-info" style="display:none"></div>
-      <div class="bib-up-prog" id="bib-up-prog">
-        <div class="bib-up-prog-bar" id="bib-up-prog-bar"></div>
-        <div class="bib-up-prog-lbl" id="bib-up-prog-lbl"></div>
+
+      <!-- Painel de upload de ficheiro (vídeo/imagem) -->
+      <div id="painelUploadVideo">
+        <input type="file" id="bib-file-input" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/x-msvideo,video/*" multiple style="display:none" onchange="bibOnFileInput(this)">
+        <div class="bib-upload-zone" id="bib-upload-zone"
+          onclick="document.getElementById('bib-file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="event.preventDefault();this.classList.remove('drag-over');bibOnDrop(event)">
+          <div style="font-size:2rem;margin-bottom:8px">📁</div>
+          <div style="font-size:.88rem;font-weight:600;color:#4b5563">Clica ou arrasta ficheiros</div>
+          <div style="font-size:.76rem;color:#9ca3af;margin-top:4px">📸 JPG, PNG, WEBP · máx. 10MB &nbsp;|&nbsp; 🎬 MP4, MOV, AVI · máx. 500MB</div>
+        </div>
+        <div class="bib-upload-previews" id="bib-upload-previews"></div>
+        <div id="bib-vid-format-info" style="display:none"></div>
+        <div class="bib-up-prog" id="bib-up-prog">
+          <div class="bib-up-prog-bar" id="bib-up-prog-bar"></div>
+          <div class="bib-up-prog-lbl" id="bib-up-prog-lbl"></div>
+        </div>
+        <div class="bib-form-row">
+          <label class="bib-form-label">Categoria</label>
+          <select class="bib-form-input" id="bib-upload-cat">
+            <option value="">— Sem categoria —</option>
+          </select>
+        </div>
+        <div class="bib-form-row" id="bib-titulo-row" style="display:none">
+          <label class="bib-form-label">Título <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
+          <input type="text" class="bib-form-input" id="bib-upload-titulo" placeholder="Ex: Por que os jovens estão a comprar mais casas em 2025">
+        </div>
+        <div class="bib-form-row">
+          <label class="bib-form-label">Descrição (opcional)</label>
+          <input type="text" class="bib-form-input" id="bib-upload-desc" placeholder="Ex: Vista da praia, Sala T3, Reel institucional...">
+        </div>
+        <div class="bib-form-row" id="bib-roteiro-row" style="display:none">
+          <label class="bib-form-label">Roteiro <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
+          <textarea class="bib-form-input" id="bib-upload-roteiro" rows="5"
+            placeholder="Cola aqui o texto falado no vídeo...&#10;&#10;Será usado automaticamente como script YouTube no Gerador de Conteúdo."
+            style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor=''"></textarea>
+          <div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">💡 Ao usar este vídeo no Gerador, o roteiro preenche automaticamente o campo Script YouTube.</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
+          <button type="button" class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
+        </div>
+        <div id="bib-upload-msg" style="margin-top:10px;font-size:.8rem;color:#6b7280"></div>
       </div>
-      <div class="bib-form-row">
-        <label class="bib-form-label">Categoria</label>
-        <select class="bib-form-input" id="bib-upload-cat">
-          <option value="">— Sem categoria —</option>
-        </select>
+
+      <!-- Painel de texto (sem ficheiro — aguarda vídeo) -->
+      <div id="painelUploadTexto" style="display:none;">
+        <div class="bib-form-row">
+          <label class="bib-form-label">Título <span style="color:#ef4444;">*</span></label>
+          <input type="text" class="bib-form-input" id="bibTextoTitulo"
+            placeholder="Ex: Pacote fiscal para jovens — Junho 2026">
+        </div>
+        <div class="bib-form-row">
+          <label class="bib-form-label">Roteiro / Texto</label>
+          <textarea class="bib-form-input" id="bibTextoRoteiro" rows="8"
+            placeholder="Cola aqui o roteiro, script ou texto do vídeo..."
+            style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"></textarea>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.75rem;color:#6b7280;cursor:pointer;">
+            <input type="file" accept=".txt" style="display:none;" onchange="bibCarregarFicheiroNoUpload(this)">
+            📄 Ou carregar ficheiro .txt
+          </label>
+        </div>
+        <div class="bib-form-row">
+          <label class="bib-form-label">Categoria</label>
+          <select class="bib-form-input" id="bibTextoCat">
+            <option value="">— Sem categoria —</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
+          <button type="button" class="cont-btn primary" onclick="bibSubmitTexto(this)">💾 Guardar — aguarda vídeo</button>
+        </div>
       </div>
-      <div class="bib-form-row" id="bib-titulo-row" style="display:none">
-        <label class="bib-form-label">Título <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
-        <input type="text" class="bib-form-input" id="bib-upload-titulo" placeholder="Ex: Por que os jovens estão a comprar mais casas em 2025">
-      </div>
-      <div class="bib-form-row">
-        <label class="bib-form-label">Descrição (opcional)</label>
-        <input type="text" class="bib-form-input" id="bib-upload-desc" placeholder="Ex: Vista da praia, Sala T3, Reel institucional...">
-      </div>
-      <div class="bib-form-row" id="bib-roteiro-row" style="display:none">
-        <label class="bib-form-label">Roteiro <span style="font-weight:400;color:#9ca3af">(opcional)</span></label>
-        <textarea class="bib-form-input" id="bib-upload-roteiro" rows="5"
-          placeholder="Cola aqui o texto falado no vídeo...&#10;&#10;Será usado automaticamente como script YouTube no Gerador de Conteúdo."
-          style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"
-          onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor=''"></textarea>
-        <div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">💡 Ao usar este vídeo no Gerador, o roteiro preenche automaticamente o campo Script YouTube.</div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:16px">
-        <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
-        <button type="button" class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
-      </div>
-      <div id="bib-upload-msg" style="margin-top:10px;font-size:.8rem;color:#6b7280"></div>
+
     </div>
   </div>
 
@@ -1838,7 +1886,7 @@ function populateCatSelects() {
     el.innerHTML = filterOpts
     if (cur) el.value = cur
   })
-  ;['cont-categoria','bib-upload-cat'].forEach(function(id) {
+  ;['cont-categoria','bib-upload-cat','bibTextoCat'].forEach(function(id) {
     var el = document.getElementById(id)
     if (!el) return
     var cur = el.value
@@ -4774,6 +4822,7 @@ function bibOpenUpload() {
   document.getElementById('bib-upload-desc').value = ''
   document.getElementById('bib-upload-msg').textContent = ''
   document.getElementById('bib-upload-cat').value = ''
+  bibSetUploadTipo('video')
   document.getElementById('bib-upload-modal').classList.add('open')
 }
 
@@ -4782,6 +4831,67 @@ function bibCloseUpload() {
   _bibUploadFiles = []
   var fmtDiv = document.getElementById('bib-vid-format-info')
   if (fmtDiv) { fmtDiv.style.display = 'none'; fmtDiv.innerHTML = '' }
+}
+
+function bibSetUploadTipo(tipo) {
+  var isTexto = tipo === 'texto'
+  var btnV = document.getElementById('btnUploadTipoVideo')
+  var btnT = document.getElementById('btnUploadTipoTexto')
+  var pV   = document.getElementById('painelUploadVideo')
+  var pT   = document.getElementById('painelUploadTexto')
+  if (btnV) { btnV.style.background = isTexto ? '#fff' : '#0A3D62'; btnV.style.color = isTexto ? '#6b7280' : '#fff'; btnV.style.borderColor = isTexto ? '#e5e7eb' : '#0A3D62' }
+  if (btnT) { btnT.style.background = isTexto ? '#0A3D62' : '#fff'; btnT.style.color = isTexto ? '#fff' : '#6b7280'; btnT.style.borderColor = isTexto ? '#0A3D62' : '#e5e7eb' }
+  if (pV) pV.style.display = isTexto ? 'none' : 'block'
+  if (pT) pT.style.display = isTexto ? 'block' : 'none'
+}
+
+function bibCarregarFicheiroNoUpload(input) {
+  var file = input.files && input.files[0]
+  if (!file) return
+  var reader = new FileReader()
+  reader.onload = function(e) {
+    var ta = document.getElementById('bibTextoRoteiro')
+    if (ta) ta.value = e.target.result
+  }
+  reader.readAsText(file)
+}
+
+async function bibSubmitTexto(btn) {
+  var titulo  = (document.getElementById('bibTextoTitulo') || {}).value || ''
+  var roteiro = (document.getElementById('bibTextoRoteiro') || {}).value || ''
+  var cat     = (document.getElementById('bibTextoCat') || {}).value || ''
+  titulo  = titulo.trim()
+  roteiro = roteiro.trim()
+  if (!titulo) { _mostrarToast('O título é obrigatório.', '#ef4444'); return }
+  if (btn) { btn.textContent = '⏳ A guardar...'; btn.disabled = true }
+  try {
+    var sd = await sb.auth.getSession()
+    var userId = sd.data && sd.data.session && sd.data.session.user && sd.data.session.user.id
+    var payload = {
+      tipo:         'video',
+      titulo:       titulo,
+      roteiro:      roteiro || null,
+      categoria:    cat || null,
+      status_video: 'aguarda_video',
+      origem:       'upload',
+      url:          '',
+      user_id:      userId,
+    }
+    var res = await sb.from('biblioteca_imagens').insert(payload)
+    if (res.error) throw res.error
+    document.getElementById('bib-upload-modal').classList.remove('open')
+    bibLoad()
+    _mostrarToast('✅ Texto guardado — aguarda vídeo', '#059669')
+    document.getElementById('bibTextoTitulo').value = ''
+    document.getElementById('bibTextoRoteiro').value = ''
+    document.getElementById('bibTextoCat').value = ''
+    bibSetUploadTipo('video')
+  } catch (err) {
+    console.error('[bibSubmitTexto]', err)
+    _mostrarToast('Erro ao guardar: ' + err.message, '#ef4444')
+  } finally {
+    if (btn) { btn.textContent = '💾 Guardar — aguarda vídeo'; btn.disabled = false }
+  }
 }
 
 function _bibIsVideo(f) {
