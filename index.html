@@ -5906,8 +5906,14 @@ function bibModalVideoExtra(item) {
     aguarda_video: { icon: '📝', label: 'Aguarda vídeo',        cor: '#d97706' },
     aguarda_texto: { icon: '🎬', label: 'Aguarda texto',        cor: '#2563eb' },
   }
-  var sv = item.status_video || 'pronto'
-  var st = statusMap[sv] || statusMap['pronto']
+  // Calcular status em tempo real a partir dos campos reais
+  var temVideo   = !!(item.url && item.url.trim())
+  var temRoteiro = !!(item.roteiro && item.roteiro.trim())
+  var sv = (temVideo && temRoteiro) ? 'pronto'
+         : temVideo                 ? 'aguarda_texto'
+         : temRoteiro               ? 'aguarda_video'
+         : 'aguarda_texto'
+  var st = statusMap[sv]
   var assocBtn = sv === 'aguarda_video'
     ? '<button onclick="bibAssociarVideo(\'' + item.id + '\')" style="width:100%;padding:10px;background:#fff7ed;border:1.5px solid #f59e0b;color:#d97706;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">📹 Associar vídeo da Biblioteca</button>'
     : sv === 'aguarda_texto'
