@@ -1021,7 +1021,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
                     <div>
                       <div style="font-size:.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Duração</div>
-                      <div style="font-size:.7rem;color:#92714A;" id="ytPalavras">≈ 66 palavras</div>
+                      <div style="font-size:.7rem;color:#92714A;" id="ytPalavras">≈ 54 palavras</div>
                     </div>
                     <div style="font-size:1.3rem;font-weight:800;color:#0A3D62;" id="ytValor">30s</div>
                   </div>
@@ -5783,7 +5783,7 @@ function updateYtSlider(val) {
   var el = document.getElementById('ytValor')
   var pw = document.getElementById('ytPalavras')
   if (el) el.textContent = v < 60 ? v + 's' : Math.floor(v/60) + 'min' + (v%60 ? ' ' + (v%60) + 's' : '')
-  if (pw) pw.textContent = '≈ ' + Math.round(v * 2.2) + ' palavras'
+  if (pw) pw.textContent = '≈ ' + Math.round(v / 60 * 107) + ' palavras'
 }
 
 function getDuracaoYt() {
@@ -5792,7 +5792,7 @@ function getDuracaoYt() {
 }
 
 function getPalavrasYt() {
-  return Math.round(getDuracaoYt() * 2.2)
+  return Math.round(getDuracaoYt() / 60 * 107)
 }
 
 function getRedesActivas() {
@@ -5972,7 +5972,7 @@ async function bibGerarRoteiroIA(id) {
     var resp = await fetch(DOORSTEP_URL + '/functions/v1/gerar-conteudo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: titulo, redes: ['youtube'], youtube_duracao_segundos: 60, youtube_palavras_alvo: 130 })
+      body: JSON.stringify({ texto_base: titulo, redes: ['youtube'], youtube_duracao_segundos: 60, youtube_palavras_alvo: 107 })
     })
     var dados = await resp.json()
     var roteiro = (dados.conteudo && dados.conteudo.youtube && dados.conteudo.youtube.video_script) || ''
