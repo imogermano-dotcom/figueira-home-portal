@@ -1247,7 +1247,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <textarea class="bib-form-input" id="bib-upload-roteiro" rows="5"
             placeholder="Cola aqui o texto falado no vídeo...&#10;&#10;Será usado automaticamente como script YouTube no Gerador de Conteúdo."
             style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"
-            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor=''"></textarea>
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor=''"
+            oninput="estimarDuracaoRoteiro(this)"></textarea>
+          <div class="roteiro-duracao-ind" style="display:none;margin-top:6px;padding:6px 10px;background:#FFFBF0;border:1px solid #F5C518;border-radius:6px;font-size:12px;color:#92714A;">
+            ⏱ <strong class="dur-valor"></strong><span class="dur-palavras" style="color:#9ca3af;"></span>
+          </div>
           <div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">💡 Ao usar este vídeo no Gerador, o roteiro preenche automaticamente o campo Script YouTube.</div>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px">
@@ -1268,7 +1272,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <label class="bib-form-label">Roteiro / Texto</label>
           <textarea class="bib-form-input" id="bibTextoRoteiro" rows="8"
             placeholder="Cola aqui o roteiro, script ou texto do vídeo..."
-            style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"></textarea>
+            style="resize:vertical;line-height:1.6;font-family:inherit;font-size:.83rem;"
+            oninput="estimarDuracaoRoteiro(this)"></textarea>
+          <div class="roteiro-duracao-ind" style="display:none;margin-top:6px;padding:6px 10px;background:#FFFBF0;border:1px solid #F5C518;border-radius:6px;font-size:12px;color:#92714A;">
+            ⏱ <strong class="dur-valor"></strong><span class="dur-palavras" style="color:#9ca3af;"></span>
+          </div>
           <label style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.75rem;color:#6b7280;cursor:pointer;">
             <input type="file" accept=".txt" style="display:none;" onchange="bibCarregarFicheiroNoUpload(this)">
             📄 Ou carregar ficheiro .txt
@@ -4839,6 +4847,22 @@ function bibCloseUpload() {
   if (fmtDiv) { fmtDiv.style.display = 'none'; fmtDiv.innerHTML = '' }
 }
 
+function estimarDuracaoRoteiro(textarea) {
+  var texto = textarea.value || ''
+  var palavras = texto.trim() ? texto.trim().split(/\s+/).length : 0
+  var ritmo = getRitmo()
+  var segundos = Math.round((palavras / ritmo) * 60)
+  var el = textarea.parentNode && textarea.parentNode.querySelector('.roteiro-duracao-ind')
+  if (!el) return
+  if (palavras < 5) { el.style.display = 'none'; return }
+  var dur = segundos < 60 ? segundos + 's'
+    : segundos % 60 === 0 ? Math.floor(segundos/60) + 'm'
+    : Math.floor(segundos/60) + 'm' + (segundos%60) + 's'
+  el.querySelector('.dur-valor').textContent = '~' + dur + ' de vídeo'
+  el.querySelector('.dur-palavras').textContent = ' · ' + palavras + ' palavras'
+  el.style.display = 'block'
+}
+
 function bibSetUploadTipo(tipo) {
   var isTexto = tipo === 'texto'
   var btnV = document.getElementById('btnUploadTipoVideo')
@@ -6066,7 +6090,11 @@ function bibModalVideoExtra(item) {
     + '<label style="font-size:.72rem;font-weight:600;color:#9ca3af;display:block;margin-bottom:4px;text-transform:uppercase">Roteiro <span style="font-weight:400;text-transform:none">(opcional)</span></label>'
     + '<textarea id="bibModalRoteiro" rows="5" placeholder="Cola aqui o texto falado no vídeo..."'
     + ' style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:.82rem;color:#374151;resize:vertical;line-height:1.6;box-sizing:border-box"'
-    + ' onchange="bibUpdateCampo(\'' + item.id + '\', \'roteiro\', this.value)">' + esc(item.roteiro || '') + '</textarea>'
+    + ' onchange="bibUpdateCampo(\'' + item.id + '\', \'roteiro\', this.value)"'
+    + ' oninput="estimarDuracaoRoteiro(this)">' + esc(item.roteiro || '') + '</textarea>'
+    + '<div class="roteiro-duracao-ind" style="display:none;margin-top:6px;padding:6px 10px;background:#FFFBF0;border:1px solid #F5C518;border-radius:6px;font-size:12px;color:#92714A;">'
+    + '⏱ <strong class="dur-valor"></strong><span class="dur-palavras" style="color:#9ca3af;"></span>'
+    + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:6px">'
     + '<button onclick="bibGerarRoteiroIA(\'' + item.id + '\')" style="font-size:.76rem;padding:5px 12px;background:#fff;border:1px solid #8b5cf6;color:#7c3aed;border-radius:6px;cursor:pointer">✨ Gerar com IA</button>'
     + '<label style="font-size:.76rem;padding:5px 12px;background:#fff;border:1px solid #e5e7eb;color:#374151;border-radius:6px;cursor:pointer">📄 Carregar .txt<input type="file" accept=".txt" style="display:none" onchange="bibCarregarFicheiroRoteiro(\'' + item.id + '\', this)"></label>'
