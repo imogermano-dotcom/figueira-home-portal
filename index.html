@@ -1021,7 +1021,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
                     <div>
                       <div style="font-size:.72rem;font-weight:600;color:#6b7280;text-transform:uppercase;">Duração</div>
-                      <div style="font-size:.7rem;color:#92714A;" id="ytPalavras">≈ 54 palavras</div>
+                      <div style="font-size:.7rem;color:#92714A;" id="ytPalavras">≈ 70 palavras</div>
                     </div>
                     <div style="font-size:1.3rem;font-weight:800;color:#0A3D62;" id="ytValor">30s</div>
                   </div>
@@ -1030,6 +1030,12 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                     style="width:100%;accent-color:#0A3D62;margin-bottom:4px;">
                   <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#9ca3af;">
                     <span>15s</span><span>45s</span><span>1m</span><span>1m30</span><span>2m</span><span>2m30</span><span>3m</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid #F5C518;">
+                    <span style="font-size:.7rem;color:#92714A;flex:1;">Ritmo de fala (palavras/min)</span>
+                    <input type="number" id="ytRitmo" value="140" min="112" max="168"
+                      style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-weight:700;color:#0A3D62;text-align:center;"
+                      onchange="guardarRitmo(this.value);updateYtSlider(document.getElementById('ytSlider').value)">
                   </div>
                 </div>
               </div>
@@ -5595,6 +5601,9 @@ document.addEventListener('DOMContentLoaded', function() {
     igUpdateFormatBar()
   }
   syncPillsFromCheckboxes()
+  // Restaurar ritmo guardado e inicializar slider
+  var ritmoEl = document.getElementById('ytRitmo')
+  if (ritmoEl) ritmoEl.value = getRitmo()
   updateYtSlider(30)
 })
 
@@ -5888,12 +5897,23 @@ function atualizarAvisoRoteiro() {
   }
 }
 
+function getRitmo() {
+  return parseInt(localStorage.getItem('ytRitmoPalavras') || '140') || 140
+}
+
+function guardarRitmo(val) {
+  var ritmo = Math.max(112, Math.min(168, parseInt(val) || 140))
+  localStorage.setItem('ytRitmoPalavras', ritmo)
+  var el = document.getElementById('ytRitmo')
+  if (el) el.value = ritmo
+}
+
 function updateYtSlider(val) {
   var v = parseInt(val) || 30
   var el = document.getElementById('ytValor')
   var pw = document.getElementById('ytPalavras')
   if (el) el.textContent = v < 60 ? v + 's' : Math.floor(v/60) + 'min' + (v%60 ? ' ' + (v%60) + 's' : '')
-  if (pw) pw.textContent = '≈ ' + Math.round(v / 60 * 107) + ' palavras'
+  if (pw) pw.textContent = '≈ ' + Math.round(v / 60 * getRitmo()) + ' palavras'
 }
 
 function getDuracaoYt() {
@@ -5902,7 +5922,7 @@ function getDuracaoYt() {
 }
 
 function getPalavrasYt() {
-  return Math.round(getDuracaoYt() / 60 * 107)
+  return Math.round(getDuracaoYt() / 60 * getRitmo())
 }
 
 function getRedesActivas() {
