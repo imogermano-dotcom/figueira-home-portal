@@ -6028,7 +6028,10 @@ function bibRenderCardVideo(item) {
       + '<div style="font-size:11px;text-align:center;color:#9ca3af">' + esc(titulo.slice(0, 40)) + '</div>'
       + '</div>'
   var btnAcao = sv === 'aguarda_video'
-    ? '<button onclick="event.stopPropagation();bibAssociarVideo(\'' + item.id + '\')" style="font-size:11px;padding:4px 10px;background:#fff7ed;border:1px solid #f59e0b;color:#d97706;border-radius:6px;cursor:pointer;font-weight:600">📹 Associar vídeo</button>'
+    ? '<div style="display:flex;gap:4px;">'
+      + '<button onclick="event.stopPropagation();bibAssociarVideo(\'' + item.id + '\')" style="font-size:11px;padding:4px 8px;background:#fff7ed;border:1px solid #f59e0b;color:#d97706;border-radius:6px;cursor:pointer;font-weight:600">📂 Biblioteca</button>'
+      + '<button onclick="event.stopPropagation();bibUploadVideoParaItem(\'' + item.id + '\')" style="font-size:11px;padding:4px 8px;background:#eff6ff;border:1px solid #3b82f6;color:#2563eb;border-radius:6px;cursor:pointer;font-weight:600">💻 Disco</button>'
+      + '</div>'
     : sv === 'aguarda_texto'
       ? '<button onclick="event.stopPropagation();bibAssociarTexto(\'' + item.id + '\')" style="font-size:11px;padding:4px 10px;background:#eff6ff;border:1px solid #3b82f6;color:#2563eb;border-radius:6px;cursor:pointer;font-weight:600">📝 Associar texto</button>'
       : '<button onclick="event.stopPropagation();bibUseInPost(\'' + item.id + '\')" style="font-size:11px;padding:4px 10px;background:#ecfdf5;border:1px solid #10b981;color:#059669;border-radius:6px;cursor:pointer;font-weight:600">✅ Usar</button>'
@@ -6069,7 +6072,10 @@ function bibModalVideoExtra(item) {
          : 'aguarda_texto'
   var st = statusMap[sv]
   var assocBtn = sv === 'aguarda_video'
-    ? '<button onclick="bibAssociarVideo(\'' + item.id + '\')" style="width:100%;padding:10px;background:#fff7ed;border:1.5px solid #f59e0b;color:#d97706;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">📹 Associar vídeo da Biblioteca</button>'
+    ? '<div style="display:flex;gap:8px;margin-top:4px">'
+      + '<button onclick="bibAssociarVideo(\'' + item.id + '\')" style="flex:1;padding:10px;background:#fff7ed;border:1.5px solid #f59e0b;color:#d97706;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer">📂 Da Biblioteca</button>'
+      + '<button onclick="bibUploadVideoParaItem(\'' + item.id + '\')" style="flex:1;padding:10px;background:#eff6ff;border:1.5px solid #3b82f6;color:#2563eb;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer">💻 Do computador</button>'
+      + '</div>'
     : sv === 'aguarda_texto'
       ? '<button onclick="bibAssociarTexto(\'' + item.id + '\')" style="width:100%;padding:10px;background:#eff6ff;border:1.5px solid #3b82f6;color:#2563eb;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">📝 Associar texto gerado</button>'
       : '<button onclick="bibUseInPost(\'' + item.id + '\');bibModalClose()" style="width:100%;padding:10px;background:#ecfdf5;border:1.5px solid #10b981;color:#059669;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:4px">✅ Usar neste conteúdo</button>'
@@ -6166,6 +6172,72 @@ var _bibAssociarTargetId = null
 function bibAssociarVideo(conteudoItemId) {
   _bibAssociarTargetId = conteudoItemId
   bibOpenPickModal('associar_video')
+}
+
+async function bibUploadVideoParaItem(itemId) {
+  var input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'video/mp4,video/quicktime,video/avi,video/*'
+  input.style.display = 'none'
+  document.body.appendChild(input)
+
+  input.onchange = async function(e) {
+    var file = e.target.files && e.target.files[0]
+    input.remove()
+    if (!file) return
+
+    var sd = await sb.auth.getSession()
+    var user = sd.data && sd.data.session && sd.data.session.user
+    if (!user) { _mostrarToast('Sessão expirada — volta a entrar.', '#ef4444'); return }
+
+    _mostrarToast('⏳ A carregar vídeo...', '#2563eb')
+
+    try {
+      // 1. Upload para R2 — reutiliza bibUploadVideoSDK
+      var ext = (file.name.split('.').pop() || 'mp4').toLowerCase()
+      var path = user.id + '/vid_' + Date.now() + '.' + ext
+      var publicUrl = await bibUploadVideoSDK(file, path, null, null, { userId: user.id })
+      if (!publicUrl) throw new Error('Upload falhou — URL não obtido')
+
+      // 2. Thumbnail
+      var thumbnailUrl = await bibCaptureAndUploadThumb(file, user.id, 0)
+
+      // 3. Formato e duração
+      var vidMeta = await bibGetVideoMeta(file)
+      var formatoFinal = vidMeta.formato || 'horizontal_16_9'
+
+      // 4. Actualizar item existente na BD
+      var upd = await sb.from('biblioteca_imagens').update({
+        url:              publicUrl,
+        thumbnail_url:    thumbnailUrl || null,
+        formato_video:    formatoFinal,
+        duracao_segundos: vidMeta.duracao || null,
+        resolucao:        vidMeta.resolucao || null,
+        tamanho_bytes:    file.size,
+        status_video:     'pronto',
+      }).eq('id', itemId)
+      if (upd.error) throw upd.error
+
+      // 5. Se tinha conteudo_id — actualizar conteudos_sociais
+      var sel = await sb.from('biblioteca_imagens').select('conteudo_id').eq('id', itemId).single()
+      if (sel.data && sel.data.conteudo_id) {
+        await sb.from('conteudos_sociais')
+          .update({ status_producao: 'pronto', video_id: itemId })
+          .eq('id', sel.data.conteudo_id)
+      }
+
+      // 6. Fechar modal e actualizar biblioteca
+      document.getElementById('hist-modal').style.display = 'none'
+      bibLoad()
+      _mostrarToast('✅ Vídeo carregado e associado!', '#059669')
+
+    } catch(err) {
+      console.error('[bibUploadVideoParaItem]', err)
+      _mostrarToast('Erro no upload: ' + err.message, '#ef4444')
+    }
+  }
+
+  input.click()
 }
 
 async function bibAssociarTexto(videoId) {
