@@ -4810,6 +4810,16 @@ function bibUseVideoInPost(r) {
   // YouTube já é sempre vídeo — manter formatoRede.yt = 'video'
   formatoRede.yt = 'video'
   atualizarAvisoRoteiro()
+
+  // Se o vídeo tem roteiro → modal de publicação rápida em vez do gerador
+  if (r.roteiro && r.roteiro.trim()) {
+    typeof bibClosePickModal === 'function' && bibClosePickModal()
+    var hm = document.getElementById('hist-modal')
+    if (hm) hm.style.display = 'none'
+    abrirModalPublicacaoRapida(r)
+    return // não vai para o gerador
+  }
+  // Se não tem roteiro → comportamento existente (vai para o gerador)
 }
 
 function bibDownload(id) {
@@ -6436,5 +6446,219 @@ window.FeedbackIA={
 };
 })();
 </script>
+
+<!-- ── Modal de Publicação Rápida de Vídeo ── -->
+<div id="pub-rapida-overlay" onclick="fecharPublicacaoRapida()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;"></div>
+
+<div id="pub-rapida-modal"
+  style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+         width:min(640px,95vw);max-height:90vh;overflow-y:auto;
+         background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);
+         z-index:401;padding:24px;">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <h3 style="font-size:16px;font-weight:700;color:#0A3D62;margin:0;">
+      🎬 Publicar Vídeo
+    </h3>
+    <button onclick="fecharPublicacaoRapida()"
+      style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280;">✕</button>
+  </div>
+
+  <!-- Preview do vídeo -->
+  <div id="pub-rapida-video" style="margin-bottom:16px;"></div>
+
+  <!-- Título -->
+  <div style="margin-bottom:12px;">
+    <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                  letter-spacing:.5px;display:block;margin-bottom:6px;">Título</label>
+    <input id="pub-rapida-titulo" type="text"
+      style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
+             font-size:13px;color:#374151;box-sizing:border-box;">
+  </div>
+
+  <!-- Roteiro (editável) -->
+  <div style="margin-bottom:16px;">
+    <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                  letter-spacing:.5px;display:block;margin-bottom:6px;">
+      Roteiro
+      <span style="font-weight:400;color:#9ca3af;">(editável)</span>
+    </label>
+    <textarea id="pub-rapida-roteiro" rows="5"
+      oninput="estimarDuracaoRoteiro(this)"
+      style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
+             font-size:13px;color:#374151;resize:vertical;line-height:1.6;
+             box-sizing:border-box;font-family:inherit;"></textarea>
+    <div class="roteiro-duracao-ind"
+      style="display:none;margin-top:6px;padding:6px 10px;background:#FFFBF0;
+             border:1px solid #F5C518;border-radius:6px;font-size:12px;color:#92714A;">
+      ⏱ <strong class="dur-valor"></strong>
+      <span class="dur-palavras" style="color:#9ca3af;"></span>
+    </div>
+  </div>
+
+  <!-- Redes a publicar -->
+  <div style="margin-bottom:16px;">
+    <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                  letter-spacing:.5px;display:block;margin-bottom:8px;">Publicar em</label>
+    <div id="pub-rapida-redes" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  </div>
+
+  <!-- Data de agendamento -->
+  <div style="margin-bottom:20px;">
+    <label style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                  letter-spacing:.5px;display:block;margin-bottom:6px;">
+      Data de agendamento
+      <span style="font-weight:400;color:#9ca3af;">(opcional — deixa em branco para rascunho)</span>
+    </label>
+    <input id="pub-rapida-data" type="datetime-local"
+      style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;
+             font-size:13px;color:#374151;box-sizing:border-box;">
+  </div>
+
+  <!-- Botões -->
+  <div style="display:flex;gap:8px;">
+    <button onclick="publicarRapidaGuardar(false)"
+      style="flex:1;padding:12px;background:#fff;color:#0A3D62;
+             border:2px solid #0A3D62;border-radius:10px;font-size:14px;
+             font-weight:700;cursor:pointer;">
+      💾 Guardar rascunho
+    </button>
+    <button onclick="publicarRapidaGuardar(true)"
+      style="flex:1;padding:12px;background:#0A3D62;color:#fff;
+             border:none;border-radius:10px;font-size:14px;
+             font-weight:700;cursor:pointer;">
+      📅 Agendar publicação
+    </button>
+  </div>
+</div>
+
+<script>
+// ── Modal de publicação rápida de vídeo ────────────────────────────────────────
+var _pubRapidaItem = null
+var _pubRapidaRedesSeleccionadas = {}
+
+function abrirModalPublicacaoRapida(r) {
+  _pubRapidaItem = r
+  _pubRapidaRedesSeleccionadas = {}
+
+  document.getElementById('pub-rapida-titulo').value = r.titulo || ''
+  document.getElementById('pub-rapida-roteiro').value = r.roteiro || ''
+  document.getElementById('pub-rapida-data').value = ''
+
+  document.getElementById('pub-rapida-video').innerHTML = r.url
+    ? '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;border-radius:8px;max-height:240px;background:#000;"></video>'
+    : '<div style="height:120px;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:32px;">🎬</div>'
+
+  var redesDisponiveis = r.formato_video === 'horizontal_16_9'
+    ? [{ id:'yt', label:'YouTube', emoji:'▶️' }]
+    : [
+        { id:'ig', label:'Instagram Reels', emoji:'📸' },
+        { id:'fb', label:'Facebook',        emoji:'📘' },
+        { id:'li', label:'LinkedIn',        emoji:'💼' },
+        { id:'tt', label:'TikTok',          emoji:'🎵' },
+        { id:'yt', label:'YouTube',         emoji:'▶️' },
+      ]
+
+  document.getElementById('pub-rapida-redes').innerHTML = redesDisponiveis.map(function(rd) {
+    return '<div class="rede-pill active" id="pub-pill-' + rd.id + '"'
+      + ' onclick="pubRapidaToggleRede(\'' + rd.id + '\', this)"'
+      + ' style="cursor:pointer;">' + rd.emoji + ' ' + rd.label + '</div>'
+  }).join('')
+
+  redesDisponiveis.forEach(function(rd) {
+    _pubRapidaRedesSeleccionadas[rd.id] = true
+  })
+
+  var textarea = document.getElementById('pub-rapida-roteiro')
+  if (textarea) estimarDuracaoRoteiro(textarea)
+
+  document.getElementById('pub-rapida-overlay').style.display = 'block'
+  document.getElementById('pub-rapida-modal').style.display = 'block'
+}
+
+function pubRapidaToggleRede(rede, el) {
+  _pubRapidaRedesSeleccionadas[rede] = !_pubRapidaRedesSeleccionadas[rede]
+  el.classList.toggle('active', _pubRapidaRedesSeleccionadas[rede])
+}
+
+function fecharPublicacaoRapida() {
+  document.getElementById('pub-rapida-overlay').style.display = 'none'
+  document.getElementById('pub-rapida-modal').style.display = 'none'
+  _pubRapidaItem = null
+}
+
+async function publicarRapidaGuardar(agendar) {
+  if (!_pubRapidaItem) return
+
+  var redes = Object.keys(_pubRapidaRedesSeleccionadas)
+    .filter(function(r) { return _pubRapidaRedesSeleccionadas[r] })
+
+  if (!redes.length) {
+    _mostrarToast('Selecciona pelo menos uma rede.', '#ef4444')
+    return
+  }
+
+  var titulo  = document.getElementById('pub-rapida-titulo').value.trim()
+  var roteiro = document.getElementById('pub-rapida-roteiro').value.trim()
+  var dataVal = document.getElementById('pub-rapida-data').value
+
+  if (agendar && !dataVal) {
+    _mostrarToast('Define uma data de agendamento.', '#ef4444')
+    return
+  }
+
+  var btn = event.currentTarget
+  var btnOrig = btn.textContent
+  btn.textContent = '⏳ A guardar...'
+  btn.disabled = true
+
+  try {
+    var sd = await sb.auth.getSession()
+    var user = sd.data && sd.data.session && sd.data.session.user
+
+    var payload = {
+      video_url:           _pubRapidaItem.url,
+      thumbnail_url:       _pubRapidaItem.thumbnail_url || null,
+      titulo:              titulo || _pubRapidaItem.titulo || 'Sem título',
+      texto_base:          roteiro,
+      user_id:             user ? user.id : null,
+      redes_seleccionadas: redes,
+      data_agendada:       agendar && dataVal ? new Date(dataVal).toISOString() : null,
+      conteudo_social_id:  null
+    }
+
+    redes.forEach(function(r) {
+      if (r === 'ig') payload.caption_instagram = roteiro
+      if (r === 'fb') payload.caption_facebook  = roteiro
+      if (r === 'li') payload.caption_linkedin  = roteiro
+      if (r === 'yt') {
+        payload.titulo_youtube    = titulo || _pubRapidaItem.titulo || ''
+        payload.descricao_youtube = roteiro
+      }
+      payload['status_' + r] = agendar ? 'agendado' : 'rascunho'
+    })
+
+    var { error } = await sb.from('videos_sociais').insert(payload)
+    if (error) throw error
+
+    await sb.from('biblioteca_imagens')
+      .update({ status_video: agendar ? 'agendado' : 'pronto' })
+      .eq('id', _pubRapidaItem.id)
+
+    fecharPublicacaoRapida()
+    _mostrarToast(agendar ? '✅ Vídeo agendado!' : '💾 Rascunho guardado!', '#059669')
+    typeof bibRender === 'function' && bibRender()
+
+  } catch(err) {
+    console.error('[publicarRapidaGuardar]', err)
+    _mostrarToast('Erro: ' + err.message, '#ef4444')
+    btn.disabled = false
+    btn.textContent = btnOrig
+  }
+}
+</script>
+
 </body>
 </html>
