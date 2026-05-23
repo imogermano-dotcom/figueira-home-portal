@@ -459,6 +459,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .bib-item img{width:100%;height:100%;object-fit:cover;display:block}
 .bib-item-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;flex-direction:column;justify-content:flex-end;padding:8px;transition:background .2s;gap:4px}
 .bib-item:hover .bib-item-overlay{background:rgba(0,0,0,.52)}
+/* ── Biblioteca mobile ───────────────────────────────────────── */
+@media(hover:none){.bib-item-overlay{display:none!important}}
+@media(max-width:640px){
+  #bib-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  #bibFiltrosVideo{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .bib-filtro-btn,.bib-tipo-btn{white-space:nowrap;flex-shrink:0}
+  .status-badge-texto{display:none!important}
+}
 .bib-item-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s;justify-content:flex-end}
 .bib-item:hover .bib-item-actions{opacity:1}
 .bib-action-btn{padding:4px 8px;border:none;border-radius:6px;font-size:.68rem;font-weight:600;cursor:pointer;background:rgba(255,255,255,.92);color:#1a3c5e;transition:all .2s}
@@ -6293,7 +6301,7 @@ function bibRenderCardVideo(item) {
     + fmtBadge
     + (dur ? '<span class="bib-video-dur">' + dur + '</span>' : '')
     // Status badge top-right
-    + '<div style="position:absolute;top:6px;right:6px;background:' + st.bg + ';color:' + st.cor + ';font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;pointer-events:none">' + st.icon + ' ' + st.label + '</div>'
+    + '<div style="position:absolute;top:6px;right:6px;background:' + st.bg + ';color:' + st.cor + ';font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;pointer-events:none">' + st.icon + ' <span class="status-badge-texto">' + esc(st.label) + '</span></div>'
     // Title bar bottom
     + '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:20px 8px 8px;pointer-events:none">'
     + '<div style="font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(titulo) + '</div>'
