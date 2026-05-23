@@ -6987,15 +6987,16 @@ function bibLoteRenderPreview(dados) {
 }
 
 function bibLoteVerificarPronto() {
-  var pronto = _bibLoteExcelDados.length > 0 && Object.keys(_bibLoteVideos).length > 0
+  // Excel é opcional — só os vídeos são obrigatórios
+  var temVideos = Object.keys(_bibLoteVideos).length > 0
   var btn = document.getElementById('bib-lote-btn')
   if (!btn) return
-  btn.style.opacity = pronto ? '1' : '.5'
-  btn.style.pointerEvents = pronto ? 'auto' : 'none'
+  btn.style.opacity = temVideos ? '1' : '.5'
+  btn.style.pointerEvents = temVideos ? 'auto' : 'none'
 }
 
 async function bibLoteSubmit() {
-  if (!_bibLoteExcelDados.length || !Object.keys(_bibLoteVideos).length) return
+  if (!Object.keys(_bibLoteVideos).length) return
   var sd = await sb.auth.getSession()
   var user = sd.data && sd.data.session && sd.data.session.user
   if (!user) { alert('Sessão expirada.'); return }
@@ -7009,7 +7010,26 @@ async function bibLoteSubmit() {
   var logEl     = document.getElementById('bib-lote-log')
   progresso.style.display = 'block'; logEl.innerHTML = ''
 
-  var total = _bibLoteExcelDados.length
+  // Construir lista de itens — Excel se disponível, senão todos os vídeos com defaults
+  var itens = _bibLoteExcelDados.length
+    ? _bibLoteExcelDados.map(function(row) {
+        return {
+          nomeVid:  (row.path_video || '').trim(),
+          titulo:   (row.titulo   || '').trim(),
+          roteiro:  (row.roteiro  || '').trim(),
+          categoria:(row.categoria|| '').trim()
+        }
+      })
+    : Object.keys(_bibLoteVideos).map(function(nome) {
+        return {
+          nomeVid:   nome,
+          titulo:    nome.replace(/\.[^/.]+$/, ''),  // nome sem extensão
+          roteiro:   '',
+          categoria: ''
+        }
+      })
+
+  var total = itens.length
   var sucesso = 0; var erros = 0
 
   function log(msg, cor) {
@@ -7020,10 +7040,10 @@ async function bibLoteSubmit() {
     logEl.scrollTop = logEl.scrollHeight
   }
 
-  for (var i = 0; i < _bibLoteExcelDados.length; i++) {
-    var row = _bibLoteExcelDados[i]
-    var nomeVid = (row.path_video || '').trim()
-    var file = _bibLoteVideos[nomeVid]
+  for (var i = 0; i < itens.length; i++) {
+    var item    = itens[i]
+    var nomeVid = item.nomeVid
+    var file    = _bibLoteVideos[nomeVid]
     progBar.style.width = Math.round((i / total) * 100) + '%'
     progLabel.textContent = 'A processar ' + (i + 1) + ' de ' + total + ': ' + nomeVid
 
@@ -7036,31 +7056,31 @@ async function bibLoteSubmit() {
       var ext = nomeVid.split('.').pop().toLowerCase()
       var path = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
       var vidUrl = await bibUploadVideoSDK(file, path, null, null,
-        { userId: user.id, categoria: row.categoria, descricao: row.titulo })
+        { userId: user.id, categoria: item.categoria, descricao: item.titulo })
       if (!vidUrl) throw new Error('Upload R2 falhou')
 
       var thumbUrl = await bibCaptureAndUploadThumb(file, user.id, i)
-      var meta = await bibGetVideoMeta(file)
-      var roteiro = (row.roteiro || '').trim()
+      var meta     = await bibGetVideoMeta(file)
+      var roteiro  = item.roteiro
 
       var { error } = await sb.from('biblioteca_imagens').insert({
         url:              vidUrl,
         thumbnail_url:    thumbUrl || null,
         tipo:             'video',
-        titulo:           (row.titulo || '').trim() || nomeVid,
+        titulo:           item.titulo || nomeVid,
         roteiro:          roteiro || null,
-        categoria:        (row.categoria || '').trim() || null,
+        categoria:        item.categoria || null,
         formato_video:    meta ? meta.formato : null,
         duracao_segundos: meta ? meta.duracao : null,
         resolucao:        meta ? meta.resolucao : null,
         tamanho_bytes:    file.size,
-        status_video:     roteiro ? 'pronto' : 'aguarda_texto',
+        status_video:     'aguarda_texto',
         origem:           'upload',
         user_id:          user.id
       })
       if (error) throw error
 
-      log('✅ ' + nomeVid + (roteiro ? ' (com roteiro)' : ' (sem roteiro)'), '#059669')
+      log('✅ ' + nomeVid, '#059669')
       sucesso++
     } catch(err) {
       log('❌ ' + nomeVid + ' — ' + err.message, '#dc2626')
