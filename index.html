@@ -1259,6 +1259,78 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button type="button" class="cont-btn primary" id="bib-upload-btn" onclick="bibUploadSubmit()">⬆️ Guardar na Biblioteca</button>
         </div>
         <div id="bib-upload-msg" style="margin-top:10px;font-size:.8rem;color:#6b7280"></div>
+
+        <!-- Separador -->
+        <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
+          <div style="flex:1;height:1px;background:#e5e7eb;"></div>
+          <span style="font-size:12px;color:#9ca3af;white-space:nowrap;">ou upload em lote</span>
+          <div style="flex:1;height:1px;background:#e5e7eb;"></div>
+        </div>
+
+        <!-- Upload em lote -->
+        <div style="border:2px dashed #e5e7eb;border-radius:10px;padding:16px;background:#fafafa;">
+          <div style="font-size:12px;font-weight:700;color:#0A3D62;margin-bottom:12px;">
+            📦 Upload em Lote
+          </div>
+
+          <!-- Excel -->
+          <div style="margin-bottom:10px;">
+            <label style="font-size:11px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">
+              1. FICHEIRO EXCEL
+              <span style="font-weight:400;color:#9ca3af;">(colunas: path_video · titulo · roteiro · categoria)</span>
+            </label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <label style="flex:1;display:flex;align-items:center;gap:8px;padding:8px 12px;
+                            border:1px solid #d1d5db;border-radius:8px;cursor:pointer;
+                            background:#fff;font-size:13px;color:#6b7280;">
+                <input type="file" id="bib-lote-excel" accept=".xlsx,.xls,.csv"
+                  style="display:none;" onchange="bibLoteCarregarExcel(this)">
+                📊 <span id="bib-lote-excel-nome">Escolher ficheiro .xlsx</span>
+              </label>
+              <a href="#" onclick="bibLoteDescarregarTemplate(); return false;"
+                style="font-size:12px;color:#3b82f6;white-space:nowrap;">⬇ Template</a>
+            </div>
+          </div>
+
+          <!-- Vídeos -->
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;">
+              2. FICHEIROS DE VÍDEO
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;
+                          border:1px solid #d1d5db;border-radius:8px;cursor:pointer;
+                          background:#fff;font-size:13px;color:#6b7280;">
+              <input type="file" id="bib-lote-videos" accept="video/*" multiple
+                style="display:none;" onchange="bibLoteCarregarVideos(this)">
+              🎬 <span id="bib-lote-videos-nome">Escolher vídeos</span>
+            </label>
+          </div>
+
+          <!-- Preview da tabela Excel -->
+          <div id="bib-lote-preview" style="display:none;margin-bottom:12px;
+               max-height:180px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;"></div>
+
+          <!-- Progresso -->
+          <div id="bib-lote-progresso" style="display:none;margin-bottom:12px;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">
+              <span id="bib-lote-prog-label">A preparar...</span>
+            </div>
+            <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+              <div id="bib-lote-prog-bar"
+                style="height:100%;width:0%;background:#0A3D62;transition:width .3s;border-radius:3px;"></div>
+            </div>
+            <div id="bib-lote-log"
+              style="margin-top:8px;max-height:100px;overflow-y:auto;font-size:11px;color:#6b7280;"></div>
+          </div>
+
+          <!-- Botão -->
+          <button id="bib-lote-btn" onclick="bibLoteSubmit()"
+            style="width:100%;padding:11px;background:#0A3D62;color:#fff;border:none;
+                   border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
+                   opacity:.5;pointer-events:none;">
+            📦 Iniciar Upload em Lote
+          </button>
+        </div>
       </div>
 
       <!-- Painel de texto (sem ficheiro — aguarda vídeo) -->
@@ -6657,6 +6729,194 @@ async function publicarRapidaGuardar(agendar) {
     btn.disabled = false
     btn.textContent = btnOrig
   }
+}
+
+// ── Upload em Lote ─────────────────────────────────────────────────────────────
+var _bibLoteExcelDados = []
+var _bibLoteVideos     = {}
+
+function bibLoteDescarregarTemplate() {
+  var csv = 'path_video,titulo,roteiro,categoria\n'
+    + 'video1.mp4,Título do vídeo,Texto do roteiro aqui,noticias_imoveis\n'
+    + 'video2.mp4,Outro título,Outro roteiro,clientes_vendedores\n'
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  var url = URL.createObjectURL(blob)
+  var a = document.createElement('a')
+  a.href = url; a.download = 'template_lote.csv'
+  a.click(); URL.revokeObjectURL(url)
+}
+
+function bibLoteCarregarExcel(input) {
+  var file = input.files && input.files[0]
+  if (!file) return
+  document.getElementById('bib-lote-excel-nome').textContent = file.name
+  var reader = new FileReader()
+  reader.onload = function(e) {
+    try {
+      var dados = []
+      if (typeof XLSX !== 'undefined') {
+        var wb = XLSX.read(e.target.result, { type: 'array' })
+        var ws = wb.Sheets[wb.SheetNames[0]]
+        dados = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      } else {
+        var text = new TextDecoder().decode(e.target.result)
+        var lines = text.split('\n').filter(function(l) { return l.trim() })
+        var headers = lines[0].split(',').map(function(h) { return h.trim() })
+        for (var i = 1; i < lines.length; i++) {
+          var vals = lines[i].split(',')
+          var row = {}
+          headers.forEach(function(h, j) { row[h] = (vals[j] || '').trim() })
+          if (row.path_video) dados.push(row)
+        }
+      }
+      _bibLoteExcelDados = dados
+      bibLoteRenderPreview(dados)
+      bibLoteVerificarPronto()
+    } catch(err) {
+      alert('Erro ao ler ficheiro: ' + err.message)
+    }
+  }
+  reader.readAsArrayBuffer(file)
+}
+
+function bibLoteCarregarVideos(input) {
+  var files = input.files
+  if (!files || !files.length) return
+  _bibLoteVideos = {}
+  for (var i = 0; i < files.length; i++) {
+    _bibLoteVideos[files[i].name] = files[i]
+  }
+  var n = files.length
+  document.getElementById('bib-lote-videos-nome').textContent =
+    n + ' ficheiro' + (n !== 1 ? 's' : '') + ' seleccionado' + (n !== 1 ? 's' : '')
+  bibLoteVerificarPronto()
+}
+
+function bibLoteRenderPreview(dados) {
+  var el = document.getElementById('bib-lote-preview')
+  if (!dados.length) { el.style.display = 'none'; return }
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+  html += '<thead><tr style="background:#f3f4f6;">'
+  ;['Ficheiro', 'Título', 'Roteiro', 'Categoria'].forEach(function(h) {
+    html += '<th style="padding:6px 8px;text-align:left;color:#6b7280;font-weight:600;border-bottom:1px solid #e5e7eb;">' + h + '</th>'
+  })
+  html += '</tr></thead><tbody>'
+  dados.forEach(function(r) {
+    var rot = (r.roteiro || '').slice(0, 40) + ((r.roteiro || '').length > 40 ? '…' : '')
+    html += '<tr style="border-bottom:1px solid #f1f5f9;">'
+    html += '<td style="padding:5px 8px;color:#374151;">' + esc(r.path_video || '') + '</td>'
+    html += '<td style="padding:5px 8px;color:#374151;">' + esc(r.titulo || '') + '</td>'
+    html += '<td style="padding:5px 8px;color:#9ca3af;">' + esc(rot) + '</td>'
+    html += '<td style="padding:5px 8px;color:#374151;">' + esc(r.categoria || '') + '</td>'
+    html += '</tr>'
+  })
+  html += '</tbody></table>'
+  el.innerHTML = html
+  el.style.display = 'block'
+}
+
+function bibLoteVerificarPronto() {
+  var pronto = _bibLoteExcelDados.length > 0 && Object.keys(_bibLoteVideos).length > 0
+  var btn = document.getElementById('bib-lote-btn')
+  if (!btn) return
+  btn.style.opacity = pronto ? '1' : '.5'
+  btn.style.pointerEvents = pronto ? 'auto' : 'none'
+}
+
+async function bibLoteSubmit() {
+  if (!_bibLoteExcelDados.length || !Object.keys(_bibLoteVideos).length) return
+  var sd = await sb.auth.getSession()
+  var user = sd.data && sd.data.session && sd.data.session.user
+  if (!user) { alert('Sessão expirada.'); return }
+
+  var btn = document.getElementById('bib-lote-btn')
+  btn.textContent = '⏳ A processar...'; btn.disabled = true
+
+  var progresso = document.getElementById('bib-lote-progresso')
+  var progBar   = document.getElementById('bib-lote-prog-bar')
+  var progLabel = document.getElementById('bib-lote-prog-label')
+  var logEl     = document.getElementById('bib-lote-log')
+  progresso.style.display = 'block'; logEl.innerHTML = ''
+
+  var total = _bibLoteExcelDados.length
+  var sucesso = 0; var erros = 0
+
+  function log(msg, cor) {
+    var linha = document.createElement('div')
+    linha.style.color = cor || '#6b7280'
+    linha.textContent = msg
+    logEl.appendChild(linha)
+    logEl.scrollTop = logEl.scrollHeight
+  }
+
+  for (var i = 0; i < _bibLoteExcelDados.length; i++) {
+    var row = _bibLoteExcelDados[i]
+    var nomeVid = (row.path_video || '').trim()
+    var file = _bibLoteVideos[nomeVid]
+    progBar.style.width = Math.round((i / total) * 100) + '%'
+    progLabel.textContent = 'A processar ' + (i + 1) + ' de ' + total + ': ' + nomeVid
+
+    if (!file) {
+      log('⚠️ ' + nomeVid + ' — ficheiro não encontrado', '#f59e0b')
+      erros++; continue
+    }
+
+    try {
+      var ext = nomeVid.split('.').pop().toLowerCase()
+      var path = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
+      var vidUrl = await bibUploadVideoSDK(file, path, null, null,
+        { userId: user.id, categoria: row.categoria, descricao: row.titulo })
+      if (!vidUrl) throw new Error('Upload R2 falhou')
+
+      var thumbUrl = await bibCaptureAndUploadThumb(file, user.id, i)
+      var meta = await bibGetVideoMeta(file)
+      var roteiro = (row.roteiro || '').trim()
+
+      var { error } = await sb.from('biblioteca_imagens').insert({
+        url:              vidUrl,
+        thumbnail_url:    thumbUrl || null,
+        tipo:             'video',
+        titulo:           (row.titulo || '').trim() || nomeVid,
+        roteiro:          roteiro || null,
+        categoria:        (row.categoria || '').trim() || null,
+        formato_video:    meta ? meta.formato : null,
+        duracao_segundos: meta ? meta.duracao : null,
+        resolucao:        meta ? meta.resolucao : null,
+        tamanho_bytes:    file.size,
+        status_video:     roteiro ? 'pronto' : 'aguarda_texto',
+        origem:           'upload',
+        user_id:          user.id
+      })
+      if (error) throw error
+
+      log('✅ ' + nomeVid + (roteiro ? ' (com roteiro)' : ' (sem roteiro)'), '#059669')
+      sucesso++
+    } catch(err) {
+      log('❌ ' + nomeVid + ' — ' + err.message, '#dc2626')
+      erros++
+    }
+  }
+
+  progBar.style.width = '100%'
+  progLabel.textContent = 'Concluído — ' + sucesso + '/' + total + ' carregados'
+    + (erros ? ', ' + erros + ' erro' + (erros !== 1 ? 's' : '') : '')
+  log('─────────────────────', '#e5e7eb')
+  log('Total: ' + sucesso + '/' + total, sucesso === total ? '#059669' : '#f59e0b')
+
+  btn.textContent = '✅ Concluído'; btn.disabled = false
+  typeof bibRender === 'function' && bibRender()
+
+  setTimeout(function() {
+    btn.textContent = '📦 Iniciar Upload em Lote'
+    _bibLoteExcelDados = []; _bibLoteVideos = {}
+    document.getElementById('bib-lote-excel').value = ''
+    document.getElementById('bib-lote-videos').value = ''
+    document.getElementById('bib-lote-excel-nome').textContent = 'Escolher ficheiro .xlsx'
+    document.getElementById('bib-lote-videos-nome').textContent = 'Escolher vídeos'
+    document.getElementById('bib-lote-preview').style.display = 'none'
+    progresso.style.display = 'none'
+    bibLoteVerificarPronto()
+  }, 5000)
 }
 </script>
 
