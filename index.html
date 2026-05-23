@@ -4918,6 +4918,9 @@ function bibOpenUpload() {
   document.getElementById('bib-upload-desc').value = ''
   document.getElementById('bib-upload-msg').textContent = ''
   document.getElementById('bib-upload-cat').value = ''
+  var sb1 = document.getElementById('bib-upload-btn'); if (sb1) sb1.style.display = ''
+  var rr = document.getElementById('bib-roteiro-row'); if (rr) rr.style.display = 'none'
+  var tr = document.getElementById('bib-titulo-row');  if (tr) tr.style.display = 'none'
   bibSetUploadTipo('video')
   document.getElementById('bib-upload-modal').classList.add('open')
 }
@@ -5063,22 +5066,40 @@ function bibOnDrop(e) {
 }
 
 async function bibRenderUploadPreviews() {
-  var wrap = document.getElementById('bib-upload-previews')
-  var fmtDiv = document.getElementById('bib-vid-format-info')
+  var wrap    = document.getElementById('bib-upload-previews')
+  var fmtDiv  = document.getElementById('bib-vid-format-info')
+  var sbBtn   = document.getElementById('bib-upload-btn')
+  var roteiroRow = document.getElementById('bib-roteiro-row')
+  var tituloRow  = document.getElementById('bib-titulo-row')
+
+  var videos = _bibUploadFiles.filter(function(f) { return _bibIsVideo(f) })
+
+  // ── MODO MULTI-VÍDEO (2+ vídeos) ────────────────────────────
+  if (videos.length > 1) {
+    if (roteiroRow) roteiroRow.style.display = 'none'
+    if (tituloRow)  tituloRow.style.display  = 'none'
+    if (fmtDiv)   { fmtDiv.style.display = 'none'; fmtDiv.innerHTML = '' }
+    if (sbBtn)     sbBtn.style.display = 'none'
+    wrap.innerHTML = bibBuildMultiListaHtml()
+    return
+  }
+
+  // ── MODO SINGLE (1 ficheiro ou só imagens) ───────────────────
+  if (sbBtn) sbBtn.style.display = ''
+
   wrap.innerHTML = _bibUploadFiles.map(function(f) {
     if (_bibIsVideo(f)) {
       return '<div style="width:72px;height:72px;border-radius:6px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:1.6rem;border:1.5px solid #e0e6f0;flex-shrink:0">🎬</div>'
     }
     return '<img class="bib-upload-thumb" src="' + URL.createObjectURL(f) + '" alt="">'
   }).join('')
+
   var hasVideo = !!_bibUploadFiles.find(function(f) { return _bibIsVideo(f) })
-  var roteiroRow = document.getElementById('bib-roteiro-row')
-  var tituloRow = document.getElementById('bib-titulo-row')
   if (roteiroRow) roteiroRow.style.display = hasVideo ? '' : 'none'
-  if (tituloRow) tituloRow.style.display = hasVideo ? '' : 'none'
+  if (tituloRow)  tituloRow.style.display  = hasVideo ? '' : 'none'
   if (!hasVideo) {
     var rt = document.getElementById('bib-upload-roteiro'); if (rt) rt.value = ''
-    var ti = document.getElementById('bib-upload-titulo'); if (ti) ti.value = ''
+    var ti = document.getElementById('bib-upload-titulo');  if (ti) ti.value = ''
   }
 
   if (fmtDiv) {
@@ -5092,6 +5113,156 @@ async function bibRenderUploadPreviews() {
       fmtDiv.style.display = 'none'
       fmtDiv.innerHTML = ''
     }
+  }
+}
+
+function bibBuildMultiListaHtml() {
+  var catOpts = (_categorias || [])
+    .filter(function(c) { return c.activa !== false })
+    .map(function(c) {
+      return '<option value="' + esc(c.slug) + '">' + esc((c.emoji ? c.emoji + ' ' : '') + c.label) + '</option>'
+    }).join('')
+
+  var html = ''
+
+  // Categoria global
+  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
+  html += '<label style="font-size:11px;font-weight:700;color:#6b7280;white-space:nowrap;">CATEGORIA (todos)</label>'
+  html += '<select id="bib-multi-cat-global" onchange="bibMultiSincronizarCat(this.value)"'
+  html += ' style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">'
+  html += '<option value="">— Sem categoria —</option>' + catOpts
+  html += '</select>'
+  html += '</div>'
+
+  // Lista de ficheiros
+  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">'
+  _bibUploadFiles.forEach(function(f, i) {
+    var nomeSemExt = f.name.replace(/\.[^/.]+$/, '')
+    var icone = _bibIsVideo(f) ? '🎬' : '📸'
+    html += '<div id="bib-multi-item-' + i + '"'
+    html += ' style="display:flex;align-items:center;gap:8px;padding:8px 10px;'
+    html += 'background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">'
+    html += '<span style="font-size:1.1rem;flex-shrink:0;">' + icone + '</span>'
+    html += '<input type="text" id="bib-multi-titulo-' + i + '" value="' + esc(nomeSemExt) + '"'
+    html += ' placeholder="Título..." '
+    html += ' style="flex:1;min-width:0;padding:5px 8px;border:1px solid #d1d5db;'
+    html += 'border-radius:6px;font-size:12px;color:#374151;">'
+    html += '<select id="bib-multi-cat-' + i + '"'
+    html += ' style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;'
+    html += 'font-size:12px;max-width:130px;color:#374151;">'
+    html += '<option value="">Sem cat.</option>' + catOpts
+    html += '</select>'
+    html += '<span id="bib-multi-status-' + i + '"'
+    html += ' style="font-size:11px;color:#9ca3af;white-space:nowrap;min-width:80px;text-align:right;">'
+    html += '⏳ Por carregar</span>'
+    html += '</div>'
+  })
+  html += '</div>'
+
+  // Botão carregar todos
+  html += '<button id="bib-multi-btn" onclick="bibCarregarTodosVideos()"'
+  html += ' style="width:100%;padding:12px;background:#0A3D62;color:#fff;border:none;'
+  html += 'border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">'
+  html += '📤 Carregar ' + _bibUploadFiles.length + ' ficheiros'
+  html += '</button>'
+
+  return html
+}
+
+function bibMultiSincronizarCat(val) {
+  for (var i = 0; i < _bibUploadFiles.length; i++) {
+    var sel = document.getElementById('bib-multi-cat-' + i)
+    if (sel) sel.value = val
+  }
+}
+
+async function bibCarregarTodosVideos() {
+  var sd = await sb.auth.getSession()
+  var user = sd.data && sd.data.session && sd.data.session.user
+  if (!user) { alert('Sessão expirada.'); return }
+
+  var btn = document.getElementById('bib-multi-btn')
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ A processar...' }
+
+  var sucesso = 0; var erros = 0
+
+  for (var i = 0; i < _bibUploadFiles.length; i++) {
+    var f = _bibUploadFiles[i]
+    var statusEl = document.getElementById('bib-multi-status-' + i)
+    var tituloEl = document.getElementById('bib-multi-titulo-' + i)
+    var catEl    = document.getElementById('bib-multi-cat-' + i)
+    var titulo   = (tituloEl && tituloEl.value.trim()) || f.name.replace(/\.[^/.]+$/, '')
+    var cat      = (catEl && catEl.value) || ''
+
+    if (statusEl) { statusEl.style.color = '#6b7280'; statusEl.textContent = '⏳ A carregar...' }
+
+    try {
+      if (_bibIsVideo(f)) {
+        var ext    = f.name.split('.').pop().toLowerCase()
+        var path   = user.id + '/vid_' + Date.now() + '_' + i + '.' + ext
+        var vidUrl = await bibUploadVideoSDK(f, path, null, null, { userId: user.id })
+        if (!vidUrl) throw new Error('Upload R2 falhou')
+
+        var thumbUrl = await bibCaptureAndUploadThumb(f, user.id, i)
+        var meta     = await bibGetVideoMeta(f)
+
+        var { error } = await sb.from('biblioteca_imagens').insert({
+          url:              vidUrl,
+          thumbnail_url:    thumbUrl || null,
+          tipo:             'video',
+          titulo:           titulo,
+          roteiro:          null,
+          categoria:        cat || null,
+          formato_video:    meta ? meta.formato : null,
+          duracao_segundos: meta ? meta.duracao : null,
+          resolucao:        meta ? meta.resolucao : null,
+          tamanho_bytes:    f.size,
+          status_video:     'aguarda_texto',
+          origem:           'upload',
+          user_id:          user.id
+        })
+        if (error) throw error
+
+      } else {
+        // Imagem
+        var imgExt  = f.name.split('.').pop().toLowerCase()
+        var imgPath = user.id + '/' + Date.now() + '_' + i + '.' + imgExt
+        var { error: upErr } = await sb.storage.from('biblioteca-imagens').upload(imgPath, f, { upsert: true })
+        if (upErr) throw upErr
+        var { data: pub } = sb.storage.from('biblioteca-imagens').getPublicUrl(imgPath)
+        var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
+          user_id: user.id, url: pub.publicUrl, titulo: titulo,
+          categoria: cat || null, origem: 'upload', tipo: 'imagem', tamanho_bytes: f.size
+        })
+        if (dbErr) throw dbErr
+      }
+
+      if (statusEl) { statusEl.style.color = '#059669'; statusEl.textContent = '✅ Carregado' }
+      // Marcar linha com fundo verde subtil
+      var row = document.getElementById('bib-multi-item-' + i)
+      if (row) row.style.background = '#f0fdf4'
+      sucesso++
+
+    } catch(err) {
+      console.error('[bibCarregarTodosVideos] item ' + i, err)
+      if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = '❌ Erro' }
+      var rowE = document.getElementById('bib-multi-item-' + i)
+      if (rowE) rowE.style.background = '#fef2f2'
+      erros++
+    }
+  }
+
+  if (btn) {
+    btn.textContent = sucesso + '/' + _bibUploadFiles.length + ' carregados'
+      + (erros ? ' · ' + erros + ' erro' + (erros !== 1 ? 's' : '') : '')
+    btn.disabled = false
+  }
+
+  typeof bibRender === 'function' && bibRender()
+
+  // Fechar automaticamente se tudo correu bem
+  if (!erros) {
+    setTimeout(function() { bibCloseUpload(); bibLoad() }, 1800)
   }
 }
 
