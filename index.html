@@ -857,15 +857,6 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <button class="ig-fmt-btn active" id="ig-fmt-unico" onclick="igSetFormato('unico')">Post Único</button>
             <button class="ig-fmt-btn" id="ig-fmt-carrossel" onclick="igSetFormato('carrossel')">🎠 Carrossel</button>
           </div>
-          <div id="ig-slides-row" style="display:none;align-items:center;gap:8px;margin-top:8px;">
-            <label style="font-size:12px;color:#6b7280;white-space:nowrap;">Nº de slides:</label>
-            <input type="range" id="ig-slides-num" min="3" max="10" value="5"
-              oninput="document.getElementById('ig-slides-label').textContent=this.value"
-              style="width:100px;accent-color:#0A3D62;">
-            <span id="ig-slides-label" style="font-size:13px;font-weight:700;color:#0A3D62;min-width:16px;">5</span>
-            <span style="font-size:11px;color:#9ca3af;">slides</span>
-          </div>
-
           <!-- 4. ESTILO DOS SLIDES (carrossel only) -->
           <div class="cont-field" id="tmpl-selector-row" style="display:none">
             <label class="cont-label">Estilo dos slides</label>
@@ -1013,10 +1004,20 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
               <!-- Instagram -->
               <div class="formato-row ig-row" id="row-ig">
                 <div class="formato-rede-label ig">📸 Instagram</div>
-                <div class="formato-opcoes">
-                  <button class="formato-btn ig-btn selected" onclick="selectFormato('ig','imagem',this)">🖼 Imagem+Texto</button>
-                  <button class="formato-btn ig-btn" onclick="selectFormato('ig','carrossel',this)">🎠 Carrossel</button>
-                  <button class="formato-btn ig-btn" onclick="selectFormato('ig','video',this)">🎬 Reels</button>
+                <div style="flex:1;">
+                  <div class="formato-opcoes">
+                    <button class="formato-btn ig-btn selected" onclick="selectFormato('ig','imagem',this)">🖼 Imagem+Texto</button>
+                    <button class="formato-btn ig-btn" onclick="selectFormato('ig','carrossel',this)">🎠 Carrossel</button>
+                    <button class="formato-btn ig-btn" onclick="selectFormato('ig','video',this)">🎬 Reels</button>
+                  </div>
+                  <div id="ig-slides-row" style="display:none;align-items:center;gap:8px;margin-top:8px;">
+                    <label style="font-size:12px;color:#6b7280;white-space:nowrap;">Nº de slides:</label>
+                    <input type="range" id="ig-slides-num" min="3" max="10" value="5"
+                      oninput="document.getElementById('ig-slides-label').textContent=this.value"
+                      style="width:100px;accent-color:#0A3D62;">
+                    <span id="ig-slides-label" style="font-size:13px;font-weight:700;color:#0A3D62;min-width:16px;">5</span>
+                    <span style="font-size:11px;color:#9ca3af;">slides</span>
+                  </div>
                 </div>
               </div>
               <!-- Facebook -->
