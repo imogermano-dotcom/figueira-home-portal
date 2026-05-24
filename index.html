@@ -1167,7 +1167,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div class="cont-box">
         <div class="bib-header">
           <h2>🖼️ Biblioteca de Média</h2>
-          <button class="cont-btn primary" style="padding:8px 16px;font-size:.82rem" onclick="bibOpenUpload()">⬆️ Fazer Upload</button>
+          <button class="cont-btn primary" style="padding:8px 16px;font-size:.82rem" onclick="bibOpenUpload(_bibFilter.tipo)">⬆️ Fazer Upload</button>
         </div>
         <div class="bib-tipo-toggle">
           <button class="bib-tipo-btn active" onclick="bibSetTipo('')">Todos</button>
@@ -1204,17 +1204,22 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <div class="bib-upload-box">
       <h3>⬆️ Adicionar à Biblioteca</h3>
 
-      <!-- Toggle Vídeo / Texto -->
+      <!-- Toggle Vídeo / Foto / Texto -->
       <div style="display:flex;gap:8px;margin-bottom:20px;">
         <button id="btnUploadTipoVideo" onclick="bibSetUploadTipo('video')"
           style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;
                  cursor:pointer;border:2px solid #0A3D62;background:#0A3D62;color:#fff;">
           🎬 Vídeo
         </button>
+        <button id="btnUploadTipoImagem" onclick="bibSetUploadTipo('imagem')"
+          style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;
+                 cursor:pointer;border:2px solid #e5e7eb;background:#fff;color:#6b7280;">
+          📷 Foto
+        </button>
         <button id="btnUploadTipoTexto" onclick="bibSetUploadTipo('texto')"
           style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;
                  cursor:pointer;border:2px solid #e5e7eb;background:#fff;color:#6b7280;">
-          📝 Texto (aguarda vídeo)
+          📝 Texto
         </button>
       </div>
 
@@ -1372,6 +1377,33 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button class="cont-btn secondary" onclick="bibCloseUpload()">Cancelar</button>
           <button type="button" class="cont-btn primary" onclick="bibSubmitTexto(this)">💾 Guardar — aguarda vídeo</button>
         </div>
+      <!-- Painel de fotos -->
+      <div id="painelUploadImagem" style="display:none;">
+        <div class="bib-upload-zone" onclick="document.getElementById('bib-img-input').click()"
+          style="margin-bottom:12px;">
+          <div style="font-size:2rem;margin-bottom:8px">📷</div>
+          <div style="font-size:.88rem;font-weight:600;color:#4b5563">Clica ou arrasta fotos aqui</div>
+          <div style="font-size:.76rem;color:#9ca3af;margin-top:4px;">JPG, PNG, WEBP · máx. 10MB cada</div>
+        </div>
+        <input type="file" id="bib-img-input" accept="image/*" multiple
+          style="display:none;" onchange="bibImgSeleccionar(this)">
+        <div id="bib-img-lista" style="display:none;margin-bottom:12px;
+             max-height:200px;overflow-y:auto;"></div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:11px;font-weight:600;color:#6b7280;
+                        display:block;margin-bottom:4px;">CATEGORIA</label>
+          <select id="bib-img-cat"
+            style="width:100%;padding:8px 12px;border:1px solid #d1d5db;
+                   border-radius:8px;font-size:13px;background:#fff;">
+            <option value="">— Sem categoria —</option>
+          </select>
+        </div>
+        <button onclick="bibImgSubmit()"
+          style="width:100%;padding:11px;background:#0A3D62;color:#fff;
+                 border:none;border-radius:8px;font-size:13px;
+                 font-weight:700;cursor:pointer;">
+          📷 Guardar fotos na Biblioteca
+        </button>
       </div>
 
     </div>
@@ -1980,7 +2012,7 @@ function populateCatSelects() {
     el.innerHTML = filterOpts
     if (cur) el.value = cur
   })
-  ;['cont-categoria','bib-upload-cat','bibTextoCat'].forEach(function(id) {
+  ;['cont-categoria','bib-upload-cat','bibTextoCat','bib-img-cat'].forEach(function(id) {
     var el = document.getElementById(id)
     if (!el) return
     var cur = el.value
@@ -4920,7 +4952,7 @@ async function bibDelete(id) {
   bibRender()
 }
 
-function bibOpenUpload() {
+function bibOpenUpload(tipo) {
   _bibUploadFiles = []
   document.getElementById('bib-upload-previews').innerHTML = ''
   document.getElementById('bib-upload-desc').value = ''
@@ -4929,7 +4961,7 @@ function bibOpenUpload() {
   var sb1 = document.getElementById('bib-upload-btn'); if (sb1) sb1.style.display = ''
   var rr = document.getElementById('bib-roteiro-row'); if (rr) rr.style.display = 'none'
   var tr = document.getElementById('bib-titulo-row');  if (tr) tr.style.display = 'none'
-  bibSetUploadTipo('video')
+  bibSetUploadTipo(tipo === 'imagem' ? 'imagem' : 'video')
   document.getElementById('bib-upload-modal').classList.add('open')
 }
 
@@ -4957,15 +4989,20 @@ function estimarDuracaoRoteiro(textarea) {
 }
 
 function bibSetUploadTipo(tipo) {
-  var isTexto = tipo === 'texto'
-  var btnV = document.getElementById('btnUploadTipoVideo')
-  var btnT = document.getElementById('btnUploadTipoTexto')
-  var pV   = document.getElementById('painelUploadVideo')
-  var pT   = document.getElementById('painelUploadTexto')
-  if (btnV) { btnV.style.background = isTexto ? '#fff' : '#0A3D62'; btnV.style.color = isTexto ? '#6b7280' : '#fff'; btnV.style.borderColor = isTexto ? '#e5e7eb' : '#0A3D62' }
-  if (btnT) { btnT.style.background = isTexto ? '#0A3D62' : '#fff'; btnT.style.color = isTexto ? '#fff' : '#6b7280'; btnT.style.borderColor = isTexto ? '#0A3D62' : '#e5e7eb' }
-  if (pV) pV.style.display = isTexto ? 'none' : 'block'
-  if (pT) pT.style.display = isTexto ? 'block' : 'none'
+  var ids  = ['video', 'imagem', 'texto']
+  var btns = { video: 'btnUploadTipoVideo', imagem: 'btnUploadTipoImagem', texto: 'btnUploadTipoTexto' }
+  var paineis = { video: 'painelUploadVideo', imagem: 'painelUploadImagem', texto: 'painelUploadTexto' }
+  ids.forEach(function(t) {
+    var active = t === tipo
+    var btn = document.getElementById(btns[t])
+    var pan = document.getElementById(paineis[t])
+    if (btn) {
+      btn.style.background   = active ? '#0A3D62' : '#fff'
+      btn.style.color        = active ? '#fff'    : '#6b7280'
+      btn.style.borderColor  = active ? '#0A3D62' : '#e5e7eb'
+    }
+    if (pan) pan.style.display = active ? 'block' : 'none'
+  })
 }
 
 function bibCarregarFicheiroNoUpload(input) {
@@ -6931,6 +6968,76 @@ async function publicarRapidaGuardar(agendar) {
     btn.disabled = false
     btn.textContent = btnOrig
   }
+}
+
+// ── Upload de Fotos ────────────────────────────────────────────────────────────
+function bibImgSeleccionar(input) {
+  var files = input.files
+  if (!files || !files.length) return
+  var lista = document.getElementById('bib-img-lista')
+  lista.innerHTML = ''
+  lista.style.display = 'block'
+  window._bibImgFiles = Array.from(files)
+  Array.from(files).forEach(function(f, i) {
+    var row = document.createElement('div')
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;'
+    row.innerHTML = '<span style="font-size:18px;">📷</span>'
+      + '<div style="flex:1;">'
+      + '<input type="text" id="bib-img-titulo-' + i + '"'
+      + ' value="' + esc(f.name.replace(/\.[^.]+$/, '')) + '"'
+      + ' style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">'
+      + '</div>'
+      + '<span style="font-size:11px;color:#9ca3af;">'
+      + (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + 'MB' : (f.size / 1024).toFixed(0) + 'KB')
+      + '</span>'
+      + '<span id="bib-img-status-' + i + '" style="font-size:14px;">⏳</span>'
+    lista.appendChild(row)
+  })
+}
+
+async function bibImgSubmit() {
+  var files = window._bibImgFiles
+  if (!files || !files.length) return
+  var cat = (document.getElementById('bib-img-cat') || {}).value || ''
+  var sd  = await sb.auth.getSession()
+  var user = sd.data && sd.data.session && sd.data.session.user
+  if (!user) { alert('Sessão expirada.'); return }
+
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i]
+    var tituloEl = document.getElementById('bib-img-titulo-' + i)
+    var titulo   = (tituloEl && tituloEl.value.trim()) || f.name.replace(/\.[^.]+$/, '')
+    var statusEl = document.getElementById('bib-img-status-' + i)
+    try {
+      var ext  = f.name.split('.').pop().toLowerCase()
+      var path = user.id + '/' + Date.now() + '_' + i + '.' + ext
+      var { error: upErr } = await sb.storage
+        .from('biblioteca-imagens')
+        .upload(path, f, { contentType: f.type, upsert: false })
+      if (upErr) throw upErr
+      var { data: urlData } = sb.storage.from('biblioteca-imagens').getPublicUrl(path)
+      var { error: dbErr } = await sb.from('biblioteca_imagens').insert({
+        url:          urlData.publicUrl,
+        tipo:         'imagem',
+        titulo:       titulo,
+        categoria:    cat || null,
+        origem:       'upload',
+        user_id:      user.id,
+        tamanho_bytes: f.size
+      })
+      if (dbErr) throw dbErr
+      if (statusEl) statusEl.textContent = '✅'
+    } catch(err) {
+      console.error('[bibImgSubmit]', err)
+      if (statusEl) statusEl.textContent = '❌'
+    }
+  }
+  setTimeout(function() {
+    document.getElementById('bib-upload-modal').classList.remove('open')
+    window._bibImgFiles = []
+    bibRender()
+    _mostrarToast('✅ Fotos guardadas na Biblioteca!', '#059669')
+  }, 1500)
 }
 
 // ── Upload em Lote ─────────────────────────────────────────────────────────────
