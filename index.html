@@ -3402,10 +3402,12 @@ async function contGerar() {
     }
     btn.textContent = '⏳ A gerar conteúdo...'
     var { data: { session } } = await sb.auth.getSession()
+    var _payload = { texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') }, texto_fixo: _contTextoFixo || false, ig_num_slides: redesActivas.ig && _igFormato === 'carrossel' ? parseInt((document.getElementById('ig-slides-num') || {}).value || '5') : undefined }
+    console.log('[contGerar] payload:', JSON.stringify({ ..._payload, texto_base: (_payload.texto_base || '').slice(0, 50) }))
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') }, texto_fixo: _contTextoFixo || false, ig_num_slides: redesActivas.ig && _igFormato === 'carrossel' ? parseInt((document.getElementById('ig-slides-num') || {}).value || '5') : undefined })
+      body: JSON.stringify(_payload)
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
