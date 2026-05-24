@@ -857,6 +857,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <button class="ig-fmt-btn active" id="ig-fmt-unico" onclick="igSetFormato('unico')">Post Único</button>
             <button class="ig-fmt-btn" id="ig-fmt-carrossel" onclick="igSetFormato('carrossel')">🎠 Carrossel</button>
           </div>
+          <div id="ig-slides-row" style="display:none;align-items:center;gap:8px;margin-top:8px;">
+            <label style="font-size:12px;color:#6b7280;white-space:nowrap;">Nº de slides:</label>
+            <input type="range" id="ig-slides-num" min="3" max="10" value="5"
+              oninput="document.getElementById('ig-slides-label').textContent=this.value"
+              style="width:100px;accent-color:#0A3D62;">
+            <span id="ig-slides-label" style="font-size:13px;font-weight:700;color:#0A3D62;min-width:16px;">5</span>
+            <span style="font-size:11px;color:#9ca3af;">slides</span>
+          </div>
 
           <!-- 4. ESTILO DOS SLIDES (carrossel only) -->
           <div class="cont-field" id="tmpl-selector-row" style="display:none">
@@ -2545,6 +2553,8 @@ function igSetFormato(fmt) {
   document.getElementById('ig-fmt-unico').className = 'ig-fmt-btn' + (fmt === 'unico' ? ' active' : '')
   document.getElementById('ig-fmt-carrossel').className = 'ig-fmt-btn' + (fmt === 'carrossel' ? ' active' : '')
   document.getElementById('tmpl-selector-row').style.display = fmt === 'carrossel' ? '' : 'none'
+  var igSlidesRow = document.getElementById('ig-slides-row')
+  if (igSlidesRow) igSlidesRow.style.display = fmt === 'carrossel' ? 'flex' : 'none'
 }
 
 function tmplSet(t) {
@@ -3394,7 +3404,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') }, texto_fixo: _contTextoFixo || false })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') }, texto_fixo: _contTextoFixo || false, ig_num_slides: redesActivas.ig && _igFormato === 'carrossel' ? parseInt((document.getElementById('ig-slides-num') || {}).value || '5') : undefined })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
