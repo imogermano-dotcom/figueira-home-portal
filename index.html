@@ -822,6 +822,22 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="cont-field">
               <label class="cont-label" id="cont-texto-label">Texto base</label>
               <textarea class="cont-textarea" id="cont-texto" rows="6" placeholder="Cola aqui a ficha do imóvel, artigo ou ideia..."></textarea>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
+                              font-size:13px;color:#374151;user-select:none;">
+                  <input type="checkbox" id="cont-texto-fixo"
+                    onchange="contToggleTextoFixo(this.checked)"
+                    style="width:16px;height:16px;accent-color:#0A3D62;cursor:pointer;">
+                  🔒 Manter texto original — Claude não altera, só divide em slides
+                </label>
+              </div>
+              <div id="cont-texto-fixo-aviso"
+                style="display:none;align-items:center;gap:6px;margin-top:6px;
+                       padding:6px 10px;background:#FFFBF0;border:1px solid #F5C518;
+                       border-radius:6px;font-size:12px;color:#92714A;">
+                🔒 Texto fixo — será usado directamente em todas as redes.
+                Instagram: Claude divide em slides sem alterar o conteúdo.
+              </div>
             </div>
             <div id="enriquecerBox" style="margin-top:6px;margin-bottom:4px;">
               <button id="btnEnriquecer" onclick="enriquecerNoticia()"
@@ -3343,6 +3359,19 @@ function contSetCategoria(val) {
   _contCategoria = val || null
 }
 
+var _contTextoFixo = false
+
+function contToggleTextoFixo(activo) {
+  _contTextoFixo = activo
+  var campo = document.getElementById('cont-texto')
+  if (campo) {
+    campo.style.borderColor = activo ? '#F5C518' : ''
+    campo.style.background  = activo ? '#FFFBF0' : ''
+  }
+  var aviso = document.getElementById('cont-texto-fixo-aviso')
+  if (aviso) aviso.style.display = activo ? 'flex' : 'none'
+}
+
 async function contGerar() {
   console.log('[gerar] início — formato:', _igFormato)
   var texto = document.getElementById('cont-texto').value.trim()
@@ -3365,7 +3394,7 @@ async function contGerar() {
     var r = await fetch(EDGE_GERAR, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') } })
+      body: JSON.stringify({ texto_base: texto, redes: redes, formato_instagram: _igFormato, perfil_conteudo: _perfilConteudo, formato: _isVideoPost ? 'video' : undefined, video_formato: _vidBibFormato || undefined, categoria: _contCategoria || undefined, youtube_duracao_segundos: redesActivas.yt ? getDuracaoYt() : undefined, youtube_palavras_alvo: redesActivas.yt ? getPalavrasYt() : undefined, formato_rede: { ig: getFormatoRede('ig'), fb: getFormatoRede('fb'), li: getFormatoRede('li'), tt: getFormatoRede('tt'), yt: getFormatoRede('yt') }, texto_fixo: _contTextoFixo || false })
     })
     var data = await r.json()
     if (!r.ok || !data.success) throw new Error(data.error || 'Erro desconhecido')
