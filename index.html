@@ -2284,7 +2284,7 @@ async function noticiaLoad() {
     dataLimite.setDate(dataLimite.getDate() - _newsDias)
     var fonte = document.getElementById('noticia-fonte-sel')?.value || ''
     var query = client.from(NOTICIAS_TABELAS[_newsCat])
-      .select('id, short_code, titulo, resumo, imagem_url, fonte, likes, data_post')
+      .select('id, short_code, titulo, resumo, imagem_url, instagram_url, fonte, likes, data_post')
       .gte('data_post', dataLimite.toISOString().split('T')[0])
       .order('data_post', { ascending: false })
       .order('likes', { ascending: false, nullsFirst: false })
@@ -2361,7 +2361,10 @@ function noticiaRenderCards() {
       + '<div class="noticia-card-meta">' + esc(r.fonte || '') + ' · ' + noticiaFormatDate(r.data_post) + likes + '</div>'
       + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-top:3px">'
       + (badges ? '<div class="noticia-card-badges">' + badges + '</div>' : '<div></div>')
+      + '<div style="display:flex;align-items:center;gap:4px">'
+      + (r.instagram_url ? '<a href="' + esc(r.instagram_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;padding:4px 10px;background:#fff;border:1px solid #e5e7eb;color:#6b7280;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">🔗 Fonte</a>' : '')
       + '<button class="' + enriqBtnCls + '" onclick="noticiaEnriquecer(\'' + sc + '\',event)"' + (enriq === 'loading' ? ' disabled' : '') + '>' + enriqBtnTxt + '</button>'
+      + '</div>'
       + '</div>'
       + '</div></div>'
 
