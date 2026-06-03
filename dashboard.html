@@ -1888,13 +1888,60 @@ function origYearRow(cat, anos) {
 }
 
 
+// ── Custos por Origem — Supabase ─────────────────────────────────────────────
+const _SB_URL  = 'https://zphasvfopnbzwnaidsnw.supabase.co';
+const _SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODI3NzgsImV4cCI6MjA5MDM1ODc3OH0.tzA42a3Ual4iOKs8riE1x5YoUzBtpSOJ_iQf5GgqjoA';
+let _costsCache = null;  // { "META_2026": { 0: 500, ... }, ... }
+
+async function origFetchCosts() {
+  const r = await fetch(_SB_URL + '/rest/v1/custos_portais?select=origem,ano,mes,valor&order=origem,ano,mes', {
+    headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON }
+  });
+  const rows = await r.json();
+  const out = {};
+  (rows || []).forEach(({ origem, ano, mes, valor }) => {
+    const key = origem + '_' + ano;
+    if (!out[key]) out[key] = {};
+    out[key][mes] = parseFloat(valor);
+  });
+  _costsCache = out;
+  return out;
+}
+
 function origLoadCosts() {
-  try { return JSON.parse(localStorage.getItem('fh_orig_costs') || '{}'); }
-  catch(e) { return {}; }
+  return _costsCache || {};
 }
-function origSaveCosts(costs) {
-  localStorage.setItem('fh_orig_costs', JSON.stringify(costs));
+
+async function origSaveCosts(costs) {
+  // Build upsert payload from full costs object
+  const rows = [];
+  Object.entries(costs).forEach(([key, months]) => {
+    const parts = key.split('_');
+    const ano = parts[parts.length - 1];
+    const origem = parts.slice(0, parts.length - 1).join('_');
+    Object.entries(months).forEach(([mes, valor]) => {
+      if (valor != null) rows.push({ origem, ano, mes: parseInt(mes), valor });
+    });
+  });
+  if (!rows.length) return;
+  const r = await fetch(_SB_URL + '/rest/v1/custos_portais', {
+    method: 'POST',
+    headers: {
+      apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify(rows)
+  });
+  return r.ok;
 }
+
+// Carrega custos do Supabase ao iniciar e re-renderiza tabela
+(async function() {
+  await origFetchCosts();
+  const sec = document.getElementById('orig-costs-section');
+  if (sec) sec.innerHTML = origRenderCosts(new Date().getFullYear().toString());
+})();
 
 function origLastMonth(ano) {
   // Returns last active month index (0-based) for a given year.
@@ -1926,6 +1973,7 @@ function origRenderCosts(ano) {
   costAnos.forEach(a => { tbl += '<option value="'+a+'"'+(a===ano?' selected':'')+'>'+a+'</option>'; });
   tbl += '</select>';
   tbl += '<span style="font-size:.72rem;color:#aaa">Jan → propaga até '+mesesLabel+' &nbsp;·&nbsp; meses futuros bloqueados</span>';
+  tbl += '<button onclick="origGravarCustos(this)" style="margin-left:auto;padding:5px 16px;background:#1a3c5e;color:#fff;border:none;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer">&#128190; Gravar</button>';
   tbl += '</div>';
   tbl += '<table style="border-collapse:collapse;font-size:.78rem">';
   tbl += '<thead><tr style="background:#f0f4f8"><th style="'+thL+'">Origem</th>';
@@ -2007,24 +2055,34 @@ function origCostLive(el) {
 }
 
 function origCostSave(el) {
+  // Apenas actualiza cache local; usar botão Gravar para persistir no Supabase
   const cat = el.dataset.cat, ano = el.dataset.ano, mi = parseInt(el.dataset.mi);
   const val = el.value.trim() === '' ? null : parseFloat(el.value) || 0;
-  const costs = origLoadCosts();
+  if (!_costsCache) _costsCache = {};
   const key = cat + '_' + ano;
   const lastMi = origLastMonth(ano);
-  if (!costs[key]) costs[key] = {};
-  if (val === null) delete costs[key][mi]; else costs[key][mi] = val;
+  if (!_costsCache[key]) _costsCache[key] = {};
+  if (val === null) delete _costsCache[key][mi]; else _costsCache[key][mi] = val;
   if (mi === 0 && val !== null) {
     const row = el.closest('tr');
     if (row) {
       row.querySelectorAll('input[data-mi]').forEach(inp => {
         const m = parseInt(inp.dataset.mi);
-        if (m > 0 && m <= lastMi && inp.value.trim() === '') { inp.value = val; costs[key][m] = val; }
+        if (m > 0 && m <= lastMi && inp.value.trim() === '') { inp.value = val; _costsCache[key][m] = val; }
       });
       origCostLive(el);
     }
   }
-  origSaveCosts(costs);
+}
+
+async function origGravarCustos(btn) {
+  const orig = btn.textContent;
+  btn.textContent = '⏳ A gravar...';
+  btn.disabled = true;
+  const ok = await origSaveCosts(_costsCache || {});
+  btn.textContent = ok ? '✓ Gravado' : '✗ Erro';
+  btn.style.background = ok ? '#27ae60' : '#e74c3c';
+  setTimeout(() => { btn.textContent = '💾 Gravar'; btn.style.background = '#1a3c5e'; btn.disabled = false; }, 2000);
 }
 
 // ── ANALISAR ──────────────────────────────────────────────────────
