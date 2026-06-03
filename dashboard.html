@@ -1889,9 +1889,8 @@ function origYearRow(cat, anos) {
 
 
 // ── Custos por Origem — Supabase ─────────────────────────────────────────────
-const _SB_URL  = 'https://zphasvfopnbzwnaidsnw.supabase.co';
-const _SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODI3NzgsImV4cCI6MjA5MDM1ODc3OH0.tzA42a3Ual4iOKs8riE1x5YoUzBtpSOJ_iQf5GgqjoA';
-let _costsCache = null;  // { "META_2026": { 0: 500, ... }, ... }
+// _SB_URL e _SB_ANON já declarados noutro bloco do ficheiro
+var _costsCache = null;  // { "META_2026": { 0: 500, ... }, ... }
 
 async function origFetchCosts() {
   const r = await fetch(_SB_URL + '/rest/v1/custos_portais?select=origem,ano,mes,valor&order=origem,ano,mes', {
