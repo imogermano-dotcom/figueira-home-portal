@@ -348,12 +348,24 @@ function finInit(){
   anos.forEach(a => { ph += '<button class="fin-pill" data-a="'+a+'" onclick="finPill(this)" style="'+pillStyle(false)+'">'+a+'</button>'; });
   document.getElementById('fin-year-pills').innerHTML = ph;
 
-  const consultores = Object.keys(D.financeiro||{}).sort();
+  buildConsPills('all');
+  finRender();
+}
+
+function buildConsPills(ano){
+  const fin = D.financeiro||{};
+  const pillStyle = (active, col) => {
+    const c = col||'#2d6a9f';
+    return 'padding:5px 13px;border-radius:14px;border:1.5px solid '+(active?c:'#ccc')+';background:'+(active?c:'#fff')+';color:'+(active?'#fff':'#555')+';cursor:pointer;font-size:.8rem;font-weight:600;margin-right:2px';
+  };
+  const consultores = Object.keys(fin).sort().filter(c => ano==='all' ? true : !!(fin[c]&&fin[c][ano]));
   let ch = '<button class="fin-cons-pill active" data-c="all" onclick="finConsPill(this)" style="'+pillStyle(true,'#1a3c5e')+'">Todos</button>';
   consultores.forEach(c => { ch += '<button class="fin-cons-pill" data-c="'+c+'" onclick="finConsPill(this)" style="'+pillStyle(false,'#1a3c5e')+'">'+c+'</button>'; });
   document.getElementById('fin-cons-pills').innerHTML = ch;
-
-  finRender();
+  // reset consultant selection if current selection has no data for this year
+  if(finSelCons !== 'all' && !consultores.includes(finSelCons)){
+    finSelCons = 'all';
+  }
 }
 
 function finPill(btn){
@@ -365,6 +377,7 @@ function finPill(btn){
     if(act) b.classList.add('active'); else b.classList.remove('active');
   });
   finSelAno = btn.dataset.a;
+  buildConsPills(finSelAno);
   finRender();
   const tvSec=document.getElementById('fin-tv-section');
   if(tvSec && tvSec.style.display!=='none') tvRender();
