@@ -1592,7 +1592,7 @@ function origAllAnos() {
 let origMode = 'vend';
 let origCapCache = {};
 
-function origInit() { origAno = 'all'; origMode = 'vend'; origCapCache = {}; origRender(); }
+function origInit() { origAno = 'all'; origMode = 'vend'; origCapCache = {}; origRender(); origInitCosts(); }
 function origSetAno(a) {
   origAno = a;
   origRender();
@@ -1936,12 +1936,13 @@ async function origSaveCosts(costs) {
   return r.ok;
 }
 
-// Carrega custos do Supabase ao iniciar e re-renderiza tabela
-(async function() {
+// Carrega custos do Supabase — chamado quando o tab Origens é aberto
+async function origInitCosts() {
+  if (_costsCache !== null) return; // já carregado
   await origFetchCosts();
   const sec = document.getElementById('orig-costs-section');
   if (sec) sec.innerHTML = origRenderCosts(new Date().getFullYear().toString());
-})();
+}
 
 function origLastMonth(ano) {
   // Returns last active month index (0-based) for a given year.
