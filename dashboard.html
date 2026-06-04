@@ -3342,12 +3342,22 @@ var _PHONE_PREFIX_MAP = [
 _PHONE_PREFIX_MAP.sort(function(a,b){ return b[0].length - a[0].length; });
 
 function _phoneToCountry(tel) {
-  if (!tel) return null;
+  if (!tel || !tel.trim()) return null;
   var t = tel.replace(/[\s\-().]/g,'');
-  if (!t.startsWith('+')) {
-    if (t.startsWith('00')) t = '+' + t.slice(2);
-    else if (t.startsWith('9') || t.startsWith('2')) t = '+351' + t; // assume PT
-    else return null;
+  if (t.startsWith('+')) {
+    // já tem +, usar direto
+  } else if (t.startsWith('00')) {
+    t = '+' + t.slice(2);
+  } else if (t.startsWith('9') || t.startsWith('2')) {
+    t = '+351' + t; // PT sem indicativo
+  } else {
+    // pode ter indicativo sem +: tentar prefixos por longest-match
+    var matched = false;
+    for (var i=0; i<_PHONE_PREFIX_MAP.length; i++) {
+      var code = _PHONE_PREFIX_MAP[i][0].slice(1); // remove o +
+      if (t.startsWith(code)) { t = '+' + t; matched = true; break; }
+    }
+    if (!matched) return null;
   }
   for (var i=0; i<_PHONE_PREFIX_MAP.length; i++) {
     if (t.startsWith(_PHONE_PREFIX_MAP[i][0])) return _PHONE_PREFIX_MAP[i][1];
@@ -3362,13 +3372,14 @@ async function cliOrigInit() {
   if (!wrap) return;
   wrap.innerHTML = '<p style="padding:20px;color:#6b7280">⏳ A carregar...</p>';
 
-  // Fetch telefones + ano de criação — todos os registos com telefone
+  // Fetch telefones + ano de criação — todos os registos (paginação sem filtro URL)
   var allRows = [];
   var pageSize = 5000, offset = 0;
   while (true) {
     var pr = await fetch(
-      _SB_URL + '/rest/v1/oportunidades?select=cliente_telefone,ego_data_criacao&cliente_telefone=not.is.null',
-      { headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON, 'Range': offset+'-'+(offset+pageSize-1), 'Range-Unit': 'items', 'Prefer': 'count=none' } }
+      _SB_URL + '/rest/v1/oportunidades?select=cliente_telefone,ego_data_criacao&order=id',
+      { headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON,
+          'Range': offset+'-'+(offset+pageSize-1), 'Range-Unit': 'items' } }
     );
     var page = await pr.json();
     if (!Array.isArray(page) || !page.length) break;
