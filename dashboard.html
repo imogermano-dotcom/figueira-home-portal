@@ -3362,18 +3362,28 @@ async function cliOrigInit() {
   if (!wrap) return;
   wrap.innerHTML = '<p style="padding:20px;color:#6b7280">⏳ A carregar...</p>';
 
-  // Fetch telefones + ano de criação do Supabase
-  var r = await fetch(_SB_URL + '/rest/v1/oportunidades?select=cliente_telefone,data_criacao_iso&limit=10000', {
-    headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON, 'Range': '0-9999' }
-  });
-  var rows = await r.json();
+  // Fetch telefones + ano de criação — todos os registos com telefone
+  var allRows = [];
+  var pageSize = 5000, offset = 0;
+  while (true) {
+    var pr = await fetch(
+      _SB_URL + '/rest/v1/oportunidades?select=cliente_telefone,ego_data_criacao&cliente_telefone=not.is.null',
+      { headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON, 'Range': offset+'-'+(offset+pageSize-1), 'Range-Unit': 'items', 'Prefer': 'count=none' } }
+    );
+    var page = await pr.json();
+    if (!Array.isArray(page) || !page.length) break;
+    allRows = allRows.concat(page);
+    if (page.length < pageSize) break;
+    offset += pageSize;
+  }
+  var rows = allRows;
 
   // Agregar por ano e país
   var data = {};
   (rows || []).forEach(function(row) {
     var pais = _phoneToCountry(row.cliente_telefone);
     if (!pais) return;
-    var ano = (row.data_criacao_iso || '').slice(0,4);
+    var ano = (row.ego_data_criacao || '').slice(0,4);
     if (!ano || ano === '0000') return;
     if (!data[ano]) data[ano] = {};
     data[ano][pais] = (data[ano][pais] || 0) + 1;
