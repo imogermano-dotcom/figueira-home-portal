@@ -3336,7 +3336,8 @@ var _PHONE_PREFIX_MAP = [
   ['+41','Suíça'],['+32','Bélgica'],['+46','Suécia'],['+47','Noruega'],
   ['+45','Dinamarca'],['+358','Finlândia'],['+55','Brasil'],['+1','EUA/Canadá'],
   ['+61','Austrália'],['+27','África do Sul'],['+52','México'],['+54','Argentina'],
-  ['+48','Polónia'],['+43','Áustria'],['+351','Portugal']
+  ['+48','Polónia'],['+43','Áustria'],['+352','Luxemburgo'],
+  ['+39','Itália'],['+51','Peru'],['+58','Venezuela'],['+65','Singapura'],['+238','Cabo Verde']
 ];
 // ordenar por comprimento desc para longest-match
 _PHONE_PREFIX_MAP.sort(function(a,b){ return b[0].length - a[0].length; });
@@ -3374,12 +3375,12 @@ async function cliOrigInit() {
 
   // Fetch telefones + ano de criação — todos os registos (paginação sem filtro URL)
   var allRows = [];
-  var pageSize = 5000, offset = 0;
+  var pageSize = 1000, offset = 0;
   while (true) {
     var pr = await fetch(
       _SB_URL + '/rest/v1/oportunidades?select=cliente_telefone,ego_data_criacao&order=id',
       { headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON,
-          'Range': offset+'-'+(offset+pageSize-1), 'Range-Unit': 'items' } }
+          'Range': offset+'-'+(offset+pageSize-1), 'Range-Unit': 'items', 'Prefer': 'count=none' } }
     );
     var page = await pr.json();
     if (!Array.isArray(page) || !page.length) break;
