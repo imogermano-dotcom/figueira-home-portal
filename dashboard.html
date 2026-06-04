@@ -3329,15 +3329,62 @@ function _esc(s) {
 var _cliOrigChart = null;
 var _cliOrigInited = false;
 
-function cliOrigInit() {
+// Prefixos telefónicos → país
+var _PHONE_PREFIX_MAP = [
+  ['+351','Portugal'],['+44','Reino Unido'],['+33','França'],['+49','Alemanha'],
+  ['+31','Países Baixos'],['+34','Espanha'],['+39','Itália'],['+353','Irlanda'],
+  ['+41','Suíça'],['+32','Bélgica'],['+46','Suécia'],['+47','Noruega'],
+  ['+45','Dinamarca'],['+358','Finlândia'],['+55','Brasil'],['+1','EUA/Canadá'],
+  ['+61','Austrália'],['+27','África do Sul'],['+52','México'],['+54','Argentina'],
+  ['+48','Polónia'],['+43','Áustria'],['+351','Portugal']
+];
+// ordenar por comprimento desc para longest-match
+_PHONE_PREFIX_MAP.sort(function(a,b){ return b[0].length - a[0].length; });
+
+function _phoneToCountry(tel) {
+  if (!tel) return null;
+  var t = tel.replace(/[\s\-().]/g,'');
+  if (!t.startsWith('+')) {
+    if (t.startsWith('00')) t = '+' + t.slice(2);
+    else if (t.startsWith('9') || t.startsWith('2')) t = '+351' + t; // assume PT
+    else return null;
+  }
+  for (var i=0; i<_PHONE_PREFIX_MAP.length; i++) {
+    if (t.startsWith(_PHONE_PREFIX_MAP[i][0])) return _PHONE_PREFIX_MAP[i][1];
+  }
+  return 'Outro';
+}
+
+async function cliOrigInit() {
   if (_cliOrigInited) return;
   _cliOrigInited = true;
   var wrap = document.getElementById('cliOrig-content');
   if (!wrap) return;
-  var data = (D.clientes_origem) || {};
+  wrap.innerHTML = '<p style="padding:20px;color:#6b7280">⏳ A carregar...</p>';
+
+  // Fetch telefones + ano de criação do Supabase
+  var r = await fetch(_SB_URL + '/rest/v1/oportunidades?select=cliente_telefone,data_criacao_iso&limit=10000', {
+    headers: { apikey: _SB_ANON, Authorization: 'Bearer ' + _SB_ANON, 'Range': '0-9999' }
+  });
+  var rows = await r.json();
+
+  // Agregar por ano e país
+  var data = {};
+  (rows || []).forEach(function(row) {
+    var pais = _phoneToCountry(row.cliente_telefone);
+    if (!pais) return;
+    var ano = (row.data_criacao_iso || '').slice(0,4);
+    if (!ano || ano === '0000') return;
+    if (!data[ano]) data[ano] = {};
+    data[ano][pais] = (data[ano][pais] || 0) + 1;
+  });
+
+  // Guardar em D para cliOrigRender poder usar
+  D.clientes_origem = data;
+
   var anos = Object.keys(data).filter(function(a){ return a && a!=='0000'; }).sort();
   if (!anos.length) {
-    wrap.innerHTML = '<p style="padding:20px;color:#6b7280">Sem dados de nacionalidade. Corre o generate_dashboard.py para actualizar.</p>';
+    wrap.innerHTML = '<p style="padding:20px;color:#6b7280">Sem dados de telefone nas oportunidades.</p>';
     return;
   }
   // Default: todos os anos seleccionados
