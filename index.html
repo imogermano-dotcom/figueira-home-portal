@@ -1578,6 +1578,12 @@ async function loadApp() {
     document.getElementById('tab-config').style.display = 'block'
     document.getElementById('tab-feedback-admin').style.display = 'block'
     document.getElementById('admin-toggle').style.display = ''
+  } else {
+    document.getElementById('tab-conteudos').style.display = 'none'
+    document.getElementById('tab-agendamento').style.display = 'none'
+    document.getElementById('tab-biblioteca').style.display = 'none'
+  }
+  if (isAdmin) {
     // Load all profiles to build color map
     var { data: allProfiles } = await sb.from('profiles').select('user_id,nome,email').order('nome')
     _profilesMap = {}
