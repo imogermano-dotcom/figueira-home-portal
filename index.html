@@ -7039,12 +7039,12 @@ async function olSearch() {
     for (var i = 0; i < refs.length; i += 60) {
       var batch = refs.slice(i, i+60)
       var { data: nb } = await ego.from('notas')
-        .select('oportunidade_ref,nota_data_iso,nota_texto')
+        .select('oportunidade_ref,nota_data_iso,nota_texto,nota_autor')
         .in('oportunidade_ref', batch)
         .order('nota_data_iso', {ascending:false})
       ;(nb||[]).forEach(function(n) {
-        if (!notaMap[n.oportunidade_ref]) notaMap[n.oportunidade_ref] = {data: n.nota_data_iso, preview:[]}
-        if (notaMap[n.oportunidade_ref].preview.length < 4) {
+        if (!notaMap[n.oportunidade_ref]) notaMap[n.oportunidade_ref] = {data: n.nota_data_iso, autor: n.nota_autor, preview:[]}
+        if (notaMap[n.oportunidade_ref].preview.length < 5) {
           var tl = (n.nota_texto||'').toLowerCase()
           var isNoise = tl.indexOf('alteração do estado')>=0 || tl.indexOf('foi feita uma interação')>=0
             || tl === 'outro' || tl === 'outra' || tl === 'ler mais'
@@ -7053,18 +7053,61 @@ async function olSearch() {
       })
     }
 
-    // Ordenar por data da última nota (mais antiga primeiro)
-    old.sort(function(a,b){
-      var da = (notaMap[a.oportunidade_ref]||{}).data || '2000-01-01'
-      var db = (notaMap[b.oportunidade_ref]||{}).data || '2000-01-01'
+    // ── Agrupar por telefone ──────────────────────────────────────────────────
+    var grupoMap = {}
+    old.forEach(function(o) {
+      var tel = (o.cliente_telefone||'').replace(/\s/g,'')
+      if (!tel) return
+      if (!grupoMap[tel]) {
+        grupoMap[tel] = {
+          tel: tel,
+          nome: o.cliente_nome,
+          opps: [],
+          tipos: [],
+          urls: [],
+          lastNotaData: null,
+          lastNotaAutor: null,
+          notaPreview: [],
+          imovelDesc: null,
+          dataCriacao: o.ego_data_criacao
+        }
+      }
+      var g = grupoMap[tel]
+      g.opps.push(o)
+      if (o.tipo_oportunidade && g.tipos.indexOf(o.tipo_oportunidade) < 0) g.tipos.push(o.tipo_oportunidade)
+      if (o.url) g.urls.push({url: o.url, ref: o.oportunidade_ref})
+      // Imóvel: usar o mais recente que tenha descrição
+      if (!g.imovelDesc) {
+        var id = o.preferencia_imovel || (o.imovel_natureza ? o.imovel_natureza + (o.imovel_concelho ? ' · ' + o.imovel_concelho : '') : null)
+        if (id) g.imovelDesc = id
+      }
+      // Acumular notas de todas as oportunidades do grupo
+      var info = notaMap[o.oportunidade_ref]
+      if (info) {
+        if (!g.lastNotaData || info.data > g.lastNotaData) {
+          g.lastNotaData = info.data
+          g.lastNotaAutor = info.autor
+        }
+        ;(info.preview||[]).forEach(function(t) {
+          if (g.notaPreview.length < 5 && g.notaPreview.indexOf(t) < 0) g.notaPreview.push(t)
+        })
+      }
+      // Data criação: usar a mais recente do grupo
+      if (o.ego_data_criacao && (!g.dataCriacao || o.ego_data_criacao > g.dataCriacao)) g.dataCriacao = o.ego_data_criacao
+    })
+
+    var grupos = Object.values(grupoMap)
+
+    // Ordenar: mais antiga data de referência primeiro
+    grupos.sort(function(a,b){
+      var da = a.lastNotaData || a.dataCriacao || '2000-01-01'
+      var db = b.lastNotaData || b.dataCriacao || '2000-01-01'
       return da < db ? -1 : da > db ? 1 : 0
     })
 
-    // Guardar para filtros client-side
-    _olAllData = old
+    _olAllData = grupos
     _olNotaMap = notaMap
 
-    // Mostrar filtros
     var filtersEl = document.getElementById('ol-filters')
     if (filtersEl) filtersEl.style.display = 'flex'
 
@@ -7080,28 +7123,26 @@ function olApplyFilters() {
   var periodo = (document.getElementById('ol-f-periodo')||{}).value || ''
   var notas   = (document.getElementById('ol-f-notas')||{}).value || ''
 
-  var filtered = _olAllData.filter(function(o) {
-    // Filtro tipo
-    if (tipo && o.tipo_oportunidade !== tipo) return false
-    // Filtro período (ano de criação)
+  var filtered = _olAllData.filter(function(g) {
+    // Filtro tipo: pelo menos uma oportunidade do grupo com este tipo
+    if (tipo && g.tipos.indexOf(tipo) < 0) return false
+    // Filtro período: data da última nota ou data criação
     if (periodo) {
       var parts = periodo.split('-')
       var anoMin = parseInt(parts[0]), anoMax = parseInt(parts[1])
-      // Usar data da última nota se existir; caso contrário data de criação
-      var dataRef = (_olNotaMap[o.oportunidade_ref] && _olNotaMap[o.oportunidade_ref].data)
-                    || o.ego_data_criacao || ''
+      var dataRef = g.lastNotaData || g.dataCriacao || ''
       var ano = dataRef ? parseInt(dataRef.slice(0,4)) : 0
       if (ano < anoMin || ano > anoMax) return false
     }
     // Filtro notas
-    if (notas === 'com' && !(_olNotaMap[o.oportunidade_ref] && (_olNotaMap[o.oportunidade_ref].preview||[]).length)) return false
-    if (notas === 'sem' && (_olNotaMap[o.oportunidade_ref] && (_olNotaMap[o.oportunidade_ref].preview||[]).length)) return false
+    if (notas === 'com' && !g.notaPreview.length) return false
+    if (notas === 'sem' && g.notaPreview.length) return false
     return true
   })
 
   var countEl = document.getElementById('ol-count')
-  if (countEl) countEl.textContent = filtered.length + ' oportunidades' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '')
-  olRender(filtered, _olNotaMap)
+  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '')
+  olRender(filtered)
 }
 
 function olResetFilters() {
@@ -7110,51 +7151,49 @@ function olResetFilters() {
   olApplyFilters()
 }
 
-function olRender(opps, notaMap) {
-  if (!opps.length) {
+function olRender(grupos) {
+  if (!grupos.length) {
     document.getElementById('ol-results').innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280">Sem old leads encontradas com os critérios actuais.</div>'
     return
   }
   var html = ''
-  opps.forEach(function(o, idx) {
-    var info = notaMap[o.oportunidade_ref] || {}
-    var lastData = info.data || '—'
-    var preview = (info.preview || []).slice(0,3)
-    var ref = (o.oportunidade_ref||'').replace(/'/g,"&#39;")
-    var tipo = (o.tipo_oportunidade||'').replace(/'/g,"&#39;")
-    var nome = (o.cliente_nome||'').replace(/'/g,"&#39;")
+  grupos.forEach(function(g, idx) {
+    // Responsável = autor da última nota; fallback = responsável da oportunidade mais recente
+    var responsavel = g.lastNotaAutor || (g.opps[g.opps.length-1]||{}).responsavel || '—'
+    var refPrincipal = (g.opps[g.opps.length-1]||{}).oportunidade_ref || ''
+    var tipoPrincipal = (g.opps[g.opps.length-1]||{}).tipo_oportunidade || ''
+    var ref  = refPrincipal.replace(/'/g,"&#39;")
+    var tipo = tipoPrincipal.replace(/'/g,"&#39;")
+    var nome = (g.nome||'').replace(/'/g,"&#39;")
 
     html += '<div class="ol-card" id="ol-card-'+idx+'">'
-    var dataCriacao = o.ego_data_criacao ? o.ego_data_criacao.slice(0,10) : null
     html += '<div class="ol-card-header"><div>'
-    html += '<span class="ol-nome">'+esc(o.cliente_nome||'—')+'</span>'
-    if (o.cliente_telefone) html += '<span class="ol-tel">📞 '+esc(o.cliente_telefone)+'</span>'
+    html += '<span class="ol-nome">'+esc(g.nome||'—')+'</span>'
+    html += '<span class="ol-tel">📞 '+esc(g.tel)+'</span>'
     html += '</div><div class="ol-meta">'
-    if (o.tipo_oportunidade) html += '<span class="ol-tag ol-tag-tipo">'+esc(o.tipo_oportunidade)+'</span>'
-    html += '<span class="ol-tag ol-tag-resp">'+esc(o.responsavel||'—')+'</span>'
-    html += '<span class="ol-tag ol-tag-date">📅 última nota: '+esc(lastData)+'</span>'
-    if (dataCriacao) html += '<span class="ol-tag" style="background:#f0fdf4;color:#166534">🗓 criada: '+esc(dataCriacao)+'</span>'
+    g.tipos.forEach(function(t){ html += '<span class="ol-tag ol-tag-tipo">'+esc(t)+'</span>' })
+    html += '<span class="ol-tag ol-tag-resp">'+esc(responsavel)+'</span>'
+    html += '<span class="ol-tag ol-tag-date">📅 '+esc(g.lastNotaData || '—')+'</span>'
+    if (g.dataCriacao) html += '<span class="ol-tag" style="background:#f0fdf4;color:#166534">🗓 '+esc(g.dataCriacao.slice(0,10))+'</span>'
+    if (g.opps.length > 1) html += '<span class="ol-tag" style="background:#ede9fe;color:#5b21b6">'+g.opps.length+' oport.</span>'
     html += '</div></div>'
-    // Linha de detalhe do imóvel / preferência
-    var imovelDesc = o.preferencia_imovel || (o.imovel_natureza ? o.imovel_natureza + (o.imovel_concelho ? ' · ' + o.imovel_concelho : '') : null)
-    if (imovelDesc || o.etapa_atual) {
-      html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">'
-      if (imovelDesc) html += '<span>🏠 '+esc(imovelDesc)+'</span>'
-      if (imovelDesc && o.etapa_atual) html += ' · '
-      if (o.etapa_atual) html += '<span>'+esc(o.etapa_atual)+'</span>'
-      html += '</div>'
+
+    if (g.imovelDesc) {
+      html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">🏠 '+esc(g.imovelDesc)+'</div>'
     }
 
-    if (preview.length) {
+    if (g.notaPreview.length) {
       html += '<div class="ol-notas-preview" id="ol-prev-'+idx+'">'
-      preview.forEach(function(t){ html += '<div class="ol-nota-line">· '+esc(t)+'</div>' })
+      g.notaPreview.forEach(function(t){ html += '<div class="ol-nota-line">· '+esc(t)+'</div>' })
       html += '</div>'
     } else {
       html += '<div class="ol-no-notas" id="ol-prev-'+idx+'">Sem notas registadas.</div>'
     }
 
     html += '<div class="ol-actions">'
-    if (o.url) html += '<a href="'+esc(o.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO</a>'
+    g.urls.slice(0,2).forEach(function(u,i){
+      html += '<a href="'+esc(u.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO'+(g.urls.length>1?' '+(i+1):'')+'</a>'
+    })
     html += '<button class="ol-btn ol-btn-nota" onclick="olOpenNota('+idx+')">✍️ Registar nota</button>'
     html += '</div>'
 
