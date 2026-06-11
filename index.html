@@ -7095,7 +7095,10 @@ function olApplyFilters() {
     if (periodo) {
       var parts = periodo.split('-')
       var anoMin = parseInt(parts[0]), anoMax = parseInt(parts[1])
-      var ano = o.ego_data_criacao ? parseInt(o.ego_data_criacao.slice(0,4)) : 0
+      // Usar data da última nota se existir; caso contrário data de criação
+      var dataRef = (_olNotaMap[o.oportunidade_ref] && _olNotaMap[o.oportunidade_ref].data)
+                    || o.ego_data_criacao || ''
+      var ano = dataRef ? parseInt(dataRef.slice(0,4)) : 0
       if (ano < anoMin || ano > anoMax) return false
     }
     // Filtro notas
