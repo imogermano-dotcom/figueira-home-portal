@@ -1516,8 +1516,9 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <main>
       <!-- Top bar: quem estou a ligar + toggle settings -->
       <div class="ol-topbar">
-        <label>Quem estás a ligar como?</label>
-        <select id="ol-caller" onchange="olSetCaller()">
+        <span id="ol-caller-display" style="font-size:.85rem;font-weight:600;color:#1a3c5e;"></span>
+        <!-- Só visível para admins: override de identidade (ex: formação) -->
+        <select id="ol-caller" onchange="olSetCaller()" style="display:none">
           <option value="">Selecionar...</option>
         </select>
         <button class="ol-tog-btn" onclick="olToggleSettings()">⚙️ Consultores ativos</button>
@@ -6895,10 +6896,13 @@ window.FeedbackIA={
 // ── Old Leads module ─────────────────────────────────────────────────────────
 var _OL_TODOS_CONSULTORES = ['Alexandra Santos','Alexsandra Ferreira','Ana Daniel','Lina Galvão','Lidia Sousa','Maria José Boia','Miguel Germano','Sandra Silva','Sofia Monteiro']
 var _olAtivos = []
-var _olCaller = localStorage.getItem('ol_caller') || ''
+var _olCaller = ''  // definido em olInit() a partir do perfil autenticado
 
 function _getEgoClient() {
-  if (!window.__sbEgo) window.__sbEgo = supabase.createClient(EGO_FB_URL, EGO_FB_KEY)
+  if (!window.__sbEgo) window.__sbEgo = supabase.createClient(
+    'https://zphasvfopnbzwnaidsnw.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODI3NzgsImV4cCI6MjA5MDM1ODc3OH0.tzA42a3Ual4iOKs8riE1x5YoUzBtpSOJ_iQf5GgqjoA'
+  )
   return window.__sbEgo
 }
 
@@ -6907,16 +6911,31 @@ async function olInit() {
   var { data } = await ego.from('sim_settings').select('value').eq('key','consultores_ativos').maybeSingle()
   _olAtivos = (data && data.value && data.value.lista) || []
 
-  // Populate caller dropdown with active consultants
+  // Caller: usar o utilizador autenticado; admins podem fazer override
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+  var defaultCaller = (_profile && _profile.nome) || ''
+  var display = document.getElementById('ol-caller-display')
   var sel = document.getElementById('ol-caller')
-  if (sel) {
-    sel.innerHTML = '<option value="">Selecionar...</option>'
-    _olAtivos.forEach(function(c) {
-      var opt = document.createElement('option')
-      opt.value = c; opt.textContent = c
-      if (c === _olCaller) opt.selected = true
-      sel.appendChild(opt)
-    })
+
+  if (isAdmin) {
+    // Admin: mostrar dropdown com todos os consultores ativos + opção de override
+    _olCaller = sel ? (sel.value || defaultCaller) : defaultCaller
+    if (sel) {
+      sel.style.display = 'inline-block'
+      sel.innerHTML = '<option value="">Selecionar...</option>'
+      _olAtivos.forEach(function(c) {
+        var opt = document.createElement('option')
+        opt.value = c; opt.textContent = c
+        if (c === _olCaller) opt.selected = true
+        sel.appendChild(opt)
+      })
+    }
+    if (display) display.textContent = '👤 A ligar como:'
+  } else {
+    // Consultor normal: usar o nome do perfil, sem dropdown
+    _olCaller = defaultCaller
+    if (sel) sel.style.display = 'none'
+    if (display) display.textContent = '👤 A ligar como: ' + (defaultCaller || '—')
   }
 
   // Populate settings checkboxes
@@ -6946,8 +6965,9 @@ async function olSaveSettings() {
 }
 
 function olSetCaller() {
-  _olCaller = document.getElementById('ol-caller').value
-  localStorage.setItem('ol_caller', _olCaller)
+  // Apenas para admins (dropdown visível)
+  var sel = document.getElementById('ol-caller')
+  if (sel) _olCaller = sel.value || ((_profile && _profile.nome) || '')
 }
 
 async function olSearch() {
