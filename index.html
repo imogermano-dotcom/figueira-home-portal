@@ -1528,7 +1528,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div id="ol-settings-panel" style="display:none">
         <div class="ol-settings-box">
           <h3>Consultores ativos</h3>
-          <p>Os consultores ativos são excluídos da lista — só aparecem oportunidades de consultores que já não estão na equipa.</p>
+          <p>Define quem está na equipa — estes nomes aparecem no campo "A ligar como" ao registar uma nota.</p>
           <div class="ol-check-grid" id="ol-consultores-checks"></div>
           <button class="ol-load-btn" onclick="olSaveSettings()">💾 Guardar</button>
         </div>
@@ -7019,26 +7019,18 @@ async function olSearch() {
     var { data: recentRaw } = await ego.from('notas').select('oportunidade_ref').gte('nota_data_iso', cutoff)
     var recentRefs = new Set((recentRaw||[]).map(function(n){return n.oportunidade_ref}).filter(Boolean))
 
-    // Oportunidades não ganhas de consultores inativos
-    var inativos = _OL_TODOS_CONSULTORES.filter(function(c){ return _olAtivos.indexOf(c) < 0 })
-    if (!inativos.length) {
-      res.innerHTML = '<div style="padding:30px;text-align:center;color:#6b7280">Todos os consultores estão marcados como ativos.</div>'
-      if (btn) { btn.disabled = false; btn.textContent = '🔄 Carregar Old Leads' }
-      return
-    }
-
+    // Todas as oportunidades não ganhas com telefone — sem filtro de consultor
     var q = ego.from('oportunidades')
       .select('oportunidade_ref,tipo_oportunidade,cliente_nome,cliente_telefone,cliente_email,responsavel,etapa_atual,oportunidade_estado,preferencia_imovel,ego_data_criacao,url,imovel_natureza,imovel_concelho,imovel_distrito')
       .neq('oportunidade_estado','Ganha')
-      .in('responsavel', inativos)
       .not('cliente_telefone', 'is', null)
       .order('ego_data_criacao', {ascending:true})
-      .limit(500)
+      .limit(1000)
 
     var { data: opps, error } = await q
     if (error) throw error
 
-    // Filtrar os que não têm nota recente
+    // Só as que não tiveram nota nos últimos 360 dias
     var old = (opps||[]).filter(function(o){ return !recentRefs.has(o.oportunidade_ref) })
 
     // Buscar últimas notas por batch
