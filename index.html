@@ -7056,14 +7056,23 @@ function olRender(opps, notaMap) {
     var nome = (o.cliente_nome||'').replace(/'/g,"&#39;")
 
     html += '<div class="ol-card" id="ol-card-'+idx+'">'
+    var dataCriacao = o.ego_data_criacao ? o.ego_data_criacao.slice(0,10) : null
     html += '<div class="ol-card-header"><div>'
     html += '<span class="ol-nome">'+esc(o.cliente_nome||'—')+'</span>'
     if (o.cliente_telefone) html += '<span class="ol-tel">📞 '+esc(o.cliente_telefone)+'</span>'
     html += '</div><div class="ol-meta">'
     if (o.tipo_oportunidade) html += '<span class="ol-tag ol-tag-tipo">'+esc(o.tipo_oportunidade)+'</span>'
     html += '<span class="ol-tag ol-tag-resp">'+esc(o.responsavel||'—')+'</span>'
-    html += '<span class="ol-tag ol-tag-date">📅 '+esc(lastData)+'</span>'
+    html += '<span class="ol-tag ol-tag-date">📅 última nota: '+esc(lastData)+'</span>'
+    if (dataCriacao) html += '<span class="ol-tag" style="background:#f0fdf4;color:#166534">🗓 criada: '+esc(dataCriacao)+'</span>'
     html += '</div></div>'
+    if (o.preferencia_imovel || o.etapa_atual) {
+      html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">'
+      if (o.preferencia_imovel) html += '<span>🏠 '+esc(o.preferencia_imovel)+'</span>'
+      if (o.preferencia_imovel && o.etapa_atual) html += ' · '
+      if (o.etapa_atual) html += '<span>'+esc(o.etapa_atual)+'</span>'
+      html += '</div>'
+    }
 
     if (preview.length) {
       html += '<div class="ol-notas-preview" id="ol-prev-'+idx+'">'
