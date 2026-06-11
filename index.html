@@ -7222,7 +7222,6 @@ function abrirModalPublicacaoRapida(r) {
   document.getElementById('pub-rapida-titulo').value = r.titulo || ''
   document.getElementById('pub-rapida-roteiro').value = r.roteiro || ''
   document.getElementById('pub-rapida-data').value = ''
-
   document.getElementById('pub-rapida-video').innerHTML = r.url
     ? '<video src="' + esc(r.url) + '" controls playsinline style="width:100%;border-radius:8px;max-height:240px;background:#000;"></video>'
     : '<div style="height:120px;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:32px;">🎬</div>'
