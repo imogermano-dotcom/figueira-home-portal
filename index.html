@@ -1540,6 +1540,38 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <span class="ol-count" id="ol-count"></span>
       </div>
 
+      <!-- Filtros (visíveis após carregar) -->
+      <div id="ol-filters" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">TIPO</label>
+          <select id="ol-f-tipo" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
+            <option value="">Todos</option>
+            <option value="Angariação">Angariação</option>
+            <option value="Venda">Venda</option>
+            <option value="Arrendamento">Arrendamento</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">PERÍODO</label>
+          <select id="ol-f-periodo" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
+            <option value="">Todos</option>
+            <option value="2015-2018">2015–2018</option>
+            <option value="2019-2021">2019–2021</option>
+            <option value="2022-2023">2022–2023</option>
+            <option value="2024-2099">2024+</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">NOTAS</label>
+          <select id="ol-f-notas" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
+            <option value="">Todos</option>
+            <option value="com">Só com notas</option>
+            <option value="sem">Só sem notas</option>
+          </select>
+        </div>
+        <button onclick="olResetFilters()" style="padding:5px 10px;background:none;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;color:#6b7280;cursor:pointer;">✕ Limpar</button>
+      </div>
+
       <!-- Results -->
       <div id="ol-results"></div>
     </main>
@@ -6897,6 +6929,8 @@ window.FeedbackIA={
 var _OL_TODOS_CONSULTORES = ['Alexandra Santos','Alexsandra Ferreira','Ana Daniel','Lina Galvão','Lidia Sousa','Maria José Boia','Miguel Germano','Sandra Silva','Sofia Monteiro']
 var _olAtivos = []
 var _olCaller = ''  // definido em olInit() a partir do perfil autenticado
+var _olAllData = []   // todos os resultados carregados (para filtros client-side)
+var _olNotaMap = {}   // notaMap guardado para re-render
 
 function _getEgoClient() {
   if (!window.__sbEgo) window.__sbEgo = supabase.createClient(
@@ -6994,9 +7028,10 @@ async function olSearch() {
     }
 
     var q = ego.from('oportunidades')
-      .select('oportunidade_ref,tipo_oportunidade,cliente_nome,cliente_telefone,cliente_email,responsavel,etapa_atual,oportunidade_estado,preferencia_imovel,ego_data_criacao,url')
+      .select('oportunidade_ref,tipo_oportunidade,cliente_nome,cliente_telefone,cliente_email,responsavel,etapa_atual,oportunidade_estado,preferencia_imovel,ego_data_criacao,url,imovel_natureza,imovel_concelho,imovel_distrito')
       .neq('oportunidade_estado','Ganha')
       .in('responsavel', inativos)
+      .not('cliente_telefone', 'is', null)
       .order('ego_data_criacao', {ascending:true})
       .limit(500)
 
@@ -7033,12 +7068,51 @@ async function olSearch() {
       return da < db ? -1 : da > db ? 1 : 0
     })
 
-    if (countEl) countEl.textContent = old.length + ' oportunidades'
-    olRender(old, notaMap)
+    // Guardar para filtros client-side
+    _olAllData = old
+    _olNotaMap = notaMap
+
+    // Mostrar filtros
+    var filtersEl = document.getElementById('ol-filters')
+    if (filtersEl) filtersEl.style.display = 'flex'
+
+    olApplyFilters()
   } catch(e) {
     res.innerHTML = '<div style="padding:20px;color:#dc2626">Erro: '+e.message+'</div>'
   }
   if (btn) { btn.disabled = false; btn.textContent = '🔄 Carregar Old Leads' }
+}
+
+function olApplyFilters() {
+  var tipo    = (document.getElementById('ol-f-tipo')||{}).value || ''
+  var periodo = (document.getElementById('ol-f-periodo')||{}).value || ''
+  var notas   = (document.getElementById('ol-f-notas')||{}).value || ''
+
+  var filtered = _olAllData.filter(function(o) {
+    // Filtro tipo
+    if (tipo && o.tipo_oportunidade !== tipo) return false
+    // Filtro período (ano de criação)
+    if (periodo) {
+      var parts = periodo.split('-')
+      var anoMin = parseInt(parts[0]), anoMax = parseInt(parts[1])
+      var ano = o.ego_data_criacao ? parseInt(o.ego_data_criacao.slice(0,4)) : 0
+      if (ano < anoMin || ano > anoMax) return false
+    }
+    // Filtro notas
+    if (notas === 'com' && !(_olNotaMap[o.oportunidade_ref] && (_olNotaMap[o.oportunidade_ref].preview||[]).length)) return false
+    if (notas === 'sem' && (_olNotaMap[o.oportunidade_ref] && (_olNotaMap[o.oportunidade_ref].preview||[]).length)) return false
+    return true
+  })
+
+  var countEl = document.getElementById('ol-count')
+  if (countEl) countEl.textContent = filtered.length + ' oportunidades' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '')
+  olRender(filtered, _olNotaMap)
+}
+
+function olResetFilters() {
+  var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas']
+  ids.forEach(function(id){ var el = document.getElementById(id); if (el) el.value = '' })
+  olApplyFilters()
 }
 
 function olRender(opps, notaMap) {
@@ -7066,10 +7140,12 @@ function olRender(opps, notaMap) {
     html += '<span class="ol-tag ol-tag-date">📅 última nota: '+esc(lastData)+'</span>'
     if (dataCriacao) html += '<span class="ol-tag" style="background:#f0fdf4;color:#166534">🗓 criada: '+esc(dataCriacao)+'</span>'
     html += '</div></div>'
-    if (o.preferencia_imovel || o.etapa_atual) {
+    // Linha de detalhe do imóvel / preferência
+    var imovelDesc = o.preferencia_imovel || (o.imovel_natureza ? o.imovel_natureza + (o.imovel_concelho ? ' · ' + o.imovel_concelho : '') : null)
+    if (imovelDesc || o.etapa_atual) {
       html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">'
-      if (o.preferencia_imovel) html += '<span>🏠 '+esc(o.preferencia_imovel)+'</span>'
-      if (o.preferencia_imovel && o.etapa_atual) html += ' · '
+      if (imovelDesc) html += '<span>🏠 '+esc(imovelDesc)+'</span>'
+      if (imovelDesc && o.etapa_atual) html += ' · '
       if (o.etapa_atual) html += '<span>'+esc(o.etapa_atual)+'</span>'
       html += '</div>'
     }
