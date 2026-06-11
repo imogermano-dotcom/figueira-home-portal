@@ -1549,6 +1549,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <option value="Angariação">Angariação</option>
             <option value="Venda">Venda</option>
             <option value="Arrendamento">Arrendamento</option>
+            <option value="__null__">Sem tipo</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
@@ -7049,7 +7050,8 @@ function olApplyFilters() {
 
   var filtered = _olAllData.filter(function(g) {
     // Filtro tipo: pelo menos uma oportunidade do grupo com este tipo
-    if (tipo && g.tipos.indexOf(tipo) < 0) return false
+    if (tipo === '__null__') { if (g.tipos.length > 0) return false }
+    else if (tipo && g.tipos.indexOf(tipo) < 0) return false
     // Filtro período: data da última nota ou data criação
     if (periodo) {
       var parts = periodo.split('-')
@@ -7116,7 +7118,7 @@ function olRender(grupos) {
 
     html += '<div class="ol-actions">'
     g.refs.slice(0,2).forEach(function(u,i){
-      html += '<a href="'+esc(u.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO'+(g.refs.length>1?' '+(i+1):'')+'</a>'
+      if (u.url) html += '<a href="'+esc(u.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO'+(g.refs.length>1?' '+(i+1):'')+'</a>'
     })
     html += '<button class="ol-btn ol-btn-nota" onclick="olOpenNota('+idx+')">✍️ Registar nota</button>'
     html += '</div>'
