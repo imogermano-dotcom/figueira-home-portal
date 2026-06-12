@@ -7014,7 +7014,7 @@ async function olSearch() {
 
   try {
     var ego = _getEgoClient()
-    var { data, error } = await ego.rpc('get_old_leads_agrupados')
+    var { data, error } = await ego.rpc('get_old_leads_agrupados').limit(10000)
     if (error) throw error
 
     // Normalizar campos para o render (RPC devolve snake_case)
