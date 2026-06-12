@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
@@ -7014,7 +7014,18 @@ async function olSearch() {
 
   try {
     var ego = _getEgoClient()
-    var { data, error } = await ego.rpc('get_old_leads_agrupados').limit(10000)
+    // Paginar em blocos de 1000 (limite max do Supabase API)
+    var allRows = [], from = 0, pageSize = 1000
+    while (true) {
+      var { data: page, error } = await ego.rpc('get_old_leads_agrupados').range(from, from + pageSize - 1)
+      if (error) throw error
+      if (!page || page.length === 0) break
+      allRows = allRows.concat(page)
+      if (page.length < pageSize) break
+      from += pageSize
+      if (btn) btn.textContent = 'A carregar... (' + allRows.length + ')'
+    }
+    var data = allRows
     if (error) throw error
 
     // Normalizar campos para o render (RPC devolve snake_case)
