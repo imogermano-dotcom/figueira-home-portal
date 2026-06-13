@@ -711,6 +711,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-agendamento" onclick="showTab('agendamento')">📅 Agendamento</button>
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-old-leads" onclick="showTab('old-leads')">📞 Old Leads</button>
+    <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
@@ -1578,6 +1579,22 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     </main>
   </div>
 
+  <!-- Mercado Idealista -->
+  <div class="portal-page" id="page-mercado">
+    <main style="flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%">
+      <div id="mercado-nav" style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e0e6f0">
+        <button class="pnav-btn active" id="mtab-dashboard" onclick="mercadoShowTab('dashboard')">📊 Dashboard</button>
+        <button class="pnav-btn" id="mtab-imoveis" onclick="mercadoShowTab('imoveis')">🏘️ Imóveis</button>
+        <button class="pnav-btn" id="mtab-agencias" onclick="mercadoShowTab('agencias')">🏢 Agências</button>
+        <button class="pnav-btn" id="mtab-duplicados" style="display:none" onclick="mercadoShowTab('duplicados')">⚠️ Duplicados</button>
+      </div>
+      <div id="mercado-dashboard"></div>
+      <div id="mercado-imoveis" style="display:none"></div>
+      <div id="mercado-agencias" style="display:none"></div>
+      <div id="mercado-duplicados" style="display:none"></div>
+    </main>
+  </div>
+
   <!-- Configuração (admin only) -->
   <div class="portal-page" id="page-config">
     <main>
@@ -1705,7 +1722,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -1718,6 +1735,7 @@ function showTab(name) {
   if (name === 'agendamento') agInit()
   if (name === 'biblioteca') bibLoad()
   if (name === 'old-leads') olInit()
+  if (name === 'mercado') mercadoInit()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -7686,6 +7704,496 @@ async function bibLoteSubmit() {
     progresso.style.display = 'none'
     bibLoteVerificarPronto()
   }, 5000)
+}
+
+// ── Mercado Idealista ─────────────────────────────────────────────────────────
+
+var _mercadoInited = false
+var _mercadoTabAtual = 'dashboard'
+var _mercadoFiltros = { operacao: null, tipo: null, precoMax: null, pagina: 1 }
+var _mercadoTotal = 0
+
+var mercadoTipoLabel = {
+  flat: 'Apartamento', house: 'Moradia', land: 'Terreno',
+  garage: 'Garagem', commercial: 'Comercial'
+}
+
+function mercadoFmtEur(n) {
+  if (!n && n !== 0) return '—'
+  return '€' + Math.round(n).toLocaleString('pt-PT')
+}
+
+function mercadoTipologia(imovel) {
+  if (!imovel.quartos) return mercadoTipoLabel[imovel.property_type] || imovel.property_type || '—'
+  return 'T' + imovel.quartos
+}
+
+function mercadoDiasNoMercado(imovel) {
+  var inicio = new Date(imovel.primeiro_visto_em)
+  var fim = imovel.retirado_em ? new Date(imovel.retirado_em) : new Date()
+  return Math.floor((fim - inicio) / (1000 * 60 * 60 * 24))
+}
+
+function mercadoVariacaoPreco(imovel) {
+  if (!imovel.preco_inicial || !imovel.preco_atual) return null
+  var diff = imovel.preco_atual - imovel.preco_inicial
+  var pct = (diff / imovel.preco_inicial * 100).toFixed(1)
+  return { eur: diff, pct: pct, direcao: diff < 0 ? 'descida' : diff > 0 ? 'subida' : 'igual' }
+}
+
+function mercadoInit() {
+  if (_mercadoInited) return
+  _mercadoInited = true
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+  if (isAdmin) {
+    document.getElementById('mtab-duplicados').style.display = ''
+  }
+  mercadoShowTab('dashboard')
+}
+
+function mercadoShowTab(tab) {
+  _mercadoTabAtual = tab
+  ;['dashboard','imoveis','agencias','duplicados'].forEach(function(t) {
+    var el = document.getElementById('mercado-'+t)
+    var btn = document.getElementById('mtab-'+t)
+    if (el) el.style.display = t === tab ? '' : 'none'
+    if (btn) btn.className = 'pnav-btn' + (t === tab ? ' active' : '')
+  })
+  if (tab === 'dashboard') mercadoLoadDashboard()
+  if (tab === 'imoveis') mercadoRenderImoveis()
+  if (tab === 'agencias') mercadoLoadAgencias()
+  if (tab === 'duplicados') mercadoLoadDuplicados()
+}
+
+async function mercadoLoadDashboard() {
+  var el = document.getElementById('mercado-dashboard')
+  el.innerHTML = '<div class="loading">A carregar dashboard...</div>'
+  try {
+    var results = await Promise.all([
+      sb.from('idealista_imoveis').select('preco_atual,preco_m2_atual,area_m2,quartos').eq('operacao','sale').eq('ativo',true),
+      sb.from('idealista_imoveis').select('preco_atual').eq('operacao','rent').eq('ativo',true),
+      sb.from('idealista_agencias').select('agencia_nome,imoveis_ativos_total,preco_medio_venda,preco_medio_m2_venda').order('imoveis_ativos_total',{ascending:false}).limit(10),
+      sb.from('idealista_sync_log').select('status,iniciado_em,total_scraped,novos,preco_alterado,retirados,custo_usd').order('iniciado_em',{ascending:false}).limit(1).single()
+    ])
+    var venda = results[0].data || []
+    var arrend = results[1].data || []
+    var agencias = results[2].data || []
+    var sync = results[3].data || {}
+    var precoMedio = venda.length ? Math.round(venda.reduce(function(s,r){return s+(r.preco_atual||0)},0)/venda.length) : 0
+    var m2Medio = venda.length ? Math.round(venda.reduce(function(s,r){return s+(r.preco_m2_atual||0)},0)/venda.length) : 0
+    var syncDate = sync.iniciado_em ? new Date(sync.iniciado_em).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'
+    var syncStatus = sync.status === 'ok' ? '<span style="color:#15803d;font-weight:700">✓ OK</span>' : '<span style="color:#dc2626">'+esc(sync.status||'—')+'</span>'
+
+    var topAgencias = agencias.slice(0,8).map(function(a) {
+      return '<tr>'
+        + '<td style="font-weight:600;color:#1a3c5e">'+esc(a.agencia_nome||'—')+'</td>'
+        + '<td style="text-align:center">'+( a.imoveis_ativos_total||0)+'</td>'
+        + '<td style="text-align:right">'+mercadoFmtEur(a.preco_medio_venda)+'</td>'
+        + '<td style="text-align:right">'+mercadoFmtEur(a.preco_medio_m2_venda)+'/m²</td>'
+        + '</tr>'
+    }).join('')
+
+    el.innerHTML = '<style>'
+      + '.mkt-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px}'
+      + '.mkt-kpi{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:18px 20px}'
+      + '.mkt-kpi-label{font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}'
+      + '.mkt-kpi-val{font-size:1.6rem;font-weight:800;color:#1a3c5e;line-height:1}'
+      + '.mkt-kpi-sub{font-size:.75rem;color:#9ca3af;margin-top:4px}'
+      + '.mkt-section{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px;margin-bottom:20px}'
+      + '.mkt-section h3{font-size:.9rem;font-weight:700;color:#1a3c5e;margin:0 0 14px}'
+      + '.mkt-table{width:100%;border-collapse:collapse;font-size:.83rem}'
+      + '.mkt-table th{text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px}'
+      + '.mkt-table td{padding:8px 10px;border-top:1px solid #f0f0f0;vertical-align:middle}'
+      + '.mkt-table tr:hover td{background:#f7f9fc}'
+      + '.mkt-sync-row{display:flex;gap:24px;flex-wrap:wrap;font-size:.83rem;color:#374151}'
+      + '.mkt-sync-item{display:flex;flex-direction:column;gap:2px}'
+      + '.mkt-sync-item span:first-child{font-size:.69rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px}'
+      + '</style>'
+      + '<div class="mkt-kpis">'
+      + '<div class="mkt-kpi"><div class="mkt-kpi-label">Imóveis à Venda</div><div class="mkt-kpi-val">'+venda.length+'</div><div class="mkt-kpi-sub">imóveis ativos</div></div>'
+      + '<div class="mkt-kpi"><div class="mkt-kpi-label">Preço Médio Venda</div><div class="mkt-kpi-val" style="font-size:1.2rem">'+mercadoFmtEur(precoMedio)+'</div><div class="mkt-kpi-sub">'+mercadoFmtEur(m2Medio)+'/m²</div></div>'
+      + '<div class="mkt-kpi"><div class="mkt-kpi-label">Arrendamento</div><div class="mkt-kpi-val">'+arrend.length+'</div><div class="mkt-kpi-sub">imóveis ativos</div></div>'
+      + '<div class="mkt-kpi"><div class="mkt-kpi-label">Agências</div><div class="mkt-kpi-val">'+agencias.length+'</div><div class="mkt-kpi-sub">no mercado</div></div>'
+      + '</div>'
+      + '<div class="mkt-section"><h3>🏢 Top Agências por Volume</h3>'
+      + '<table class="mkt-table"><thead><tr><th>Agência</th><th>Imóveis</th><th>Preço Médio</th><th>€/m²</th></tr></thead><tbody>'+topAgencias+'</tbody></table>'
+      + '</div>'
+      + '<div class="mkt-section"><h3>🔄 Último Sync</h3>'
+      + '<div class="mkt-sync-row">'
+      + '<div class="mkt-sync-item"><span>Data</span><span>'+syncDate+'</span></div>'
+      + '<div class="mkt-sync-item"><span>Estado</span><span>'+syncStatus+'</span></div>'
+      + '<div class="mkt-sync-item"><span>Total scraped</span><span>'+(sync.total_scraped||0)+'</span></div>'
+      + '<div class="mkt-sync-item"><span>Novos</span><span style="color:#15803d;font-weight:600">+'+(sync.novos||0)+'</span></div>'
+      + '<div class="mkt-sync-item"><span>Alterações preço</span><span style="color:#d97706;font-weight:600">'+(sync.preco_alterado||0)+'</span></div>'
+      + '<div class="mkt-sync-item"><span>Retirados</span><span style="color:#dc2626;font-weight:600">'+(sync.retirados||0)+'</span></div>'
+      + '<div class="mkt-sync-item"><span>Custo</span><span>$'+(sync.custo_usd||0)+'</span></div>'
+      + '</div></div>'
+  } catch(e) {
+    el.innerHTML = '<div class="err-box">Erro ao carregar: '+esc(e.message)+'</div>'
+  }
+}
+
+async function mercadoRenderImoveis() {
+  var el = document.getElementById('mercado-imoveis')
+  var f = _mercadoFiltros
+
+  // render filtros
+  var filtrosHtml = '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:16px 20px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">'
+    + '<div><label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Operação</label>'
+    + '<select onchange="mercadoFiltroChange(\'operacao\',this.value)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none">'
+    + '<option value="">Todas</option>'
+    + '<option value="sale"'+(f.operacao==='sale'?' selected':'')+'>Venda</option>'
+    + '<option value="rent"'+(f.operacao==='rent'?' selected':'')+'>Arrendamento</option>'
+    + '</select></div>'
+    + '<div><label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Tipo</label>'
+    + '<select onchange="mercadoFiltroChange(\'tipo\',this.value)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none">'
+    + '<option value="">Todos</option>'
+    + '<option value="flat"'+(f.tipo==='flat'?' selected':'')+'>Apartamento</option>'
+    + '<option value="house"'+(f.tipo==='house'?' selected':'')+'>Moradia</option>'
+    + '<option value="land"'+(f.tipo==='land'?' selected':'')+'>Terreno</option>'
+    + '<option value="garage"'+(f.tipo==='garage'?' selected':'')+'>Garagem</option>'
+    + '<option value="commercial"'+(f.tipo==='commercial'?' selected':'')+'>Comercial</option>'
+    + '</select></div>'
+    + '<div><label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Preço máx.</label>'
+    + '<input type="number" placeholder="ex: 500000" value="'+(f.precoMax||'')+'" onchange="mercadoFiltroChange(\'precoMax\',this.value?parseInt(this.value):null)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none;width:130px">'
+    + '</div>'
+    + '<div id="mkt-count" style="font-size:.8rem;color:#6b7280;align-self:center"></div>'
+    + '</div>'
+    + '<div id="mkt-imoveis-list"></div>'
+    + '<div id="mkt-imoveis-pag" style="display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap"></div>'
+
+  el.innerHTML = filtrosHtml
+  await mercadoLoadImoveisPagina()
+}
+
+async function mercadoLoadImoveisPagina() {
+  var listEl = document.getElementById('mkt-imoveis-list')
+  var pagEl = document.getElementById('mkt-imoveis-pag')
+  var countEl = document.getElementById('mkt-count')
+  if (!listEl) return
+  listEl.innerHTML = '<div class="loading">A carregar imóveis...</div>'
+  try {
+    var f = _mercadoFiltros
+    var porPagina = 20
+    var query = sb.from('idealista_imoveis')
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,tem_elevador,tem_parking',{count:'exact'})
+      .eq('ativo',true)
+      .order('primeiro_visto_em',{ascending:false})
+      .range((f.pagina-1)*porPagina, f.pagina*porPagina-1)
+    if (f.operacao) query = query.eq('operacao',f.operacao)
+    if (f.tipo) query = query.eq('property_type',f.tipo)
+    if (f.precoMax) query = query.lte('preco_atual',f.precoMax)
+    var { data, count, error } = await query
+    if (error) throw error
+    _mercadoTotal = count || 0
+    var totalPags = Math.ceil(_mercadoTotal / porPagina)
+    if (countEl) countEl.textContent = _mercadoTotal + ' imóveis'
+
+    if (!data || !data.length) {
+      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af">Nenhum imóvel encontrado.</div>'
+      if (pagEl) pagEl.innerHTML = ''
+      return
+    }
+
+    listEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">'
+      + data.map(function(im) {
+        var variacao = mercadoVariacaoPreco(im)
+        var varHtml = ''
+        if (variacao && variacao.direcao !== 'igual') {
+          var cor = variacao.direcao === 'descida' ? '#15803d' : '#dc2626'
+          var seta = variacao.direcao === 'descida' ? '↓' : '↑'
+          varHtml = '<span style="color:'+cor+';font-size:.72rem;font-weight:700">'+seta+' '+Math.abs(variacao.pct)+'%</span>'
+        }
+        var dias = mercadoDiasNoMercado(im)
+        var opLabel = im.operacao === 'sale' ? 'Venda' : 'Arrend.'
+        var opColor = im.operacao === 'sale' ? '#1e40af' : '#92400e'
+        var opBg = im.operacao === 'sale' ? '#dbeafe' : '#fef3c7'
+        return '<div class="mkt-imovel-card" onclick="mercadoAbrirFicha(\''+esc(im.property_code)+'\')" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;cursor:pointer;transition:box-shadow .15s" onmouseenter="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.13)\'" onmouseleave="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.07)\'">'
+          + '<div style="position:relative;height:160px;background:#e0e6f0;overflow:hidden">'
+          + (im.thumbnail_url ? '<img src="'+esc(im.thumbnail_url)+'" onerror="this.style.display=\'none\'" style="width:100%;height:160px;object-fit:cover;display:block">' : '')
+          + '<span style="position:absolute;top:8px;left:8px;background:'+opBg+';color:'+opColor+';font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+opLabel+'</span>'
+          + (im.num_alteracoes_preco > 0 ? '<span style="position:absolute;top:8px;right:8px;background:#fef9c3;color:#854d0e;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+im.num_alteracoes_preco+' alt. preço</span>' : '')
+          + '</div>'
+          + '<div style="padding:14px">'
+          + '<div style="font-size:.83rem;font-weight:700;color:#111827;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(im.titulo||'—')+'</div>'
+          + '<div style="font-size:.74rem;color:#6b7280;margin-bottom:8px">'+esc(im.municipio||im.morada||'—')+'</div>'
+          + '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'
+          + '<span style="font-size:1.15rem;font-weight:800;color:#1a3c5e">'+mercadoFmtEur(im.preco_atual)+'</span>'
+          + (im.preco_m2_atual ? '<span style="font-size:.74rem;color:#9ca3af">'+mercadoFmtEur(im.preco_m2_atual)+'/m²</span>' : '')
+          + varHtml
+          + '</div>'
+          + '<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:#4b5563">'
+          + '<span>'+mercadoTipologia(im)+'</span>'
+          + (im.area_m2 ? '<span>·</span><span>'+im.area_m2+' m²</span>' : '')
+          + (im.wcs ? '<span>·</span><span>'+im.wcs+' WC</span>' : '')
+          + (im.piso != null ? '<span>·</span><span>Piso '+im.piso+'</span>' : '')
+          + '</div>'
+          + '<div style="margin-top:8px;font-size:.72rem;color:#9ca3af;display:flex;justify-content:space-between">'
+          + '<span>'+esc(im.agencia_nome_atual||'—')+'</span>'
+          + '<span>'+dias+'d no mercado</span>'
+          + '</div>'
+          + '</div></div>'
+      }).join('')
+      + '</div>'
+
+    // paginação
+    if (pagEl) {
+      var pagHtml = ''
+      if (f.pagina > 1) pagHtml += '<button class="ctrl-btn more" onclick="mercadoIrPagina('+(f.pagina-1)+')">← Anterior</button>'
+      pagHtml += '<span style="font-size:.8rem;color:#6b7280;align-self:center">Pág. '+f.pagina+' / '+totalPags+'</span>'
+      if (f.pagina < totalPags) pagHtml += '<button class="ctrl-btn more" onclick="mercadoIrPagina('+(f.pagina+1)+')">Seguinte →</button>'
+      pagEl.innerHTML = pagHtml
+    }
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<div class="err-box">Erro: '+esc(e.message)+'</div>'
+  }
+}
+
+function mercadoFiltroChange(campo, valor) {
+  _mercadoFiltros[campo] = valor || null
+  _mercadoFiltros.pagina = 1
+  mercadoLoadImoveisPagina()
+}
+
+function mercadoIrPagina(pag) {
+  _mercadoFiltros.pagina = pag
+  mercadoLoadImoveisPagina()
+  document.getElementById('mercado-imoveis').scrollIntoView({behavior:'smooth',block:'start'})
+}
+
+async function mercadoAbrirFicha(propertyCode) {
+  var el = document.getElementById('mercado-imoveis')
+  el.innerHTML = '<div class="loading">A carregar ficha...</div>'
+  try {
+    var results = await Promise.all([
+      sb.from('idealista_imoveis').select('*').eq('property_code',propertyCode).single(),
+      sb.from('idealista_imovel_agencias').select('agencia_nome,agente_nome,agente_telefone,preco,preco_m2,primeiro_visto_em,ultimo_visto_em,ativa').eq('property_code',propertyCode).order('primeiro_visto_em',{ascending:true}),
+      sb.from('idealista_historico_preco').select('preco_anterior,preco_novo,variacao_eur,variacao_pct,direcao,registado_em').eq('property_code',propertyCode).order('registado_em',{ascending:true}),
+      sb.from('idealista_historico_caracteristicas').select('campo,valor_anterior,valor_novo,registado_em').eq('property_code',propertyCode).order('registado_em',{ascending:true})
+    ])
+    var im = results[0].data
+    var agencias = results[1].data || []
+    var histPreco = results[2].data || []
+    var histCaract = results[3].data || []
+    if (!im) throw new Error('Imóvel não encontrado')
+
+    var variacao = mercadoVariacaoPreco(im)
+    var varHtml = ''
+    if (variacao && variacao.direcao !== 'igual') {
+      var cor = variacao.direcao === 'descida' ? '#15803d' : '#dc2626'
+      var seta = variacao.direcao === 'descida' ? '↓' : '↑'
+      varHtml = ' <span style="color:'+cor+';font-weight:700">'+seta+' '+Math.abs(variacao.pct)+'% ('+mercadoFmtEur(Math.abs(variacao.eur))+')</span>'
+    }
+
+    var fichaHtml = '<div style="margin-bottom:12px">'
+      + '<button onclick="mercadoRenderImoveis()" style="padding:6px 14px;background:#f0f4f8;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;color:#374151">← Voltar à listagem</button>'
+      + '</div>'
+      + '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:16px">'
+      + (im.thumbnail_url ? '<img src="'+esc(im.thumbnail_url)+'" onerror="this.style.display=\'none\'" style="width:100%;max-height:320px;object-fit:cover;display:block">' : '<div style="height:120px;background:#e0e6f0"></div>')
+      + '<div style="padding:20px">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">'
+      + '<div>'
+      + '<h2 style="font-size:1.1rem;font-weight:800;color:#111827;margin-bottom:4px">'+esc(im.titulo||'—')+'</h2>'
+      + '<div style="font-size:.83rem;color:#6b7280">'+esc(im.morada||im.municipio||'—')+'</div>'
+      + '</div>'
+      + '<a href="'+esc(im.url||'#')+'" target="_blank" style="padding:7px 14px;background:#1a3c5e;color:#fff;border-radius:8px;font-size:.8rem;font-weight:600;text-decoration:none;white-space:nowrap">Ver no Idealista ↗</a>'
+      + '</div>'
+      + '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">'
+      + '<span style="font-size:1.6rem;font-weight:800;color:#1a3c5e">'+mercadoFmtEur(im.preco_atual)+'</span>'
+      + (im.preco_m2_atual ? '<span style="color:#9ca3af;font-size:.85rem">'+mercadoFmtEur(im.preco_m2_atual)+'/m²</span>' : '')
+      + varHtml
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px">'
+      + _mktDetalhe('Tipologia', mercadoTipologia(im))
+      + _mktDetalhe('Área', im.area_m2 ? im.area_m2+' m²' : '—')
+      + _mktDetalhe('WCs', im.wcs || '—')
+      + _mktDetalhe('Piso', im.piso != null ? im.piso : '—')
+      + _mktDetalhe('Elevador', im.tem_elevador ? 'Sim' : 'Não')
+      + _mktDetalhe('Parking', im.tem_parking ? 'Sim' : 'Não')
+      + _mktDetalhe('Dias no mercado', mercadoDiasNoMercado(im)+'d')
+      + _mktDetalhe('Preço inicial', mercadoFmtEur(im.preco_inicial))
+      + _mktDetalhe('Alt. preço', im.num_alteracoes_preco || 0)
+      + '</div>'
+      + '</div></div>'
+
+    // Histórico de preço
+    if (histPreco.length) {
+      fichaHtml += '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px;margin-bottom:16px">'
+        + '<h3 style="font-size:.9rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">📈 Histórico de Preço</h3>'
+        + '<table class="mkt-table" style="width:100%;border-collapse:collapse;font-size:.83rem"><thead><tr>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Data</th>'
+        + '<th style="text-align:right;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Anterior</th>'
+        + '<th style="text-align:right;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Novo</th>'
+        + '<th style="text-align:right;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Variação</th>'
+        + '</tr></thead><tbody>'
+        + histPreco.map(function(h) {
+          var cor = h.direcao === 'descida' ? '#15803d' : '#dc2626'
+          var seta = h.direcao === 'descida' ? '↓' : '↑'
+          var d = new Date(h.registado_em).toLocaleDateString('pt-PT')
+          return '<tr><td style="padding:8px 10px;border-top:1px solid #f0f0f0">'+d+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;text-align:right">'+mercadoFmtEur(h.preco_anterior)+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;text-align:right;font-weight:700">'+mercadoFmtEur(h.preco_novo)+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;text-align:right;color:'+cor+';font-weight:700">'+seta+' '+mercadoFmtEur(Math.abs(h.variacao_eur))+' ('+Math.abs(h.variacao_pct||0).toFixed(1)+'%)</td>'
+            + '</tr>'
+        }).join('')
+        + '</tbody></table></div>'
+    }
+
+    // Agências
+    if (agencias.length) {
+      fichaHtml += '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px;margin-bottom:16px">'
+        + '<h3 style="font-size:.9rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">🏢 Agências que anunciaram</h3>'
+        + '<table class="mkt-table" style="width:100%;border-collapse:collapse;font-size:.83rem"><thead><tr>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Agência</th>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Agente</th>'
+        + '<th style="text-align:right;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Preço</th>'
+        + '<th style="text-align:center;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Estado</th>'
+        + '</tr></thead><tbody>'
+        + agencias.map(function(a) {
+          var estado = a.ativa ? '<span style="color:#15803d;font-weight:700">Ativa</span>' : '<span style="color:#9ca3af">Inativa</span>'
+          return '<tr><td style="padding:8px 10px;border-top:1px solid #f0f0f0;font-weight:600">'+esc(a.agencia_nome||'—')+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0">'+esc(a.agente_nome||'—')+(a.agente_telefone?'<br><span style="font-size:.74rem;color:#2d6a9f">'+esc(a.agente_telefone)+'</span>':'')+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;text-align:right">'+mercadoFmtEur(a.preco)+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;text-align:center">'+estado+'</td>'
+            + '</tr>'
+        }).join('')
+        + '</tbody></table></div>'
+    }
+
+    // Histórico características
+    if (histCaract.length) {
+      fichaHtml += '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px;margin-bottom:16px">'
+        + '<h3 style="font-size:.9rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">📝 Histórico de Alterações</h3>'
+        + '<table class="mkt-table" style="width:100%;border-collapse:collapse;font-size:.83rem"><thead><tr>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Data</th>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Campo</th>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Anterior</th>'
+        + '<th style="text-align:left;padding:7px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Novo</th>'
+        + '</tr></thead><tbody>'
+        + histCaract.map(function(h) {
+          var d = new Date(h.registado_em).toLocaleDateString('pt-PT')
+          return '<tr><td style="padding:8px 10px;border-top:1px solid #f0f0f0">'+d+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;font-weight:600">'+esc(h.campo||'—')+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0;color:#9ca3af">'+esc(String(h.valor_anterior||'—'))+'</td>'
+            + '<td style="padding:8px 10px;border-top:1px solid #f0f0f0">'+esc(String(h.valor_novo||'—'))+'</td>'
+            + '</tr>'
+        }).join('')
+        + '</tbody></table></div>'
+    }
+
+    el.innerHTML = fichaHtml
+  } catch(e) {
+    el.innerHTML = '<div class="err-box">Erro: '+esc(e.message)+'</div>'
+  }
+}
+
+function _mktDetalhe(label, valor) {
+  return '<div style="background:#f0f4f8;border-radius:8px;padding:10px 12px">'
+    + '<div style="font-size:.69rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">'+label+'</div>'
+    + '<div style="font-size:.88rem;font-weight:700;color:#1a3c5e">'+valor+'</div>'
+    + '</div>'
+}
+
+async function mercadoLoadAgencias() {
+  var el = document.getElementById('mercado-agencias')
+  el.innerHTML = '<div class="loading">A carregar agências...</div>'
+  try {
+    var { data, error } = await sb.from('idealista_agencias')
+      .select('agencia_nome,agencia_url,imoveis_ativos_total,imoveis_ativos_venda,imoveis_ativos_arrend,preco_medio_venda,preco_medio_m2_venda,preco_medio_arrend,area_media_m2,tempo_medio_mercado_dias,taxa_reducao_preco_pct,imoveis_historico_total')
+      .order('imoveis_ativos_total',{ascending:false})
+    if (error) throw error
+    var rows = (data || [])
+    var totalImoveis = rows.reduce(function(s,r){return s+(r.imoveis_ativos_total||0)},0)
+    el.innerHTML = '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:20px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+      + '<h3 style="font-size:.9rem;font-weight:700;color:#1a3c5e;margin:0">'+rows.length+' Agências</h3>'
+      + '<span style="font-size:.8rem;color:#6b7280">'+totalImoveis+' imóveis no total</span>'
+      + '</div>'
+      + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.83rem"><thead><tr>'
+      + '<th style="text-align:left;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap">Agência</th>'
+      + '<th style="text-align:center;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Quota</th>'
+      + '<th style="text-align:center;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Total</th>'
+      + '<th style="text-align:center;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Venda</th>'
+      + '<th style="text-align:center;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Arrend.</th>'
+      + '<th style="text-align:right;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">P.Médio Venda</th>'
+      + '<th style="text-align:right;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">€/m²</th>'
+      + '<th style="text-align:right;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">T. Médio</th>'
+      + '<th style="text-align:right;padding:8px 10px;background:#f0f4f8;color:#4b5563;font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.4px">Red. Preço</th>'
+      + '</tr></thead><tbody>'
+      + rows.map(function(a,i) {
+        var quota = totalImoveis > 0 ? (((a.imoveis_ativos_total||0)/totalImoveis)*100).toFixed(1) : 0
+        var quotaBar = '<div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#e0e6f0;border-radius:4px;height:6px;min-width:60px"><div style="width:'+quota+'%;background:#2d6a9f;height:6px;border-radius:4px"></div></div><span>'+quota+'%</span></div>'
+        return '<tr>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0">'
+          + (a.agencia_url ? '<a href="'+esc(a.agencia_url)+'" target="_blank" style="color:#1a3c5e;font-weight:700;text-decoration:none">'+esc(a.agencia_nome||'—')+'↗</a>' : '<span style="font-weight:700;color:#1a3c5e">'+esc(a.agencia_nome||'—')+'</span>')
+          + '</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;min-width:120px">'+quotaBar+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:center;font-weight:700">'+(a.imoveis_ativos_total||0)+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:center;color:#1e40af">'+(a.imoveis_ativos_venda||0)+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:center;color:#92400e">'+(a.imoveis_ativos_arrend||0)+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:right">'+mercadoFmtEur(a.preco_medio_venda)+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:right">'+mercadoFmtEur(a.preco_medio_m2_venda)+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:right">'+(a.tempo_medio_mercado_dias!=null?a.tempo_medio_mercado_dias+'d':'—')+'</td>'
+          + '<td style="padding:9px 10px;border-top:1px solid #f0f0f0;text-align:right">'+(a.taxa_reducao_preco_pct!=null?a.taxa_reducao_preco_pct.toFixed(1)+'%':'—')+'</td>'
+          + '</tr>'
+      }).join('')
+      + '</tbody></table></div></div>'
+  } catch(e) {
+    el.innerHTML = '<div class="err-box">Erro: '+esc(e.message)+'</div>'
+  }
+}
+
+async function mercadoLoadDuplicados() {
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+  var el = document.getElementById('mercado-duplicados')
+  if (!isAdmin) { el.innerHTML = '<div class="err-box">Acesso restrito a admins.</div>'; return }
+  el.innerHTML = '<div class="loading">A carregar duplicados...</div>'
+  try {
+    var { data, error } = await sb.from('idealista_duplicados')
+      .select('id,score_total,fotos_comuns,hamming_dist_foto,motivos,imovel_id_a,imovel_id_b,confirmado')
+      .is('confirmado',null)
+      .order('score_total',{ascending:false})
+    if (error) throw error
+    if (!data || !data.length) {
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af">Nenhum duplicado pendente.</div>'
+      return
+    }
+    el.innerHTML = '<div style="margin-bottom:12px;font-size:.83rem;color:#6b7280">'+data.length+' duplicados pendentes de validação</div>'
+      + data.map(function(d) {
+        var motivos = Array.isArray(d.motivos) ? d.motivos.join(', ') : (d.motivos||'—')
+        return '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:18px;margin-bottom:14px">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">'
+          + '<span style="background:#fef3c7;color:#92400e;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px">Score: '+d.score_total+'</span>'
+          + (d.fotos_comuns ? '<span style="background:#dbeafe;color:#1e40af;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px">'+d.fotos_comuns+' fotos comuns</span>' : '')
+          + '<span style="font-size:.78rem;color:#6b7280">'+esc(motivos)+'</span>'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'
+          + '<div style="background:#f0f4f8;border-radius:8px;padding:12px"><div style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Imóvel A</div><div style="font-weight:700;color:#1a3c5e;font-size:.88rem">'+esc(d.imovel_id_a||'—')+'</div></div>'
+          + '<div style="background:#f0f4f8;border-radius:8px;padding:12px"><div style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Imóvel B</div><div style="font-weight:700;color:#1a3c5e;font-size:.88rem">'+esc(d.imovel_id_b||'—')+'</div></div>'
+          + '</div>'
+          + '<div style="display:flex;gap:10px">'
+          + '<button onclick="mercadoValidarDuplicado(\''+d.id+'\',true,this.parentElement.parentElement)" style="padding:8px 20px;background:#15803d;color:#fff;border:none;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer">✓ Confirmar Duplicado</button>'
+          + '<button onclick="mercadoValidarDuplicado(\''+d.id+'\',false,this.parentElement.parentElement)" style="padding:8px 20px;background:#fff;color:#dc2626;border:1.5px solid #fecaca;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer">✗ Rejeitar</button>'
+          + '</div>'
+          + '</div>'
+      }).join('')
+  } catch(e) {
+    el.innerHTML = '<div class="err-box">Erro: '+esc(e.message)+'</div>'
+  }
+}
+
+async function mercadoValidarDuplicado(id, confirmado, cardEl) {
+  try {
+    var { error } = await sb.from('idealista_duplicados')
+      .update({ confirmado: confirmado, confirmado_por: _profile.email, confirmado_em: new Date().toISOString() })
+      .eq('id', id)
+    if (error) throw error
+    cardEl.style.opacity = '.4'
+    cardEl.style.pointerEvents = 'none'
+    cardEl.querySelector('div:last-child').innerHTML = '<span style="font-size:.83rem;color:#6b7280">'+(confirmado?'✓ Confirmado':'✗ Rejeitado')+'</span>'
+  } catch(e) {
+    alert('Erro: '+e.message)
+  }
 }
 </script>
 
