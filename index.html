@@ -8158,9 +8158,36 @@ async function mercadoLoadDuplicados() {
       el.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af">Nenhum duplicado pendente.</div>'
       return
     }
+
+    // Buscar detalhes dos imóveis (titulo, url, property_code) por UUID
+    var allIds = []
+    data.forEach(function(d) {
+      if (d.imovel_id_a) allIds.push(d.imovel_id_a)
+      if (d.imovel_id_b) allIds.push(d.imovel_id_b)
+    })
+    var imoveisMap = {}
+    if (allIds.length) {
+      var { data: imData } = await sb.from('idealista_imoveis')
+        .select('id,property_code,titulo,url,preco_atual,municipio,thumbnail_url')
+        .in('id', allIds)
+      ;(imData || []).forEach(function(im) { imoveisMap[im.id] = im })
+    }
+
+    function _dupImovelHtml(uuid) {
+      var im = imoveisMap[uuid]
+      if (!im) return '<div style="font-size:.83rem;color:#9ca3af">'+esc(uuid||'—')+'</div>'
+      return '<div style="font-weight:700;color:#1a3c5e;font-size:.88rem;margin-bottom:4px">'+esc(im.titulo||im.property_code||'—')+'</div>'
+        + '<div style="font-size:.75rem;color:#6b7280;margin-bottom:6px">'+esc(im.municipio||'')+(im.preco_atual?' · '+mercadoFmtEur(im.preco_atual):'')+'</div>'
+        + (im.url ? '<a href="'+esc(im.url)+'" target="_blank" style="font-size:.75rem;color:#2563eb;text-decoration:none;font-weight:600">Ver no Idealista ↗</a>' : '')
+    }
+
     el.innerHTML = '<div style="margin-bottom:12px;font-size:.83rem;color:#6b7280">'+data.length+' duplicados pendentes de validação</div>'
       + data.map(function(d) {
         var motivos = Array.isArray(d.motivos) ? d.motivos.join(', ') : (d.motivos||'—')
+        var imA = imoveisMap[d.imovel_id_a]
+        var imB = imoveisMap[d.imovel_id_b]
+        var thumbA = imA && imA.thumbnail_url ? '<img src="'+esc(imA.thumbnail_url)+'" onerror="this.style.display=\'none\'" style="width:100%;height:100px;object-fit:cover;border-radius:6px;display:block;margin-bottom:8px">' : ''
+        var thumbB = imB && imB.thumbnail_url ? '<img src="'+esc(imB.thumbnail_url)+'" onerror="this.style.display=\'none\'" style="width:100%;height:100px;object-fit:cover;border-radius:6px;display:block;margin-bottom:8px">' : ''
         return '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:18px;margin-bottom:14px">'
           + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">'
           + '<span style="background:#fef3c7;color:#92400e;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px">Score: '+d.score_total+'</span>'
@@ -8168,8 +8195,8 @@ async function mercadoLoadDuplicados() {
           + '<span style="font-size:.78rem;color:#6b7280">'+esc(motivos)+'</span>'
           + '</div>'
           + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'
-          + '<div style="background:#f0f4f8;border-radius:8px;padding:12px"><div style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Imóvel A</div><div style="font-weight:700;color:#1a3c5e;font-size:.88rem">'+esc(d.imovel_id_a||'—')+'</div></div>'
-          + '<div style="background:#f0f4f8;border-radius:8px;padding:12px"><div style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Imóvel B</div><div style="font-weight:700;color:#1a3c5e;font-size:.88rem">'+esc(d.imovel_id_b||'—')+'</div></div>'
+          + '<div style="background:#f0f4f8;border-radius:8px;padding:12px"><div style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Imóvel A</div>'+thumbA+_dupImovelHtml(d.imovel_id_a)+'</div>'
+          + '<div style="background:#f0f4f8;border-radius:8px;padding:12px"><div style="font-size:.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Imóvel B</div>'+thumbB+_dupImovelHtml(d.imovel_id_b)+'</div>'
           + '</div>'
           + '<div style="display:flex;gap:10px">'
           + '<button onclick="mercadoValidarDuplicado(\''+d.id+'\',true,this.parentElement.parentElement)" style="padding:8px 20px;background:#15803d;color:#fff;border:none;border-radius:8px;font-size:.83rem;font-weight:600;cursor:pointer">✓ Confirmar Duplicado</button>'
