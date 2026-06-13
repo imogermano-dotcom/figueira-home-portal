@@ -7710,7 +7710,8 @@ async function bibLoteSubmit() {
 
 var _mercadoInited = false
 var _mercadoTabAtual = 'dashboard'
-var _mercadoFiltros = { operacao: null, tipo: null, precoMax: null, pagina: 1 }
+var _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', pagina: 1 }
+var _mercadoPesquisaTimer = null
 var _mercadoTotal = 0
 
 var mercadoTipoLabel = {
@@ -7838,15 +7839,30 @@ async function mercadoRenderImoveis() {
   var f = _mercadoFiltros
 
   // render filtros
-  var filtrosHtml = '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:16px 20px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">'
-    + '<div><label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Operação</label>'
-    + '<select onchange="mercadoFiltroChange(\'operacao\',this.value)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none">'
+  var selStyle = 'padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none;background:#fff'
+  var inpStyle = 'padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none;width:140px'
+  var lblStyle = 'display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px'
+  var filtrosHtml = '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);padding:16px 20px;margin-bottom:16px">'
+    // linha 1: pesquisas de texto
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">'
+    + '<div><label style="'+lblStyle+'">Referência</label>'
+    + '<input type="text" placeholder="ex: 104890321" value="'+esc(f.referencia||'')+'" oninput="mercadoPesquisaChange(\'referencia\',this.value)" style="'+inpStyle+';width:160px"></div>'
+    + '<div><label style="'+lblStyle+'">Rua / Localização</label>'
+    + '<input type="text" placeholder="ex: Rua da Boavista" value="'+esc(f.rua||'')+'" oninput="mercadoPesquisaChange(\'rua\',this.value)" style="'+inpStyle+';width:200px"></div>'
+    + '<div><label style="'+lblStyle+'">Agência</label>'
+    + '<input type="text" placeholder="ex: Homelusa" value="'+esc(f.agencia||'')+'" oninput="mercadoPesquisaChange(\'agencia\',this.value)" style="'+inpStyle+';width:180px"></div>'
+    + '<div id="mkt-count" style="font-size:.8rem;color:#6b7280;align-self:center;margin-left:auto"></div>'
+    + '</div>'
+    // linha 2: filtros de seleção + preço
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">'
+    + '<div><label style="'+lblStyle+'">Operação</label>'
+    + '<select onchange="mercadoFiltroChange(\'operacao\',this.value)" style="'+selStyle+'">'
     + '<option value="">Todas</option>'
     + '<option value="sale"'+(f.operacao==='sale'?' selected':'')+'>Venda</option>'
     + '<option value="rent"'+(f.operacao==='rent'?' selected':'')+'>Arrendamento</option>'
     + '</select></div>'
-    + '<div><label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Tipo</label>'
-    + '<select onchange="mercadoFiltroChange(\'tipo\',this.value)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none">'
+    + '<div><label style="'+lblStyle+'">Tipo</label>'
+    + '<select onchange="mercadoFiltroChange(\'tipo\',this.value)" style="'+selStyle+'">'
     + '<option value="">Todos</option>'
     + '<option value="flat"'+(f.tipo==='flat'?' selected':'')+'>Apartamento</option>'
     + '<option value="house"'+(f.tipo==='house'?' selected':'')+'>Moradia</option>'
@@ -7854,10 +7870,24 @@ async function mercadoRenderImoveis() {
     + '<option value="garage"'+(f.tipo==='garage'?' selected':'')+'>Garagem</option>'
     + '<option value="commercial"'+(f.tipo==='commercial'?' selected':'')+'>Comercial</option>'
     + '</select></div>'
-    + '<div><label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Preço máx.</label>'
-    + '<input type="number" placeholder="ex: 500000" value="'+(f.precoMax||'')+'" onchange="mercadoFiltroChange(\'precoMax\',this.value?parseInt(this.value):null)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.83rem;outline:none;width:130px">'
+    + '<div><label style="'+lblStyle+'">Tipologia</label>'
+    + '<select onchange="mercadoFiltroChange(\'quartos\',this.value)" style="'+selStyle+'">'
+    + '<option value="">Todas</option>'
+    + '<option value="0"'+(f.quartos==='0'?' selected':'')+'>T0</option>'
+    + '<option value="1"'+(f.quartos==='1'?' selected':'')+'>T1</option>'
+    + '<option value="2"'+(f.quartos==='2'?' selected':'')+'>T2</option>'
+    + '<option value="3"'+(f.quartos==='3'?' selected':'')+'>T3</option>'
+    + '<option value="4"'+(f.quartos==='4'?' selected':'')+'>T4</option>'
+    + '<option value="5"'+(f.quartos==='5'?' selected':'')+'>T5+</option>'
+    + '</select></div>'
+    + '<div><label style="'+lblStyle+'">Preço mín.</label>'
+    + '<input type="number" placeholder="ex: 50000" value="'+(f.precoMin||'')+'" onchange="mercadoFiltroChange(\'precoMin\',this.value?parseInt(this.value):null)" style="'+inpStyle+'">'
     + '</div>'
-    + '<div id="mkt-count" style="font-size:.8rem;color:#6b7280;align-self:center"></div>'
+    + '<div><label style="'+lblStyle+'">Preço máx.</label>'
+    + '<input type="number" placeholder="ex: 500000" value="'+(f.precoMax||'')+'" onchange="mercadoFiltroChange(\'precoMax\',this.value?parseInt(this.value):null)" style="'+inpStyle+'">'
+    + '</div>'
+    + '<button onclick="mercadoLimparFiltros()" style="padding:7px 14px;background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:8px;font-size:.8rem;cursor:pointer;color:#374151">Limpar</button>'
+    + '</div>'
     + '</div>'
     + '<div id="mkt-imoveis-list"></div>'
     + '<div id="mkt-imoveis-pag" style="display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap"></div>'
@@ -7882,7 +7912,15 @@ async function mercadoLoadImoveisPagina() {
       .range((f.pagina-1)*porPagina, f.pagina*porPagina-1)
     if (f.operacao) query = query.eq('operacao',f.operacao)
     if (f.tipo) query = query.eq('property_type',f.tipo)
+    if (f.quartos !== null && f.quartos !== '') {
+      if (f.quartos === '5') query = query.gte('quartos', 5)
+      else query = query.eq('quartos', parseInt(f.quartos))
+    }
+    if (f.precoMin) query = query.gte('preco_atual',f.precoMin)
     if (f.precoMax) query = query.lte('preco_atual',f.precoMax)
+    if (f.referencia && f.referencia.trim()) query = query.ilike('property_code','%'+f.referencia.trim()+'%')
+    if (f.rua && f.rua.trim()) query = query.ilike('morada','%'+f.rua.trim()+'%')
+    if (f.agencia && f.agencia.trim()) query = query.ilike('agencia_nome_atual','%'+f.agencia.trim()+'%')
     var { data, count, error } = await query
     if (error) throw error
     _mercadoTotal = count || 0
@@ -7953,6 +7991,18 @@ function mercadoFiltroChange(campo, valor) {
   _mercadoFiltros[campo] = valor || null
   _mercadoFiltros.pagina = 1
   mercadoLoadImoveisPagina()
+}
+
+function mercadoPesquisaChange(campo, valor) {
+  _mercadoFiltros[campo] = valor
+  _mercadoFiltros.pagina = 1
+  clearTimeout(_mercadoPesquisaTimer)
+  _mercadoPesquisaTimer = setTimeout(function() { mercadoLoadImoveisPagina() }, 400)
+}
+
+function mercadoLimparFiltros() {
+  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', pagina: 1 }
+  mercadoRenderImoveis()
 }
 
 function mercadoIrPagina(pag) {
