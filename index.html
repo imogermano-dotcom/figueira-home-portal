@@ -1582,6 +1582,19 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
   <!-- Mercado Idealista -->
   <div class="portal-page" id="page-mercado">
     <main style="flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%">
+      <!-- Pesquisa unificada -->
+      <div style="position:relative;margin-bottom:16px" id="mkt-search-wrap">
+        <div style="display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #d1d5db;border-radius:12px;padding:10px 16px;transition:border-color .15s" id="mkt-search-box">
+          <span style="color:#9ca3af;font-size:1.1rem">🔍</span>
+          <input id="mkt-search-input" type="text" placeholder="Pesquisar por referência, morada, agência, agente…"
+            style="flex:1;border:none;outline:none;font-size:.9rem;color:#111827;background:transparent"
+            oninput="mercadoSearchInput(this.value)"
+            onfocus="document.getElementById('mkt-search-box').style.borderColor='#2d6a9f'"
+            onblur="setTimeout(function(){mercadoSearchClose()},200);document.getElementById('mkt-search-box').style.borderColor='#d1d5db'">
+          <button onclick="mercadoSearchClear()" id="mkt-search-clear" style="display:none;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:1rem;padding:0">✕</button>
+        </div>
+        <div id="mkt-search-results" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:200;background:#fff;border:1.5px solid #e0e6f0;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:420px;overflow-y:auto"></div>
+      </div>
       <div id="mercado-nav" style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e0e6f0">
         <button class="pnav-btn active" id="mtab-dashboard" onclick="mercadoShowTab('dashboard')">📊 Dashboard</button>
         <button class="pnav-btn" id="mtab-imoveis" onclick="mercadoShowTab('imoveis')">🏘️ Imóveis</button>
@@ -7713,6 +7726,81 @@ var _mercadoTabAtual = 'dashboard'
 var _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', pagina: 1 }
 var _mercadoPesquisaTimer = null
 var _mercadoTotal = 0
+var _mercadoSearchTimer = null
+
+function mercadoSearchInput(val) {
+  var clearBtn = document.getElementById('mkt-search-clear')
+  if (clearBtn) clearBtn.style.display = val ? '' : 'none'
+  clearTimeout(_mercadoSearchTimer)
+  if (!val || val.trim().length < 2) { mercadoSearchClose(); return }
+  _mercadoSearchTimer = setTimeout(function() { mercadoSearchExecute(val.trim()) }, 350)
+}
+
+async function mercadoSearchExecute(termo) {
+  var resEl = document.getElementById('mkt-search-results')
+  if (!resEl) return
+  resEl.style.display = ''
+  resEl.innerHTML = '<div style="padding:14px 16px;color:#6b7280;font-size:.83rem">A pesquisar…</div>'
+  try {
+    var { data, error } = await sb.rpc('idealista_search', { termo: termo })
+    if (error) throw error
+    if (!data || !data.length) {
+      resEl.innerHTML = '<div style="padding:14px 16px;color:#6b7280;font-size:.83rem">Nenhum resultado para <strong>'+esc(termo)+'</strong></div>'
+      return
+    }
+    // Se referência exacta → abre ficha directamente
+    var exacto = data.find(function(r) { return r.property_code === termo })
+    if (exacto) { mercadoSearchClose(); mercadoAbrirFicha(exacto.property_code); return }
+    resEl.innerHTML = data.map(function(r) {
+      var opLabel = r.operacao === 'sale' ? 'Venda' : 'Arrend.'
+      var opColor = r.operacao === 'sale' ? '#1e40af' : '#92400e'
+      var opBg   = r.operacao === 'sale' ? '#dbeafe' : '#fef3c7'
+      var estadoBg = r.ativo ? '#dcfce7' : '#f3f4f6'
+      var estadoCor = r.ativo ? '#15803d' : '#6b7280'
+      var estadoTxt = r.ativo ? 'Activo' : 'Retirado'
+      var tipologia = r.quartos != null ? 'T'+r.quartos : (mercadoTipoLabel[r.property_type] || r.property_type || '')
+      var dupBadge = r.num_duplicados > 0
+        ? '<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px">⚠️ '+r.num_duplicados+' duplicado'+(r.num_duplicados>1?'s':'')+'</span>'
+        : ''
+      return '<div onclick="mercadoSearchClose();mercadoAbrirFicha(\''+esc(r.property_code)+'\')" '
+        + 'style="display:flex;align-items:flex-start;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:background .1s" '
+        + 'onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">'
+        + '<span style="font-size:.8rem;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px">'+esc(r.titulo||'—')+'</span>'
+        + dupBadge
+        + '</div>'
+        + '<div style="font-size:.74rem;color:#6b7280">'
+        + esc(r.property_code)+' · '+esc(r.agencia_nome_atual||'Particular')+' · '
+        + (r.preco_atual ? mercadoFmtEur(r.preco_atual) : '—')+' · '
+        + (r.dias_no_mercado != null ? r.dias_no_mercado+'d no mercado' : '')
+        + '</div>'
+        + (r.morada ? '<div style="font-size:.72rem;color:#9ca3af;margin-top:1px">'+esc(r.morada)+'</div>' : '')
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">'
+        + '<span style="background:'+estadoBg+';color:'+estadoCor+';font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:8px">'+estadoTxt+'</span>'
+        + '<span style="background:'+opBg+';color:'+opColor+';font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:8px">'+opLabel+'</span>'
+        + '</div>'
+        + '</div>'
+    }).join('')
+    + (data.length === 20 ? '<div style="padding:10px 16px;font-size:.74rem;color:#9ca3af;text-align:center">Mostrando os 20 resultados mais relevantes</div>' : '')
+  } catch(e) {
+    resEl.innerHTML = '<div style="padding:14px 16px;color:#dc2626;font-size:.83rem">Erro na pesquisa: '+esc(String(e))+'</div>'
+  }
+}
+
+function mercadoSearchClose() {
+  var resEl = document.getElementById('mkt-search-results')
+  if (resEl) resEl.style.display = 'none'
+}
+
+function mercadoSearchClear() {
+  var inp = document.getElementById('mkt-search-input')
+  if (inp) inp.value = ''
+  var clearBtn = document.getElementById('mkt-search-clear')
+  if (clearBtn) clearBtn.style.display = 'none'
+  mercadoSearchClose()
+}
 
 var mercadoTipoLabel = {
   flat: 'Apartamento', house: 'Moradia', land: 'Terreno',
