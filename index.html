@@ -7773,7 +7773,7 @@ async function mercadoSearchExecute(termo) {
         + '<div style="font-size:.74rem;color:#6b7280">'
         + esc(r.property_code)+' · '+esc(r.agencia_nome_atual||'Particular')+' · '
         + (r.preco_atual ? mercadoFmtEur(r.preco_atual) : '—')+' · '
-        + (r.dias_no_mercado != null ? r.dias_no_mercado+'d no mercado' : '')
+        + mercadoDiasLabel(r)
         + '</div>'
         + (r.morada ? '<div style="font-size:.72rem;color:#9ca3af;margin-top:1px">'+esc(r.morada)+'</div>' : '')
         + '</div>'
@@ -7818,9 +7818,30 @@ function mercadoTipologia(imovel) {
 }
 
 function mercadoDiasNoMercado(imovel) {
-  var inicio = new Date(imovel.primeiro_visto_em)
+  // Usa publicado_na_fonte_em quando disponível (Imovirtual); senão primeiro_visto_em
+  var inicio = new Date(imovel.publicado_na_fonte_em || imovel.primeiro_visto_em)
   var fim = imovel.retirado_em ? new Date(imovel.retirado_em) : new Date()
   return Math.floor((fim - inicio) / (1000 * 60 * 60 * 24))
+}
+
+function mercadoDiasLabel(imovel) {
+  // Bug 2 Parte A: label honesto conforme a qualidade da data disponível
+  if (imovel.publicado_na_fonte_em) {
+    // Temos data real de publicação na fonte — dias rigorosos
+    var dias = mercadoDiasNoMercado(imovel)
+    return dias + 'd no mercado'
+  }
+  // Só temos a data em que começámos a monitorizar
+  var monitorizadoDesde = new Date(imovel.primeiro_visto_em)
+  var diasMonit = Math.floor((new Date() - monitorizadoDesde) / (1000 * 60 * 60 * 24))
+  if (diasMonit < 7) {
+    // Menos de 1 semana: ainda não é significativo mostrar dias
+    var d = monitorizadoDesde
+    var label = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear()
+    return 'desde ' + label
+  }
+  // 7+ dias: útil mas com ressalva
+  return '≥ ' + diasMonit + 'd monitorizado'
 }
 
 function mercadoVariacaoPreco(imovel) {
@@ -8056,7 +8077,7 @@ async function mercadoLoadImoveisPagina() {
           + '</div>'
           + '<div style="margin-top:8px;font-size:.72rem;color:#9ca3af;display:flex;justify-content:space-between">'
           + '<span>'+esc(im.agencia_nome_atual||'—')+'</span>'
-          + '<span>'+dias+'d no mercado</span>'
+          + '<span>'+mercadoDiasLabel(im)+'</span>'
           + '</div>'
           + '</div></div>'
       }).join('')
@@ -8148,7 +8169,7 @@ async function mercadoAbrirFicha(propertyCode) {
       + _mktDetalhe('Piso', im.piso != null ? im.piso : '—')
       + _mktDetalhe('Elevador', im.tem_elevador ? 'Sim' : 'Não')
       + _mktDetalhe('Parking', im.tem_parking ? 'Sim' : 'Não')
-      + _mktDetalhe('Dias no mercado', mercadoDiasNoMercado(im)+'d')
+      + _mktDetalhe('Tempo no mercado', mercadoDiasLabel(im))
       + _mktDetalhe('Preço inicial', mercadoFmtEur(im.preco_inicial))
       + _mktDetalhe('Alt. preço', im.num_alteracoes_preco || 0)
       + '</div>'
