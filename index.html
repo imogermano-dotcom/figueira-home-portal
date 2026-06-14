@@ -7407,6 +7407,7 @@ async function olNaoAtende(idx, ref, nome) {
     nota_origem: 'portal'
   })
   if (error) { alert('Erro ao registar: '+error.message); return }
+  _olHistLoaded = false  // invalidar cache do Histórico
   olCloseNota(idx)
   // reload para actualizar contadores / remover se atingiu 3
   olSearch()
@@ -7445,6 +7446,7 @@ async function olSaveNota(idx, ref, tipo, nome) {
   if (error) {
     alert('Erro ao guardar: ' + error.message)
   } else {
+    _olHistLoaded = false  // invalidar cache do Histórico
     // Atualizar preview no card
     var prevEl = document.getElementById('ol-prev-'+idx)
     var newLine = '<div class="ol-nota-line ol-nota-new">· '+esc(text)+'</div>'
