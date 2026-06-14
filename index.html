@@ -1542,7 +1542,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       </div>
 
       <!-- Filtros (visíveis após carregar) -->
-      <div id="ol-filters" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;gap:16px;flex-wrap:wrap;align-items:center;">
+      <div id="ol-filters" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;gap:10px 16px;flex-wrap:wrap;align-items:center;">
         <div style="display:flex;align-items:center;gap:6px;">
           <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">TIPO</label>
           <select id="ol-f-tipo" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
@@ -1570,6 +1570,24 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <option value="com">Só com notas</option>
             <option value="sem">Só sem notas</option>
           </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">CONSULTOR</label>
+          <select id="ol-f-consultor" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">REF</label>
+          <input id="ol-f-ref" type="text" placeholder="ex: CAP_14444" oninput="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:110px;">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">CONTACTO</label>
+          <input id="ol-f-contacto" type="text" placeholder="tel ou email" oninput="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:130px;">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">MORADA/IMÓVEL</label>
+          <input id="ol-f-morada" type="text" placeholder="ex: Figueira, T2..." oninput="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:150px;">
         </div>
         <button onclick="olResetFilters()" style="padding:5px 10px;background:none;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;color:#6b7280;cursor:pointer;">✕ Limpar</button>
       </div>
@@ -7064,6 +7082,8 @@ async function olSearch() {
       return {
         tel:            r.tel,
         nome:           r.nome,
+        email:          r.email || '',
+        responsavel:    r.responsavel || '',
         tipos:          r.tipos || [],
         refs:           r.refs  || [],   // [{ref, url}, ...]
         imovelDesc:     r.imovel_desc,
@@ -7078,6 +7098,17 @@ async function olSearch() {
     var filtersEl = document.getElementById('ol-filters')
     if (filtersEl) filtersEl.style.display = 'flex'
 
+    // Popular dropdown de consultor com valores únicos
+    var consultorSel = document.getElementById('ol-f-consultor')
+    if (consultorSel) {
+      var responsaveis = []
+      _olAllData.forEach(function(g) { if (g.responsavel && responsaveis.indexOf(g.responsavel) < 0) responsaveis.push(g.responsavel) })
+      responsaveis.sort()
+      var opts = '<option value="">Todos</option>'
+      responsaveis.forEach(function(r) { opts += '<option value="'+esc(r)+'">'+esc(r)+'</option>' })
+      consultorSel.innerHTML = opts
+    }
+
     olApplyFilters()
   } catch(e) {
     res.innerHTML = '<div style="padding:20px;color:#dc2626">Erro: '+e.message+'</div>'
@@ -7086,15 +7117,19 @@ async function olSearch() {
 }
 
 function olApplyFilters() {
-  var tipo    = (document.getElementById('ol-f-tipo')||{}).value || ''
-  var periodo = (document.getElementById('ol-f-periodo')||{}).value || ''
-  var notas   = (document.getElementById('ol-f-notas')||{}).value || ''
+  var tipo      = (document.getElementById('ol-f-tipo')||{}).value || ''
+  var periodo   = (document.getElementById('ol-f-periodo')||{}).value || ''
+  var notas     = (document.getElementById('ol-f-notas')||{}).value || ''
+  var consultor = (document.getElementById('ol-f-consultor')||{}).value || ''
+  var ref       = ((document.getElementById('ol-f-ref')||{}).value||'').toLowerCase().trim()
+  var contacto  = ((document.getElementById('ol-f-contacto')||{}).value||'').toLowerCase().trim()
+  var morada    = ((document.getElementById('ol-f-morada')||{}).value||'').toLowerCase().trim()
 
   var filtered = _olAllData.filter(function(g) {
-    // Filtro tipo: pelo menos uma oportunidade do grupo com este tipo
+    // Filtro tipo
     if (tipo === '__null__') { if (g.tipos.length > 0) return false }
     else if (tipo && g.tipos.indexOf(tipo) < 0) return false
-    // Filtro período: data da última nota ou data criação
+    // Filtro período
     if (periodo) {
       var parts = periodo.split('-')
       var anoMin = parseInt(parts[0]), anoMax = parseInt(parts[1])
@@ -7105,6 +7140,14 @@ function olApplyFilters() {
     // Filtro notas
     if (notas === 'com' && !g.notaPreview.length) return false
     if (notas === 'sem' && g.notaPreview.length) return false
+    // Filtro consultor (campo responsavel da oportunidade)
+    if (consultor && g.responsavel !== consultor) return false
+    // Filtro referência EGO
+    if (ref && !g.refs.some(function(u){ return (u.ref||'').toLowerCase().indexOf(ref) >= 0 })) return false
+    // Filtro contacto (telefone ou email)
+    if (contacto && (g.tel||'').toLowerCase().indexOf(contacto) < 0 && (g.email||'').toLowerCase().indexOf(contacto) < 0) return false
+    // Filtro morada/imóvel
+    if (morada && (g.imovelDesc||'').toLowerCase().indexOf(morada) < 0) return false
     return true
   })
 
@@ -7114,7 +7157,7 @@ function olApplyFilters() {
 }
 
 function olResetFilters() {
-  var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas']
+  var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas','ol-f-consultor','ol-f-ref','ol-f-contacto','ol-f-morada']
   ids.forEach(function(id){ var el = document.getElementById(id); if (el) el.value = '' })
   olApplyFilters()
 }
@@ -7166,6 +7209,11 @@ function olRender(grupos) {
     html += '</div>'
 
     html += '<div class="ol-nota-form" id="ol-form-'+idx+'" style="display:none">'
+    html += '<div style="margin-bottom:6px;font-size:.76rem;font-weight:600;color:#374151;">Resultado da chamada:</div>'
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px;">'
+    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD']
+    resultados.forEach(function(r){ html += '<label style="display:flex;align-items:center;gap:4px;font-size:.77rem;cursor:pointer;white-space:nowrap"><input type="radio" name="ol-res-'+idx+'" value="'+esc(r)+'"> '+esc(r)+'</label>' })
+    html += '</div>'
     html += '<textarea id="ol-txt-'+idx+'" placeholder="Escreve aqui a nota após a chamada..." rows="3"></textarea>'
     html += '<div class="ol-form-row">'
     html += '<input type="date" id="ol-date-'+idx+'" value="'+new Date().toISOString().slice(0,10)+'">'
@@ -7193,6 +7241,9 @@ async function olSaveNota(idx, ref, tipo, nome) {
   if (!text) { alert('Escreve uma nota antes de guardar.'); return }
   if (!autor) { alert('Seleciona quem está a ligar (campo "Quem estás a ligar como?").'); return }
 
+  var resChecked = document.querySelector('input[name="ol-res-'+idx+'"]:checked')
+  var resultado = resChecked ? resChecked.value : null
+
   var btn = document.querySelector('#ol-form-'+idx+' .ol-btn-save')
   if (btn) { btn.disabled = true; btn.textContent = '⏳' }
 
@@ -7205,6 +7256,7 @@ async function olSaveNota(idx, ref, tipo, nome) {
     nota_data_raw: data,
     nota_data_iso: data,
     nota_autor: autor,
+    nota_resultado: resultado,
     origem_lista: 'Ativas'
   })
 
