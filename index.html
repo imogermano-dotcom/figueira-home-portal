@@ -711,6 +711,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-agendamento" onclick="showTab('agendamento')">📅 Agendamento</button>
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-old-leads" onclick="showTab('old-leads')">📞 Old Leads</button>
+    <button class="pnav-btn" id="tab-hist-chamadas" onclick="showTab('hist-chamadas')">📋 Histórico Chamadas</button>
     <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
@@ -1579,21 +1580,89 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">REF</label>
-          <input id="ol-f-ref" type="text" placeholder="ex: CAP_14444" oninput="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:110px;">
+          <input id="ol-f-ref" type="text" placeholder="ex: CAP_14444" oninput="olApplyFiltersDebounced()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:110px;">
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">CONTACTO</label>
-          <input id="ol-f-contacto" type="text" placeholder="tel ou email" oninput="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:130px;">
+          <input id="ol-f-contacto" type="text" placeholder="mín. 4 caracteres" oninput="olApplyFiltersDebounced()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:130px;">
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">MORADA/IMÓVEL</label>
-          <input id="ol-f-morada" type="text" placeholder="ex: Figueira, T2..." oninput="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:150px;">
+          <input id="ol-f-morada" type="text" placeholder="ex: Figueira, T2..." oninput="olApplyFiltersDebounced()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:150px;">
         </div>
         <button onclick="olResetFilters()" style="padding:5px 10px;background:none;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;color:#6b7280;cursor:pointer;">✕ Limpar</button>
       </div>
 
       <!-- Results -->
       <div id="ol-results"></div>
+
+      <!-- Contactos Inválidos (3+ não atende) -->
+      <div style="margin-top:32px;border-top:2px solid #fee2e2;padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:.9rem;font-weight:700;color:#dc2626">📵 Contactos Inválidos</span>
+            <span id="ol-invalidos-count" style="font-size:.78rem;color:#6b7280"></span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button id="ol-invalidos-toggle" onclick="olToggleInvalidos()"
+              style="padding:5px 12px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.8rem;font-weight:600;cursor:pointer">
+              ▼ Ver contactos (3+ sem resposta)
+            </button>
+          </div>
+        </div>
+        <div id="ol-invalidos-panel" style="display:none;margin-top:12px">
+          <p style="font-size:.78rem;color:#6b7280;margin:0 0 10px">
+            Estes contactos não atenderam 3 ou mais vezes e foram retirados do Old Leads.
+            Podem ser reativados manualmente para tentar novamente no futuro.
+          </p>
+          <div id="ol-invalidos-results"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Histórico de Chamadas -->
+  <div class="portal-page" id="page-hist-chamadas">
+    <main style="flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <h2 style="font-size:1.1rem;font-weight:700;color:#1a3c5e;margin:0">📋 Histórico de Chamadas</h2>
+        <button onclick="histLoad()" style="padding:7px 14px;background:#2d6a9f;color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer">🔄 Atualizar</button>
+      </div>
+
+      <!-- Filtros -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:12px">
+        <div id="hist-consultor-wrap" style="display:none;align-items:center;gap:6px">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">CONSULTOR</label>
+          <select id="hist-f-consultor" onchange="histApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">DE</label>
+          <input type="date" id="hist-f-de" onchange="histApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">ATÉ</label>
+          <input type="date" id="hist-f-ate" onchange="histApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">RESULTADO</label>
+          <select id="hist-f-resultado" onchange="histApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem">
+            <option value="">Todos</option>
+            <option value="Vender na Figueira">Vender na Figueira</option>
+            <option value="Vender na Figueira mais tarde">Vender na Figueira mais tarde</option>
+            <option value="Vender fora da Figueira">Vender fora da Figueira</option>
+            <option value="Sem interesse">Sem interesse</option>
+            <option value="Pretende retirar contacto da BD">Pretende retirar contacto da BD</option>
+            <option value="Não atende">Não atende</option>
+            <option value="__sem__">Sem resultado registado</option>
+          </select>
+        </div>
+        <button onclick="histResetFilters()" style="padding:5px 10px;background:none;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;color:#6b7280;cursor:pointer">✕ Limpar</button>
+      </div>
+
+      <div id="hist-count" style="font-size:.8rem;color:#6b7280;margin-bottom:8px"></div>
+      <div id="hist-results"></div>
     </main>
   </div>
 
@@ -1753,7 +1822,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','hist-chamadas','config','mercado'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -1766,6 +1835,7 @@ function showTab(name) {
   if (name === 'agendamento') agInit()
   if (name === 'biblioteca') bibLoad()
   if (name === 'old-leads') olInit()
+  if (name === 'hist-chamadas') histInit()
   if (name === 'mercado') mercadoInit()
 }
 
@@ -7091,7 +7161,9 @@ async function olSearch() {
         lastNotaData:   r.last_nota_data,
         lastNotaAutor:  r.last_nota_autor,
         notaPreview:    r.nota_preview || [],
-        n_opps:         r.n_opps || 1
+        n_opps:         r.n_opps || 1,
+        naoAtendeCount: r.nao_atende_count || 0,
+        naoAtendeDates: r.nao_atende_dates || []
       }
     })
 
@@ -7116,6 +7188,12 @@ async function olSearch() {
   if (btn) { btn.disabled = false; btn.textContent = '🔄 Carregar Old Leads' }
 }
 
+var _olFilterTimer = null
+function olApplyFiltersDebounced() {
+  clearTimeout(_olFilterTimer)
+  _olFilterTimer = setTimeout(olApplyFilters, 300)
+}
+
 function olApplyFilters() {
   var tipo      = (document.getElementById('ol-f-tipo')||{}).value || ''
   var periodo   = (document.getElementById('ol-f-periodo')||{}).value || ''
@@ -7124,6 +7202,11 @@ function olApplyFilters() {
   var ref       = ((document.getElementById('ol-f-ref')||{}).value||'').toLowerCase().trim()
   var contacto  = ((document.getElementById('ol-f-contacto')||{}).value||'').toLowerCase().trim()
   var morada    = ((document.getElementById('ol-f-morada')||{}).value||'').toLowerCase().trim()
+
+  // Mínimo de caracteres para filtros de texto livre (evita render de milhares de cards)
+  var contactoAtivo = contacto.length >= 4 ? contacto : ''
+  var refAtivo      = ref.length >= 3 ? ref : ''
+  var moradaAtivo   = morada.length >= 3 ? morada : ''
 
   var filtered = _olAllData.filter(function(g) {
     // Filtro tipo
@@ -7140,19 +7223,23 @@ function olApplyFilters() {
     // Filtro notas
     if (notas === 'com' && !g.notaPreview.length) return false
     if (notas === 'sem' && g.notaPreview.length) return false
-    // Filtro consultor (campo responsavel da oportunidade)
+    // Filtro consultor
     if (consultor && g.responsavel !== consultor) return false
-    // Filtro referência EGO
-    if (ref && !g.refs.some(function(u){ return (u.ref||'').toLowerCase().indexOf(ref) >= 0 })) return false
-    // Filtro contacto (telefone ou email)
-    if (contacto && (g.tel||'').toLowerCase().indexOf(contacto) < 0 && (g.email||'').toLowerCase().indexOf(contacto) < 0) return false
-    // Filtro morada/imóvel
-    if (morada && (g.imovelDesc||'').toLowerCase().indexOf(morada) < 0) return false
+    // Filtro referência EGO (mín. 3 chars)
+    if (refAtivo && !g.refs.some(function(u){ return (u.ref||'').toLowerCase().indexOf(refAtivo) >= 0 })) return false
+    // Filtro contacto — mín. 4 chars (evita match com "9" → 7000 resultados)
+    if (contactoAtivo && (g.tel||'').toLowerCase().indexOf(contactoAtivo) < 0 && (g.email||'').toLowerCase().indexOf(contactoAtivo) < 0) return false
+    // Filtro morada/imóvel (mín. 3 chars)
+    if (moradaAtivo && (g.imovelDesc||'').toLowerCase().indexOf(moradaAtivo) < 0) return false
     return true
   })
 
   var countEl = document.getElementById('ol-count')
-  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '')
+  var hint = ''
+  if ((contacto && contacto.length < 4) || (ref && ref.length < 3) || (morada && morada.length < 3)) {
+    hint = ' — escreve mais para filtrar'
+  }
+  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '') + hint
   olRender(filtered)
 }
 
@@ -7193,6 +7280,15 @@ function olRender(grupos) {
       html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">🏠 '+esc(g.imovelDesc)+'</div>'
     }
 
+    // Histórico de não-atende
+    if (g.naoAtendeCount > 0) {
+      var datesStr = g.naoAtendeDates.map(function(d){ return (d||'').slice(0,10) }).join(', ')
+      var cor = g.naoAtendeCount >= 2 ? '#dc2626' : '#d97706'
+      html += '<div style="font-size:.76rem;color:'+cor+';margin:3px 0 5px;padding:4px 8px;background:#fef2f2;border-radius:5px;border-left:3px solid '+cor+'">'
+      html += '📵 Sem resposta: '+esc(datesStr)+' — <strong>'+g.naoAtendeCount+'/3</strong> tentativas'
+      html += '</div>'
+    }
+
     if (g.notaPreview.length) {
       html += '<div class="ol-notas-preview" id="ol-prev-'+idx+'">'
       g.notaPreview.forEach(function(t){ html += '<div class="ol-nota-line">· '+esc(t)+'</div>' })
@@ -7206,12 +7302,13 @@ function olRender(grupos) {
       if (u.url) html += '<a href="'+esc(u.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO'+(g.refs.length>1?' '+(i+1):'')+'</a>'
     })
     html += '<button class="ol-btn ol-btn-nota" onclick="olOpenNota('+idx+')">✍️ Registar nota</button>'
+    html += '<button class="ol-btn" style="background:#fef2f2;border-color:#fca5a5;color:#dc2626" onclick="olOpenNota('+idx+',\'Não atende\')">📵 Não atende</button>'
     html += '</div>'
 
     html += '<div class="ol-nota-form" id="ol-form-'+idx+'" style="display:none">'
     html += '<div style="margin-bottom:6px;font-size:.76rem;font-weight:600;color:#374151;">Resultado da chamada:</div>'
     html += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px;">'
-    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD']
+    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD','Não atende']
     resultados.forEach(function(r){ html += '<label style="display:flex;align-items:center;gap:4px;font-size:.77rem;cursor:pointer;white-space:nowrap"><input type="radio" name="ol-res-'+idx+'" value="'+esc(r)+'"> '+esc(r)+'</label>' })
     html += '</div>'
     html += '<textarea id="ol-txt-'+idx+'" placeholder="Escreve aqui a nota após a chamada..." rows="3"></textarea>'
@@ -7225,9 +7322,15 @@ function olRender(grupos) {
   document.getElementById('ol-results').innerHTML = html
 }
 
-function olOpenNota(idx) {
+function olOpenNota(idx, preRes) {
   var f = document.getElementById('ol-form-'+idx)
-  if (f) { f.style.display = 'block'; document.getElementById('ol-txt-'+idx).focus() }
+  if (!f) return
+  f.style.display = 'block'
+  if (preRes) {
+    var radio = f.querySelector('input[name="ol-res-'+idx+'"][value="'+preRes+'"]')
+    if (radio) { radio.checked = true }
+  }
+  document.getElementById('ol-txt-'+idx).focus()
 }
 function olCloseNota(idx) {
   var f = document.getElementById('ol-form-'+idx)
@@ -7238,11 +7341,14 @@ async function olSaveNota(idx, ref, tipo, nome) {
   var text = (document.getElementById('ol-txt-'+idx).value||'').trim()
   var data = document.getElementById('ol-date-'+idx).value
   var autor = _olCaller || (document.getElementById('ol-caller')||{}).value || ''
-  if (!text) { alert('Escreve uma nota antes de guardar.'); return }
   if (!autor) { alert('Seleciona quem está a ligar (campo "Quem estás a ligar como?").'); return }
 
   var resChecked = document.querySelector('input[name="ol-res-'+idx+'"]:checked')
   var resultado = resChecked ? resChecked.value : null
+
+  // "Não atende" não precisa de texto — auto-preencher
+  if (!text && resultado === 'Não atende') text = 'Não atende'
+  if (!text) { alert('Escreve uma nota antes de guardar.'); return }
 
   var btn = document.querySelector('#ol-form-'+idx+' .ol-btn-save')
   if (btn) { btn.disabled = true; btn.textContent = '⏳' }
@@ -7279,10 +7385,349 @@ async function olSaveNota(idx, ref, tipo, nome) {
   }
   if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar nota' }
 }
+// ── Contactos Inválidos (3+ não atende) ──────────────────────────────────────
+var _olInvalidosLoaded = false
+
+function olToggleInvalidos() {
+  var panel = document.getElementById('ol-invalidos-panel')
+  var btn   = document.getElementById('ol-invalidos-toggle')
+  if (!panel) return
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block'
+    if (btn) btn.textContent = '▲ Ocultar contactos (3+ sem resposta)'
+    if (!_olInvalidosLoaded) olLoadInvalidos()
+  } else {
+    panel.style.display = 'none'
+    if (btn) btn.textContent = '▼ Ver contactos (3+ sem resposta)'
+  }
+}
+
+async function olLoadInvalidos() {
+  _olInvalidosLoaded = true
+  var res = document.getElementById('ol-invalidos-results')
+  if (res) res.innerHTML = '<div style="padding:20px;text-align:center;color:#6b7280">A carregar...</div>'
+
+  var ego = _getEgoClient()
+  var { data, error } = await ego.rpc('get_contactos_invalidos')
+  if (error) {
+    if (res) res.innerHTML = '<div style="color:#dc2626;padding:10px">Erro: '+error.message+'</div>'
+    return
+  }
+
+  var countEl = document.getElementById('ol-invalidos-count')
+  if (countEl) countEl.textContent = '(' + (data||[]).length + ' contactos)'
+
+  if (!data || !data.length) {
+    if (res) res.innerHTML = '<div style="padding:20px;color:#6b7280">Sem contactos inválidos.</div>'
+    return
+  }
+
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem">'
+  html += '<thead><tr style="background:#fef2f2;border-bottom:2px solid #fca5a5">'
+  html += '<th style="padding:9px 8px;text-align:left;font-weight:600;color:#991b1b">NOME</th>'
+  html += '<th style="padding:9px 8px;text-align:left;font-weight:600;color:#991b1b">TELEFONE</th>'
+  html += '<th style="padding:9px 8px;text-align:left;font-weight:600;color:#991b1b">TIPO</th>'
+  html += '<th style="padding:9px 8px;text-align:left;font-weight:600;color:#991b1b">REF</th>'
+  html += '<th style="padding:9px 8px;text-align:left;font-weight:600;color:#991b1b">TENTATIVAS SEM RESPOSTA</th>'
+  html += '<th style="padding:9px 8px"></th>'
+  html += '</tr></thead><tbody>'
+
+  ;(data||[]).forEach(function(r) {
+    var datas = (r.nao_atende_dates||[]).map(function(d){ return (d||'').slice(0,10) }).join('  →  ')
+    var refPrincipal = ((r.refs||[])[0]||{}).ref || ''
+    var refUrl       = ((r.refs||[])[0]||{}).url || ''
+    var tiposPrinc   = (r.tipos||[]).join(', ') || '—'
+    html += '<tr style="border-bottom:1px solid #fee2e2">'
+    html += '<td style="padding:8px;font-weight:600;color:#374151">'+esc(r.nome||'—')+'</td>'
+    html += '<td style="padding:8px;white-space:nowrap;color:#374151">📞 '+esc(r.tel)+'</td>'
+    html += '<td style="padding:8px;color:#6b7280;font-size:.78rem">'+esc(tiposPrinc)+'</td>'
+    html += '<td style="padding:8px;white-space:nowrap">'
+    html += refUrl ? '<a href="'+esc(refUrl)+'" target="_blank" style="color:#2d6a9f;font-size:.78rem;font-weight:600">'+esc(refPrincipal)+'</a>' : '<span style="color:#6b7280;font-size:.78rem">'+esc(refPrincipal)+'</span>'
+    html += '</td>'
+    html += '<td style="padding:8px;color:#dc2626;font-size:.78rem;white-space:nowrap">📵 '+esc(datas)+' <strong>('+r.nao_atende_count+'x)</strong></td>'
+    html += '<td style="padding:8px"><button onclick="olReativarContacto(\''+esc(r.tel)+'\')" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:5px;background:none;font-size:.74rem;cursor:pointer;color:#374151;white-space:nowrap" title="Remove os registos de não-atende para este contacto voltar ao Old Leads">🔄 Reativar</button></td>'
+    html += '</tr>'
+  })
+
+  html += '</tbody></table></div>'
+  if (res) res.innerHTML = html
+}
+
+async function olReativarContacto(tel) {
+  if (!confirm('Tens a certeza que queres reativar o contacto '+tel+'?\n\nIsso irá remover os "Não atende" registados e o contacto voltará a aparecer no Old Leads.')) return
+
+  var ego = _getEgoClient()
+  // Encontrar todas as refs deste telefone e apagar os "Não atende"
+  var { data: opps } = await ego.from('oportunidades')
+    .select('oportunidade_ref')
+    .filter('cliente_telefone', 'ilike', '%'+tel.replace(/\s+/g,'')+'%')
+
+  if (!opps || !opps.length) { alert('Não foi possível encontrar as oportunidades deste contacto.'); return }
+
+  var refs = opps.map(function(o){ return o.oportunidade_ref })
+  var { error } = await ego.from('notas')
+    .delete()
+    .in('oportunidade_ref', refs)
+    .eq('nota_resultado', 'Não atende')
+
+  if (error) { alert('Erro ao reativar: '+error.message); return }
+
+  alert('Contacto reativado. Carrega "Old Leads" novamente para o ver na lista.')
+  _olInvalidosLoaded = false
+  olLoadInvalidos()
+}
+
+// ── Histórico de Chamadas ─────────────────────────────────────────────────────
+var _histAllData    = []
+var _histFiltered   = []
+var _histDataMap    = {}
+var _histEditId     = null
+var _histLoaded     = false
+var _histPage       = 1
+var _histPageSize   = 25
+
+async function histInit() {
+  if (!_histLoaded) histLoad()
+}
+
+async function histLoad() {
+  _histLoaded = true
+  var res = document.getElementById('hist-results')
+  var countEl = document.getElementById('hist-count')
+  if (res) res.innerHTML = '<div style="padding:30px;text-align:center;color:#6b7280">A carregar...</div>'
+  if (countEl) countEl.textContent = ''
+
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+
+  var wrap = document.getElementById('hist-consultor-wrap')
+  if (wrap) wrap.style.display = isAdmin ? 'flex' : 'none'
+
+  var ego = _getEgoClient()
+  var q = ego.from('notas')
+    .select('id, oportunidade_ref, cliente_nome, nota_autor, nota_texto, nota_resultado, nota_data_iso, criado_em')
+    .not('nota_autor', 'is', null)
+    .order('criado_em', { ascending: false })
+    .limit(1000)
+
+  if (!isAdmin) {
+    var meName = _olCaller || (_profile && _profile.nome) || ''
+    if (meName) q = q.eq('nota_autor', meName)
+  }
+
+  var { data, error } = await q
+  if (error) {
+    if (res) res.innerHTML = '<div style="padding:20px;color:#dc2626">Erro: '+error.message+'</div>'
+    return
+  }
+
+  _histAllData = data || []
+
+  if (isAdmin) {
+    var sel = document.getElementById('hist-f-consultor')
+    if (sel) {
+      var autores = []
+      _histAllData.forEach(function(r) { if (r.nota_autor && autores.indexOf(r.nota_autor) < 0) autores.push(r.nota_autor) })
+      autores.sort()
+      var opts = '<option value="">Todos</option>'
+      autores.forEach(function(a) { opts += '<option value="'+esc(a)+'">'+esc(a)+'</option>' })
+      sel.innerHTML = opts
+    }
+  }
+
+  histApplyFilters()
+}
+
+function histApplyFilters() {
+  var consultor = ((document.getElementById('hist-f-consultor')||{}).value||'')
+  var de        = ((document.getElementById('hist-f-de')||{}).value||'')
+  var ate       = ((document.getElementById('hist-f-ate')||{}).value||'')
+  var resultado = ((document.getElementById('hist-f-resultado')||{}).value||'')
+
+  var filtered = _histAllData.filter(function(r) {
+    if (consultor && r.nota_autor !== consultor) return false
+    var dataRef = (r.nota_data_iso || '').slice(0,10)
+    if (de  && dataRef < de)  return false
+    if (ate && dataRef > ate) return false
+    if (resultado === '__sem__' && r.nota_resultado) return false
+    else if (resultado && resultado !== '__sem__' && r.nota_resultado !== resultado) return false
+    return true
+  })
+
+  _histFiltered = filtered
+  _histPage = 1
+  histRenderPage()
+}
+
+function histRenderPage() {
+  var total = _histFiltered.length
+  var totalPages = Math.max(1, Math.ceil(total / _histPageSize))
+  _histPage = Math.max(1, Math.min(_histPage, totalPages))
+
+  var countEl = document.getElementById('hist-count')
+  if (countEl) {
+    var base = total + ' nota' + (total !== 1 ? 's' : '')
+    if (total < _histAllData.length) base += ' (filtrado de ' + _histAllData.length + ')'
+    if (totalPages > 1) base += ' — página ' + _histPage + ' de ' + totalPages
+    countEl.textContent = base
+  }
+
+  var start = (_histPage - 1) * _histPageSize
+  histRender(_histFiltered.slice(start, start + _histPageSize))
+}
+
+function histGoPage(delta) {
+  var totalPages = Math.max(1, Math.ceil(_histFiltered.length / _histPageSize))
+  _histPage = Math.max(1, Math.min(_histPage + delta, totalPages))
+  histRenderPage()
+}
+
+function histResetFilters() {
+  ['hist-f-consultor','hist-f-de','hist-f-ate','hist-f-resultado'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = ''
+  })
+  histApplyFilters()
+}
+
+function histResultadoBadge(res) {
+  if (!res) return '<span style="color:#9ca3af;font-size:.75rem">—</span>'
+  var styles = {
+    'Vender na Figueira':              'background:#dcfce7;color:#166534',
+    'Vender na Figueira mais tarde':   'background:#fef9c3;color:#854d0e',
+    'Vender fora da Figueira':         'background:#fee2e2;color:#991b1b',
+    'Sem interesse':                   'background:#f3f4f6;color:#374151',
+    'Pretende retirar contacto da BD': 'background:#fce7f3;color:#9d174d',
+    'Não atende':                      'background:#fef2f2;color:#dc2626'
+  }
+  var s = styles[res] || 'background:#f3f4f6;color:#374151'
+  return '<span style="padding:2px 7px;border-radius:4px;font-size:.72rem;font-weight:600;white-space:nowrap;'+s+'">'+esc(res)+'</span>'
+}
+
+function histRender(rows) {
+  var res = document.getElementById('hist-results')
+  if (!rows.length) {
+    res.innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280">Sem notas encontradas com os critérios actuais.</div>'
+    return
+  }
+  _histDataMap = {}
+  rows.forEach(function(r) { _histDataMap[r.id] = r })
+
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem">'
+  html += '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb">'
+  html += '<th style="padding:10px 8px;text-align:left;font-weight:600;color:#6b7280;white-space:nowrap">DATA</th>'
+  if (isAdmin) html += '<th style="padding:10px 8px;text-align:left;font-weight:600;color:#6b7280">CONSULTOR</th>'
+  html += '<th style="padding:10px 8px;text-align:left;font-weight:600;color:#6b7280">CLIENTE</th>'
+  html += '<th style="padding:10px 8px;text-align:left;font-weight:600;color:#6b7280">REF</th>'
+  html += '<th style="padding:10px 8px;text-align:left;font-weight:600;color:#6b7280">RESULTADO</th>'
+  html += '<th style="padding:10px 8px;text-align:left;font-weight:600;color:#6b7280">NOTA</th>'
+  html += '<th style="padding:10px 8px"></th>'
+  html += '</tr></thead><tbody>'
+
+  rows.forEach(function(r) {
+    html += '<tr style="border-bottom:1px solid #f3f4f6">'
+    html += '<td style="padding:8px;white-space:nowrap;color:#374151">'+esc(r.nota_data_iso||'—')+'</td>'
+    if (isAdmin) html += '<td style="padding:8px;white-space:nowrap;color:#374151">'+esc(r.nota_autor||'—')+'</td>'
+    html += '<td style="padding:8px;color:#374151">'+esc(r.cliente_nome||'—')+'</td>'
+    html += '<td style="padding:8px;white-space:nowrap;font-size:.78rem;color:#2d6a9f;font-weight:600">'+esc(r.oportunidade_ref||'—')+'</td>'
+    html += '<td style="padding:8px">'+histResultadoBadge(r.nota_resultado)+'</td>'
+    html += '<td style="padding:8px;color:#4b5563;max-width:280px;font-size:.8rem">'+esc((r.nota_texto||'').slice(0,110))+((r.nota_texto||'').length>110?'…':'')+'</td>'
+    html += '<td style="padding:8px"><button onclick="hcOpenEdit('+r.id+')" style="padding:3px 8px;border:1px solid #d1d5db;border-radius:5px;background:none;font-size:.75rem;cursor:pointer;color:#374151;white-space:nowrap">✏️ Editar</button></td>'
+    html += '</tr>'
+  })
+
+  html += '</tbody></table></div>'
+
+  var totalPages = Math.max(1, Math.ceil(_histFiltered.length / _histPageSize))
+  if (totalPages > 1) {
+    var btnStyle = 'padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem;color:#374151'
+    var btnDis   = 'padding:6px 14px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;font-size:.82rem;color:#9ca3af;cursor:default'
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:18px 0">'
+    html += '<button onclick="histGoPage(-1)" style="'+(_histPage<=1?btnDis:btnStyle)+'" '+(_histPage<=1?'disabled':'')+'>‹ Anterior</button>'
+    html += '<span style="font-size:.82rem;color:#374151;font-weight:500">Página '+_histPage+' de '+totalPages+'</span>'
+    html += '<button onclick="histGoPage(1)" style="'+(_histPage>=totalPages?btnDis:btnStyle)+'" '+(_histPage>=totalPages?'disabled':'')+'>Próxima ›</button>'
+    html += '</div>'
+  }
+
+  res.innerHTML = html
+}
+
+function hcOpenEdit(id) {
+  var r = _histDataMap[id]
+  if (!r) return
+  _histEditId = id
+  document.getElementById('hc-edit-txt').value = r.nota_texto || ''
+  document.querySelectorAll('input[name="hc-edit-res"]').forEach(function(rb) {
+    rb.checked = rb.value === (r.nota_resultado || '')
+  })
+  document.getElementById('hc-edit-overlay').style.display = 'block'
+  document.getElementById('hc-edit-modal').style.display = 'block'
+}
+
+function hcCloseEdit() {
+  document.getElementById('hc-edit-overlay').style.display = 'none'
+  document.getElementById('hc-edit-modal').style.display = 'none'
+  _histEditId = null
+}
+
+async function hcSaveEdit() {
+  if (!_histEditId) return
+  var text = (document.getElementById('hc-edit-txt').value||'').trim()
+  var resChecked = document.querySelector('input[name="hc-edit-res"]:checked')
+  var resultado = (resChecked && resChecked.value) ? resChecked.value : null
+
+  var btn = document.getElementById('hc-edit-save-btn')
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ A guardar...' }
+
+  var ego = _getEgoClient()
+  var { error } = await ego.from('notas')
+    .update({ nota_texto: text, nota_resultado: resultado })
+    .eq('id', _histEditId)
+
+  if (error) {
+    alert('Erro ao guardar: '+error.message)
+  } else {
+    var r = _histDataMap[_histEditId]
+    if (r) { r.nota_texto = text; r.nota_resultado = resultado }
+    hcCloseEdit()
+    histApplyFilters()
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar' }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 </script>
 
 <!-- ── Modal de Publicação Rápida de Vídeo ── -->
+<!-- ── Modal Editar Nota (Histórico Chamadas) ── -->
+<div id="hc-edit-overlay" onclick="hcCloseEdit()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;"></div>
+<div id="hc-edit-modal"
+  style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+         width:min(520px,94vw);background:#fff;border-radius:14px;
+         box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:501;padding:24px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="font-size:.95rem;font-weight:700;color:#1a3c5e;margin:0">✏️ Editar nota</h3>
+    <button onclick="hcCloseEdit()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280">✕</button>
+  </div>
+  <div style="margin-bottom:6px;font-size:.76rem;font-weight:600;color:#374151">Resultado da chamada:</div>
+  <div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:12px">
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer"><input type="radio" name="hc-edit-res" value="Vender na Figueira"> Vender na Figueira</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer"><input type="radio" name="hc-edit-res" value="Vender na Figueira mais tarde"> Vender na Figueira mais tarde</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer"><input type="radio" name="hc-edit-res" value="Vender fora da Figueira"> Vender fora da Figueira</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer"><input type="radio" name="hc-edit-res" value="Sem interesse"> Sem interesse</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer"><input type="radio" name="hc-edit-res" value="Pretende retirar contacto da BD"> Pretende retirar contacto da BD</label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:.78rem;cursor:pointer"><input type="radio" name="hc-edit-res" value=""> Limpar resultado</label>
+  </div>
+  <textarea id="hc-edit-txt" rows="5"
+    style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.83rem;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button id="hc-edit-save-btn" onclick="hcSaveEdit()"
+      style="flex:1;padding:9px;background:#2d6a9f;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer">💾 Guardar</button>
+    <button onclick="hcCloseEdit()"
+      style="padding:9px 16px;background:none;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;cursor:pointer;color:#374151">Cancelar</button>
+  </div>
+</div>
+
 <div id="pub-rapida-overlay" onclick="fecharPublicacaoRapida()"
   style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;"></div>
 
