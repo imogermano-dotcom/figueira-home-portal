@@ -7688,10 +7688,10 @@ function olHistRender(rows, total, totalPages) {
   if (totalPages > 1) html += ' — página ' + _olHistPage + ' de ' + totalPages
   html += '</div>'
 
-  rows.forEach(function(c) {
-    var idx = c.ref
+  rows.forEach(function(c, rowIdx) {
+    var globalIdx = ((_olHistPage - 1) * _olHistSize) + rowIdx
     html += '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer" '
-    html += 'onclick="olHistOpenContact('+JSON.stringify(idx)+')" '
+    html += 'onclick="olHistOpenContact('+globalIdx+')" '
     html += 'onmouseover="this.style.borderColor=\'#93c5fd\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.07)\'" '
     html += 'onmouseout="this.style.borderColor=\'#e5e7eb\';this.style.boxShadow=\'\'">'
 
@@ -7777,8 +7777,8 @@ function olHistBuildNotaCard(n, editMode) {
   return html
 }
 
-function olHistOpenContact(ref) {
-  var c = _olHistData.find(function(x){ return x.ref === ref })
+function olHistOpenContact(idx) {
+  var c = _olHistData[idx]
   if (!c) return
 
   c.notas.forEach(function(n) { _histDataMap[n.id] = n })
