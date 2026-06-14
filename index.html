@@ -1589,7 +1589,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">MORADA/IMÓVEL</label>
-          <input id="ol-f-morada" type="text" placeholder="ex: Figueira, T2..." oninput="olApplyFiltersDebounced()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:150px;">
+          <input id="ol-f-morada" type="text" placeholder="ex: Cidade..." onkeydown="if(event.key==='Enter') olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:150px;">
+          <button onclick="olApplyFilters()" style="padding:5px 10px;background:#1d4ed8;border:none;border-radius:6px;font-size:.78rem;color:#fff;cursor:pointer;font-weight:600">OK</button>
         </div>
         <button onclick="olResetFilters()" style="padding:5px 10px;background:none;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;color:#6b7280;cursor:pointer;">✕ Limpar</button>
       </div>
@@ -7209,10 +7210,9 @@ function olApplyFilters() {
 
   var countEl = document.getElementById('ol-count')
 
-  // Se algum campo de texto está abaixo do mínimo, não re-renderizar — esperar mais caracteres
+  // Contacto e REF: não re-renderizar abaixo do mínimo (morada só filtra via botão OK)
   if ((contacto.length > 0 && contacto.length < 4) ||
-      (ref.length > 0 && ref.length < 3) ||
-      (morada.length > 0 && morada.length < 3)) {
+      (ref.length > 0 && ref.length < 3)) {
     if (countEl) countEl.textContent = _olAllData.length + ' contactos — escreve mais para filtrar'
     return
   }
