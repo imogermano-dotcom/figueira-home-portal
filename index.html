@@ -7067,7 +7067,10 @@ window.FeedbackIA={
 var _OL_TODOS_CONSULTORES = ['Alexandra Santos','Alexsandra Ferreira','Ana Daniel','Lina Galvão','Lidia Sousa','Maria José Boia','Miguel Germano','Sandra Silva','Sofia Monteiro']
 var _olAtivos = []
 var _olCaller = ''  // definido em olInit() a partir do perfil autenticado
-var _olAllData = []   // todos os resultados carregados (para filtros client-side)
+var _olAllData    = []   // todos os resultados carregados (para filtros client-side)
+var _olFiltered   = []   // resultado do último filtro
+var _olPage       = 1
+var _olPageSize   = 50
 var _olNotaMap = {}   // notaMap guardado para re-render
 
 function _getEgoClient() {
@@ -7264,27 +7267,28 @@ function olApplyFilters() {
 function olResetFilters() {
   var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas','ol-f-consultor','ol-f-ref','ol-f-contacto','ol-f-morada']
   ids.forEach(function(id){ var el = document.getElementById(id); if (el) el.value = '' })
-  // Se não há filtros activos, limpar resultados em vez de renderizar 7876 cards
-  var hasFilter = ids.some(function(id){
-    var el = document.getElementById(id)
-    return el && el.value && el.value !== ''
-  })
-  if (!hasFilter) {
-    var countEl = document.getElementById('ol-count')
-    if (countEl) countEl.textContent = _olAllData.length + ' contactos — usa filtros para pesquisar'
-    document.getElementById('ol-results').innerHTML = ''
-    return
-  }
-  olApplyFilters()
+  // Mostrar todos (paginados) sem filtros activos
+  var countEl = document.getElementById('ol-count')
+  if (countEl) countEl.textContent = _olAllData.length + ' contactos'
+  olRender(_olAllData)
 }
 
-function olRender(grupos) {
+function olRenderPage() {
+  var grupos = _olFiltered
   if (!grupos.length) {
     document.getElementById('ol-results').innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280">Sem old leads encontradas com os critérios actuais.</div>'
     return
   }
+  var totalPages = Math.ceil(grupos.length / _olPageSize)
+  if (_olPage < 1) _olPage = 1
+  if (_olPage > totalPages) _olPage = totalPages
+  var start = (_olPage - 1) * _olPageSize
+  var pageItems = grupos.slice(start, start + _olPageSize)
+
   var html = ''
-  grupos.forEach(function(g, idx) {
+  pageItems.forEach(function(g, pageIdx) {
+    var idx = start + pageIdx  // índice global para IDs únicos
+    g.__renderIdx = idx
     // Responsável = autor da última nota
     var responsavel = g.lastNotaAutor || '—'
     var refPrincipal = (g.refs[0]||{}).ref || ''
@@ -7348,7 +7352,29 @@ function olRender(grupos) {
     html += '</div></div>'
     html += '</div>'
   })
+
+  // Paginação
+  if (totalPages > 1) {
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px 0;border-top:1px solid #e5e7eb;margin-top:16px">'
+    html += '<button onclick="olGoPage(-1)" '+((_olPage<=1)?'disabled':'')+' style="padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem;color:#374151'+((_olPage<=1)?';opacity:.4':'')+'">← Anterior</button>'
+    html += '<span style="font-size:.82rem;color:#6b7280">Página <strong>'+_olPage+'</strong> de <strong>'+totalPages+'</strong> &nbsp;('+grupos.length+' total)</span>'
+    html += '<button onclick="olGoPage(1)" '+((_olPage>=totalPages)?'disabled':'')+' style="padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem;color:#374151'+((_olPage>=totalPages)?';opacity:.4':'')+'">Seguinte →</button>'
+    html += '</div>'
+  }
+
   document.getElementById('ol-results').innerHTML = html
+}
+
+function olGoPage(delta) {
+  _olPage += delta
+  olRenderPage()
+  window.scrollTo(0, document.getElementById('ol-results').offsetTop - 80)
+}
+
+function olRender(grupos) {
+  _olFiltered = grupos
+  _olPage = 1
+  olRenderPage()
 }
 
 function olOpenNota(idx, preRes) {
