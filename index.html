@@ -1537,11 +1537,24 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       </div>
 
       <!-- Controls -->
-      <div class="ol-controls">
-        <button class="ol-load-btn ol-search-btn" id="ol-load-btn" onclick="olSearch()">🔄 Carregar Old Leads</button>
-        <button id="ol-hist-btn" onclick="olToggleHistorico()" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s">📋 Histórico</button>
+      <div class="ol-controls" style="align-items:center;flex-wrap:wrap;gap:10px">
+        <!-- Tab switcher -->
+        <div style="display:flex;border:1.5px solid #d1d5db;border-radius:9px;overflow:hidden;flex-shrink:0">
+          <button id="ol-tab-leads" onclick="olSwitchToLeads()"
+            style="padding:8px 18px;border:none;border-right:1.5px solid #d1d5db;background:#1e3a5f;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .15s">
+            📋 Old Leads
+          </button>
+          <button id="ol-tab-hist" onclick="olToggleHistorico()"
+            style="padding:8px 18px;border:none;background:#f9fafb;color:#6b7280;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s">
+            🕐 Histórico
+          </button>
+        </div>
+        <button class="ol-load-btn ol-search-btn" id="ol-load-btn" onclick="olSearch()" style="display:inline-block">🔄 Carregar</button>
         <span class="ol-count" id="ol-count"></span>
       </div>
+
+      <!-- Título do modo activo -->
+      <div id="ol-mode-title" style="font-size:1.1rem;font-weight:700;color:#1e3a5f;padding:10px 0 4px;display:none">Old Leads</div>
 
       <!-- Filtros (visíveis após carregar) -->
       <div id="ol-filters" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;gap:10px 16px;flex-wrap:wrap;align-items:center;">
@@ -7174,6 +7187,7 @@ async function olSearch() {
 
     var filtersEl = document.getElementById('ol-filters')
     if (filtersEl) filtersEl.style.display = 'flex'
+    _olSetTabStyle('leads')
 
     // Popular dropdown de consultor com valores únicos
     var consultorSel = document.getElementById('ol-f-consultor')
@@ -7507,33 +7521,58 @@ var _olHistSize   = 50
 var _olHistMode   = false
 var _olHistLoaded = false
 
-function olToggleHistorico() {
-  _olHistMode = !_olHistMode
-  var btn         = document.getElementById('ol-hist-btn')
-  var loadBtn     = document.getElementById('ol-load-btn')
-  var histView    = document.getElementById('ol-hist-view')
-  var olRes       = document.getElementById('ol-results')
-  var olFilters   = document.getElementById('ol-filters')
-  var olInval     = document.getElementById('ol-invalidos-section')
-  var countEl     = document.getElementById('ol-count')
+function _olSetTabStyle(mode) {
+  // mode: 'leads' | 'hist'
+  var tabLeads = document.getElementById('ol-tab-leads')
+  var tabHist  = document.getElementById('ol-tab-hist')
+  var title    = document.getElementById('ol-mode-title')
+  var loadBtn  = document.getElementById('ol-load-btn')
 
-  if (_olHistMode) {
-    if (btn) { btn.style.background='#1d4ed8'; btn.style.color='#fff'; btn.style.borderColor='#1d4ed8' }
-    if (olRes)    olRes.style.display    = 'none'
-    if (olFilters && olFilters.style.display !== 'none') olFilters.setAttribute('data-was-visible','1')
-    if (olFilters) olFilters.style.display = 'none'
-    if (olInval)  olInval.style.display  = 'none'
-    if (countEl)  countEl.textContent    = ''
-    if (histView) histView.style.display = 'block'
-    olHistLoad()
+  if (mode === 'hist') {
+    if (tabLeads) { tabLeads.style.background='#f9fafb'; tabLeads.style.color='#6b7280'; tabLeads.style.fontWeight='600' }
+    if (tabHist)  { tabHist.style.background='#1d4ed8';  tabHist.style.color='#fff';    tabHist.style.fontWeight='700' }
+    if (title)    { title.textContent='Histórico de Contactos'; title.style.color='#1d4ed8'; title.style.display='block' }
+    if (loadBtn)  loadBtn.style.display = 'none'
   } else {
-    if (btn) { btn.style.background=''; btn.style.color=''; btn.style.borderColor='' }
-    if (histView) histView.style.display = 'none'
-    if (olRes)    olRes.style.display    = ''
-    if (olInval)  olInval.style.display  = ''
-    if (olFilters && olFilters.getAttribute('data-was-visible')) olFilters.style.display = 'flex'
-    if (countEl && _olAllData.length) countEl.textContent = _olAllData.length + ' contactos'
+    if (tabLeads) { tabLeads.style.background='#1e3a5f'; tabLeads.style.color='#fff';    tabLeads.style.fontWeight='700' }
+    if (tabHist)  { tabHist.style.background='#f9fafb';  tabHist.style.color='#6b7280'; tabHist.style.fontWeight='600' }
+    if (title)    { title.textContent='Old Leads'; title.style.color='#1e3a5f'; title.style.display='block' }
+    if (loadBtn)  loadBtn.style.display = ''
   }
+}
+
+function olSwitchToLeads() {
+  if (!_olHistMode) return  // já estamos em leads
+  _olHistMode = false
+  _olSetTabStyle('leads')
+  var histView = document.getElementById('ol-hist-view')
+  var olRes    = document.getElementById('ol-results')
+  var olInval  = document.getElementById('ol-invalidos-section')
+  var olFilters= document.getElementById('ol-filters')
+  var countEl  = document.getElementById('ol-count')
+  if (histView) histView.style.display = 'none'
+  if (olRes)    olRes.style.display    = ''
+  if (olInval)  olInval.style.display  = ''
+  if (olFilters && olFilters.getAttribute('data-was-visible')) olFilters.style.display = 'flex'
+  if (countEl && _olAllData.length) countEl.textContent = _olAllData.length + ' contactos'
+}
+
+function olToggleHistorico() {
+  if (_olHistMode) return  // já estamos em histórico — clique no tab activo não faz nada
+  _olHistMode = true
+  _olSetTabStyle('hist')
+  var histView  = document.getElementById('ol-hist-view')
+  var olRes     = document.getElementById('ol-results')
+  var olFilters = document.getElementById('ol-filters')
+  var olInval   = document.getElementById('ol-invalidos-section')
+  var countEl   = document.getElementById('ol-count')
+  if (olRes)    olRes.style.display    = 'none'
+  if (olFilters && olFilters.style.display !== 'none') olFilters.setAttribute('data-was-visible','1')
+  if (olFilters) olFilters.style.display = 'none'
+  if (olInval)  olInval.style.display  = 'none'
+  if (countEl)  countEl.textContent    = ''
+  if (histView) histView.style.display = 'block'
+  olHistLoad()
 }
 
 async function olHistLoad() {
@@ -7656,39 +7695,108 @@ function olHistRender(rows, total, totalPages) {
   histView.innerHTML = html
 }
 
+var _olHistResultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD','Não atende']
+
+function olHistBuildNotaCard(n, editMode) {
+  var html = '<div id="ol-nota-card-'+n.id+'" style="border:1px solid '+(editMode?'#93c5fd':'#e5e7eb')+';border-radius:10px;padding:14px;margin-bottom:12px;transition:border-color .15s">'
+
+  // Cabeçalho: data + autor + botão editar
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
+  html += '<div style="display:flex;align-items:center;gap:8px">'
+  html += '<span style="font-size:.82rem;font-weight:700;color:#374151">'+esc((n.nota_data_iso||'').slice(0,10))+'</span>'
+  if (n.nota_autor) html += '<span style="font-size:.73rem;color:#6b7280;background:#f3f4f6;padding:1px 7px;border-radius:4px">'+esc(n.nota_autor)+'</span>'
+  html += '</div>'
+  if (!editMode) {
+    html += '<button onclick="olHistEditNota('+n.id+')" style="padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:.78rem;cursor:pointer;color:#374151;font-weight:600;white-space:nowrap">✏️ Editar</button>'
+  }
+  html += '</div>'
+
+  // Resultado: radio buttons (disabled em leitura, enabled em edição)
+  html += '<div style="margin-bottom:10px">'
+  html += '<div style="font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Resultado da chamada</div>'
+  html += '<div style="display:flex;flex-wrap:wrap;gap:5px 16px">'
+  _olHistResultados.forEach(function(r) {
+    var checked = n.nota_resultado === r
+    html += '<label style="display:flex;align-items:center;gap:5px;font-size:.79rem;cursor:'+(editMode?'pointer':'default')+';white-space:nowrap;'+(checked?'font-weight:700;color:#1d4ed8':'color:#6b7280')+'">'
+    html += '<input type="radio" name="ol-nm-res-'+n.id+'" value="'+esc(r)+'"'+(checked?' checked':'')+' '+(editMode?'':'disabled')+' style="accent-color:#1d4ed8;cursor:'+(editMode?'pointer':'default')+'">'
+    html += esc(r)+'</label>'
+  })
+  html += '</div></div>'
+
+  // Texto
+  if (editMode) {
+    html += '<textarea id="ol-nm-txt-'+n.id+'" style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:.84rem;font-family:inherit;resize:vertical;min-height:80px" rows="4">'+esc(n.nota_texto||'')+'</textarea>'
+    html += '<div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">'
+    html += '<button onclick="olHistCancelEdit('+n.id+')" style="padding:6px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:.8rem;cursor:pointer;color:#374151">Cancelar</button>'
+    html += '<button onclick="olHistSaveNota('+n.id+')" style="padding:6px 16px;border:none;border-radius:6px;background:#1d4ed8;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer">💾 Guardar</button>'
+    html += '</div>'
+  } else {
+    if (n.nota_texto) {
+      html += '<div style="font-size:.84rem;color:#374151;line-height:1.55;white-space:pre-wrap;background:#f8fafc;border-radius:6px;padding:10px 12px">'+esc(n.nota_texto)+'</div>'
+    }
+  }
+
+  html += '</div>'
+  return html
+}
+
 function olHistOpenContact(ref) {
   var c = _olHistData.find(function(x){ return x.ref === ref })
   if (!c) return
 
-  // Popula _histDataMap para que hcOpenEdit funcione
   c.notas.forEach(function(n) { _histDataMap[n.id] = n })
 
   var title = document.getElementById('ol-hist-modal-title')
   var body  = document.getElementById('ol-hist-modal-body')
-  if (title) title.textContent = c.nome + (c.ref ? ' — ' + c.ref : '')
+  if (title) title.innerHTML = '<span>'+esc(c.nome)+'</span><span style="font-size:.78rem;color:#9ca3af;font-weight:400;margin-left:8px">'+esc(c.ref)+'</span>'
 
   var sorted = c.notas.slice().sort(function(a,b){
     return (b.nota_data_iso||b.criado_em||'').localeCompare(a.nota_data_iso||a.criado_em||'')
   })
 
-  var html = ''
-  sorted.forEach(function(n) {
-    html += '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:10px">'
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">'
-    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-    html += '<span style="font-size:.8rem;font-weight:600;color:#374151">'+esc((n.nota_data_iso||'').slice(0,10))+'</span>'
-    if (n.nota_autor) html += '<span style="font-size:.75rem;color:#6b7280">'+esc(n.nota_autor)+'</span>'
-    html += histResultadoBadge(n.nota_resultado)
-    html += '</div>'
-    html += '<button onclick="hcOpenEdit('+n.id+')" style="padding:4px 10px;border:1px solid #d1d5db;border-radius:5px;background:none;font-size:.75rem;cursor:pointer;color:#374151;white-space:nowrap">✏️ Editar</button>'
-    html += '</div>'
-    html += '<div style="font-size:.84rem;color:#374151;line-height:1.5">'+esc(n.nota_texto||'')+'</div>'
-    html += '</div>'
-  })
+  var html = sorted.map(function(n){ return olHistBuildNotaCard(n, false) }).join('')
+  if (body) body.innerHTML = html || '<div style="padding:20px;text-align:center;color:#6b7280">Sem notas registadas.</div>'
 
-  if (body) body.innerHTML = html
   document.getElementById('ol-hist-overlay').style.display = 'block'
   document.getElementById('ol-hist-modal').style.display   = 'block'
+}
+
+function olHistEditNota(id) {
+  var n = _histDataMap[id]
+  if (!n) return
+  var card = document.getElementById('ol-nota-card-'+id)
+  if (card) card.outerHTML = olHistBuildNotaCard(n, true)
+}
+
+function olHistCancelEdit(id) {
+  var n = _histDataMap[id]
+  if (!n) return
+  var card = document.getElementById('ol-nota-card-'+id)
+  if (card) card.outerHTML = olHistBuildNotaCard(n, false)
+}
+
+async function olHistSaveNota(id) {
+  var n = _histDataMap[id]
+  if (!n) return
+  var textEl = document.getElementById('ol-nm-txt-'+id)
+  var text   = textEl ? textEl.value.trim() : (n.nota_texto||'')
+  var resChecked = document.querySelector('input[name="ol-nm-res-'+id+'"]:checked')
+  var resultado  = resChecked ? resChecked.value : null
+
+  var ego = _getEgoClient()
+  var { error } = await ego.from('notas').update({ nota_texto: text, nota_resultado: resultado }).eq('id', id)
+  if (error) { alert('Erro ao guardar: '+error.message); return }
+
+  // Actualiza cache local
+  n.nota_texto     = text
+  n.nota_resultado = resultado
+  _histDataMap[id] = n
+  _olHistData.forEach(function(c) {
+    c.notas.forEach(function(nn,i){ if (nn.id === id) { c.notas[i] = n; if (i===0) { c.lastResultado=resultado } } })
+  })
+
+  var card = document.getElementById('ol-nota-card-'+id)
+  if (card) card.outerHTML = olHistBuildNotaCard(n, false)
 }
 
 function olHistCloseModal() {
