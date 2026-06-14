@@ -7264,6 +7264,17 @@ function olApplyFilters() {
 function olResetFilters() {
   var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas','ol-f-consultor','ol-f-ref','ol-f-contacto','ol-f-morada']
   ids.forEach(function(id){ var el = document.getElementById(id); if (el) el.value = '' })
+  // Se não há filtros activos, limpar resultados em vez de renderizar 7876 cards
+  var hasFilter = ids.some(function(id){
+    var el = document.getElementById(id)
+    return el && el.value && el.value !== ''
+  })
+  if (!hasFilter) {
+    var countEl = document.getElementById('ol-count')
+    if (countEl) countEl.textContent = _olAllData.length + ' contactos — usa filtros para pesquisar'
+    document.getElementById('ol-results').innerHTML = ''
+    return
+  }
   olApplyFilters()
 }
 
