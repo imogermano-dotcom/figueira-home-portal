@@ -7203,10 +7203,15 @@ function olApplyFilters() {
   var contacto  = ((document.getElementById('ol-f-contacto')||{}).value||'').toLowerCase().trim()
   var morada    = ((document.getElementById('ol-f-morada')||{}).value||'').toLowerCase().trim()
 
-  // Mínimo de caracteres para filtros de texto livre (evita render de milhares de cards)
-  var contactoAtivo = contacto.length >= 4 ? contacto : ''
-  var refAtivo      = ref.length >= 3 ? ref : ''
-  var moradaAtivo   = morada.length >= 3 ? morada : ''
+  var countEl = document.getElementById('ol-count')
+
+  // Se algum campo de texto está abaixo do mínimo, não re-renderizar — esperar mais caracteres
+  if ((contacto.length > 0 && contacto.length < 4) ||
+      (ref.length > 0 && ref.length < 3) ||
+      (morada.length > 0 && morada.length < 3)) {
+    if (countEl) countEl.textContent = _olAllData.length + ' contactos — escreve mais para filtrar'
+    return
+  }
 
   var filtered = _olAllData.filter(function(g) {
     // Filtro tipo
@@ -7225,21 +7230,16 @@ function olApplyFilters() {
     if (notas === 'sem' && g.notaPreview.length) return false
     // Filtro consultor
     if (consultor && g.responsavel !== consultor) return false
-    // Filtro referência EGO (mín. 3 chars)
-    if (refAtivo && !g.refs.some(function(u){ return (u.ref||'').toLowerCase().indexOf(refAtivo) >= 0 })) return false
-    // Filtro contacto — mín. 4 chars (evita match com "9" → 7000 resultados)
-    if (contactoAtivo && (g.tel||'').toLowerCase().indexOf(contactoAtivo) < 0 && (g.email||'').toLowerCase().indexOf(contactoAtivo) < 0) return false
-    // Filtro morada/imóvel (mín. 3 chars)
-    if (moradaAtivo && (g.imovelDesc||'').toLowerCase().indexOf(moradaAtivo) < 0) return false
+    // Filtro referência EGO
+    if (ref && !g.refs.some(function(u){ return (u.ref||'').toLowerCase().indexOf(ref) >= 0 })) return false
+    // Filtro contacto
+    if (contacto && (g.tel||'').toLowerCase().indexOf(contacto) < 0 && (g.email||'').toLowerCase().indexOf(contacto) < 0) return false
+    // Filtro morada/imóvel
+    if (morada && (g.imovelDesc||'').toLowerCase().indexOf(morada) < 0) return false
     return true
   })
 
-  var countEl = document.getElementById('ol-count')
-  var hint = ''
-  if ((contacto && contacto.length < 4) || (ref && ref.length < 3) || (morada && morada.length < 3)) {
-    hint = ' — escreve mais para filtrar'
-  }
-  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '') + hint
+  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '')
   olRender(filtered)
 }
 
@@ -7302,19 +7302,19 @@ function olRender(grupos) {
       if (u.url) html += '<a href="'+esc(u.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO'+(g.refs.length>1?' '+(i+1):'')+'</a>'
     })
     html += '<button class="ol-btn ol-btn-nota" onclick="olOpenNota('+idx+')">✍️ Registar nota</button>'
-    html += '<button class="ol-btn" style="background:#fef2f2;border-color:#fca5a5;color:#dc2626" onclick="olOpenNota('+idx+',\'Não atende\')">📵 Não atende</button>'
     html += '</div>'
 
     html += '<div class="ol-nota-form" id="ol-form-'+idx+'" style="display:none">'
     html += '<div style="margin-bottom:6px;font-size:.76rem;font-weight:600;color:#374151;">Resultado da chamada:</div>'
     html += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px;">'
-    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD','Não atende']
+    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD']
     resultados.forEach(function(r){ html += '<label style="display:flex;align-items:center;gap:4px;font-size:.77rem;cursor:pointer;white-space:nowrap"><input type="radio" name="ol-res-'+idx+'" value="'+esc(r)+'"> '+esc(r)+'</label>' })
     html += '</div>'
     html += '<textarea id="ol-txt-'+idx+'" placeholder="Escreve aqui a nota após a chamada..." rows="3"></textarea>'
     html += '<div class="ol-form-row">'
     html += '<input type="date" id="ol-date-'+idx+'" value="'+new Date().toISOString().slice(0,10)+'">'
     html += '<button class="ol-btn ol-btn-save" onclick="olSaveNota('+idx+',\''+ref+'\',\''+tipo+'\',\''+nome+'\')">💾 Guardar nota</button>'
+    html += '<button class="ol-btn" style="background:#fef2f2;border-color:#fca5a5;color:#dc2626" onclick="olNaoAtende('+idx+',\''+ref+'\',\''+nome+'\')">📵 Não atende</button>'
     html += '<button class="ol-btn" onclick="olCloseNota('+idx+')">✕ Cancelar</button>'
     html += '</div></div>'
     html += '</div>'
@@ -7335,6 +7335,25 @@ function olOpenNota(idx, preRes) {
 function olCloseNota(idx) {
   var f = document.getElementById('ol-form-'+idx)
   if (f) f.style.display = 'none'
+}
+
+async function olNaoAtende(idx, ref, nome) {
+  var autor = _olCaller || (document.getElementById('ol-caller')||{}).value || ''
+  if (!autor) { alert('Seleciona quem está a ligar (campo "Quem estás a ligar como?").'); return }
+  var data = document.getElementById('ol-date-'+idx).value
+  var ego = _getEgoClient()
+  var { error } = await ego.from('notas').insert({
+    oportunidade_ref: ref,
+    cliente_nome: nome,
+    nota_texto: 'Não atende',
+    nota_resultado: 'Não atende',
+    nota_autor: autor,
+    nota_data_iso: data
+  })
+  if (error) { alert('Erro ao registar: '+error.message); return }
+  olCloseNota(idx)
+  // reload para actualizar contadores / remover se atingiu 3
+  olSearch()
 }
 
 async function olSaveNota(idx, ref, tipo, nome) {
