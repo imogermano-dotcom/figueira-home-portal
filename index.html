@@ -7403,7 +7403,8 @@ async function olNaoAtende(idx, ref, nome) {
     nota_texto: 'Não atende',
     nota_resultado: 'Não atende',
     nota_autor: autor,
-    nota_data_iso: data
+    nota_data_iso: data,
+    nota_origem: 'portal'
   })
   if (error) { alert('Erro ao registar: '+error.message); return }
   olCloseNota(idx)
@@ -7437,7 +7438,8 @@ async function olSaveNota(idx, ref, tipo, nome) {
     nota_data_iso: data,
     nota_autor: autor,
     nota_resultado: resultado,
-    origem_lista: 'Ativas'
+    origem_lista: 'Ativas',
+    nota_origem: 'portal'
   })
 
   if (error) {
@@ -7621,7 +7623,7 @@ async function olHistLoad() {
   var ego = _getEgoClient()
   var q = ego.from('notas')
     .select('id,oportunidade_ref,cliente_nome,nota_autor,nota_texto,nota_resultado,nota_data_iso,criado_em')
-    .not('nota_autor','is',null)
+    .eq('nota_origem', 'portal')
     .order('criado_em',{ascending:false})
     .limit(5000)
 
