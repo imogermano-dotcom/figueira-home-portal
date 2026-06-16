@@ -7936,14 +7936,21 @@ async function mercadoLoadDashboard() {
           if (!s) return '<tr><td style="color:#9ca3af">'+fonte+'</td><td colspan="6" style="color:#d1d5db;font-size:.78rem">sem registo</td></tr>'
           var d = new Date(s.iniciado_em).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
           var st = s.status==='ok' ? '<span style="color:#15803d;font-weight:700">✓ OK</span>' : '<span style="color:#dc2626">'+esc(s.status||'—')+'</span>'
+          var dataIso = s.iniciado_em
+          var linkNovos = s.novos > 0
+            ? '<span onclick="mercadoVerNovosSync(\''+fonte+'\',\''+dataIso+'\')" style="color:#15803d;font-weight:600;cursor:pointer;text-decoration:underline">+'+(s.novos)+'</span>'
+            : '<span style="color:#15803d;font-weight:600">+0</span>'
+          var linkRetirados = s.retirados > 0
+            ? '<span onclick="mercadoVerRetiradosSync(\''+fonte+'\',\''+dataIso+'\')" style="color:#dc2626;font-weight:600;cursor:pointer;text-decoration:underline">'+(s.retirados)+'</span>'
+            : '<span style="color:#dc2626;font-weight:600">0</span>'
           return '<tr>'
             + '<td style="font-weight:600;color:#1a3c5e;text-transform:capitalize">'+fonte+'</td>'
             + '<td>'+d+'</td>'
             + '<td>'+st+'</td>'
             + '<td>'+(s.total_scraped||0)+'</td>'
-            + '<td style="color:#15803d;font-weight:600">+'+(s.novos||0)+'</td>'
+            + '<td>'+linkNovos+'</td>'
             + '<td style="color:#d97706;font-weight:600">'+(s.preco_alterado||0)+'</td>'
-            + '<td style="color:#dc2626;font-weight:600">'+(s.retirados||0)+'</td>'
+            + '<td>'+linkRetirados+'</td>'
             + '</tr>'
         }).join('')
       + '</tbody></table></div>'
@@ -8041,11 +8048,24 @@ async function mercadoLoadImoveisPagina() {
     if (f.rua && f.rua.trim()) query = query.ilike('morada','%'+f.rua.trim()+'%')
     if (f.agencia && f.agencia.trim()) query = query.ilike('agencia_nome_atual','%'+f.agencia.trim()+'%')
     if (f.novosHoje) { var hoje = new Date().toISOString().split('T')[0]; query = query.gte('primeiro_visto_em', hoje) }
+    if (f._fonteSync) query = query.eq('fonte', f._fonteSync).gte('primeiro_visto_em', f._desde)
+    if (f._retiradosDesde) { query = sb.from('idealista_imoveis')
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,tem_elevador,tem_parking',{count:'exact'})
+      .eq('fonte', f._fonteSync).eq('ativo', false).gte('retirado_em', f._retiradosDesde)
+      .order('retirado_em',{ascending:false}).range((f.pagina-1)*porPagina, f.pagina*porPagina-1) }
     var { data, count, error } = await query
     if (error) throw error
     _mercadoTotal = count || 0
     var totalPags = Math.ceil(_mercadoTotal / porPagina)
-    if (countEl) countEl.textContent = _mercadoTotal + ' imóveis'
+    var labelExtra = ''
+    if (f._fonteSync && !f._retiradosDesde) {
+      var dSync = new Date(f._desde).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      labelExtra = ' · <span style="color:#0369a1">⚡ Novos desde sync '+dSync+' ('+f._fonteSync+')</span> <span onclick="mercadoLimparFiltros()" style="cursor:pointer;color:#6b7280;font-size:.75rem">✕ limpar</span>'
+    } else if (f._retiradosDesde) {
+      var dSync2 = new Date(f._retiradosDesde).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      labelExtra = ' · <span style="color:#dc2626">🔴 Retirados desde sync '+dSync2+' ('+f._fonteSync+')</span> <span onclick="mercadoLimparFiltros()" style="cursor:pointer;color:#6b7280;font-size:.75rem">✕ limpar</span>'
+    }
+    if (countEl) countEl.innerHTML = _mercadoTotal + ' imóveis' + labelExtra
 
     if (!data || !data.length) {
       listEl.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af">Nenhum imóvel encontrado.</div>'
@@ -8118,6 +8138,19 @@ function mercadoPesquisaChange(campo, valor) {
   _mercadoFiltros.pagina = 1
   clearTimeout(_mercadoPesquisaTimer)
   _mercadoPesquisaTimer = setTimeout(function() { mercadoLoadImoveisPagina() }, 400)
+}
+
+function mercadoVerNovosSync(fonte, dataIso) {
+  // Abre tab Imóveis filtrado pelos novos desta fonte desde o sync
+  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, pagina: 1, _fonteSync: fonte, _desde: dataIso }
+  mercadoNavTab('imoveis')
+  mercadoRenderImoveis()
+}
+
+function mercadoVerRetiradosSync(fonte, dataIso) {
+  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, pagina: 1, _fonteSync: fonte, _retiradosDesde: dataIso }
+  mercadoNavTab('imoveis')
+  mercadoRenderImoveis()
 }
 
 function mercadoToggleNovosHoje() {
