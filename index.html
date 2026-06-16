@@ -1535,14 +1535,25 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </div>
       </div>
 
-      <!-- Controls -->
-      <div class="ol-controls">
-        <button class="ol-load-btn ol-search-btn" onclick="olSearch()">🔄 Carregar Old Leads</button>
+      <!-- Tab switcher + Controls -->
+      <div class="ol-controls" style="align-items:center;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;border:1.5px solid #d1d5db;border-radius:9px;overflow:hidden;flex-shrink:0">
+          <button id="ol-tab-leads" onclick="olSwitchToLeads()"
+            style="padding:8px 18px;border:none;border-right:1.5px solid #d1d5db;background:#1e3a5f;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">
+            📋 Old Leads
+          </button>
+          <button id="ol-tab-hist" onclick="olToggleHistorico()"
+            style="padding:8px 18px;border:none;background:#f9fafb;color:#6b7280;font-size:.85rem;font-weight:600;cursor:pointer">
+            🕐 Histórico
+          </button>
+        </div>
+        <button class="ol-load-btn ol-search-btn" id="ol-load-btn" onclick="olSearch()">🔄 Carregar</button>
         <span class="ol-count" id="ol-count"></span>
       </div>
+      <div id="ol-mode-title" style="font-size:1.1rem;font-weight:700;color:#1e3a5f;padding:10px 0 4px;display:none"></div>
 
       <!-- Filtros (visíveis após carregar) -->
-      <div id="ol-filters" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;gap:16px;flex-wrap:wrap;align-items:center;">
+      <div id="ol-filters" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:12px;gap:12px;flex-wrap:wrap;align-items:center;">
         <div style="display:flex;align-items:center;gap:6px;">
           <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">TIPO</label>
           <select id="ol-f-tipo" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
@@ -1571,11 +1582,38 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <option value="sem">Só sem notas</option>
           </select>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">CONSULTOR</label>
+          <select id="ol-f-consultor" onchange="olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">REF</label>
+          <input id="ol-f-ref" type="text" placeholder="ex: CAP_14444" oninput="olApplyFiltersDebounced()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:110px;">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">CONTACTO</label>
+          <input id="ol-f-contacto" type="text" placeholder="min. 4 caracteres" oninput="olApplyFiltersDebounced()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:130px;">
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:.75rem;font-weight:600;color:#6b7280;white-space:nowrap">MORADA/IMÓVEL</label>
+          <input id="ol-f-morada" type="text" placeholder="ex: Cidade..." onkeydown="if(event.key==='Enter') olApplyFilters()" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.8rem;width:130px;">
+          <button onclick="olApplyFilters()" style="padding:5px 10px;background:#1d4ed8;border:none;border-radius:6px;font-size:.78rem;color:#fff;cursor:pointer;font-weight:600">OK</button>
+        </div>
         <button onclick="olResetFilters()" style="padding:5px 10px;background:none;border:1px solid #d1d5db;border-radius:6px;font-size:.78rem;color:#6b7280;cursor:pointer;">✕ Limpar</button>
       </div>
 
-      <!-- Results -->
+      <!-- Results + Histórico view -->
       <div id="ol-results"></div>
+      <div id="ol-hist-view" style="display:none"></div>
+      <div id="ol-invalidos-section" style="margin-top:32px;border-top:2px solid #fee2e2;padding-top:16px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.9rem;font-weight:700;color:#dc2626">&#9888; Contactos Inválidos</span>
+          <button onclick="document.getElementById('ol-invalidos-list').style.display=document.getElementById('ol-invalidos-list').style.display==='none'?'block':'none'" style="padding:4px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:.76rem;color:#dc2626;cursor:pointer">&#9660; Ver contactos (3+ sem resposta)</button>
+        </div>
+        <div id="ol-invalidos-list" style="display:none"></div>
+      </div>
     </main>
   </div>
 
@@ -6961,8 +6999,18 @@ window.FeedbackIA={
 var _OL_TODOS_CONSULTORES = ['Alexandra Santos','Alexsandra Ferreira','Ana Daniel','Lina Galvão','Lidia Sousa','Maria José Boia','Miguel Germano','Sandra Silva','Sofia Monteiro']
 var _olAtivos = []
 var _olCaller = ''  // definido em olInit() a partir do perfil autenticado
-var _olAllData = []   // todos os resultados carregados (para filtros client-side)
-var _olNotaMap = {}   // notaMap guardado para re-render
+var _olAllData    = []   // todos os resultados carregados (para filtros client-side)
+var _olFiltered   = []
+var _olPage       = 1
+var _olPageSize   = 50
+var _olNotaMap    = {}
+var _olHistMode   = false
+var _olHistLoaded = false
+var _olHistData   = []
+var _olHistPage   = 1
+var _olHistSize   = 50
+var _histDataMap  = {}
+var _olDebounceT  = null
 
 function _getEgoClient() {
   if (!window.__sbEgo) window.__sbEgo = supabase.createClient(
@@ -7062,18 +7110,31 @@ async function olSearch() {
     // Normalizar campos para o render (RPC devolve snake_case)
     _olAllData = (data||[]).map(function(r) {
       return {
-        tel:            r.tel,
-        nome:           r.nome,
-        tipos:          r.tipos || [],
-        refs:           r.refs  || [],   // [{ref, url}, ...]
-        imovelDesc:     r.imovel_desc,
-        dataCriacao:    r.data_criacao,
-        lastNotaData:   r.last_nota_data,
-        lastNotaAutor:  r.last_nota_autor,
-        notaPreview:    r.nota_preview || [],
-        n_opps:         r.n_opps || 1
+        tel:             r.tel,
+        nome:            r.nome,
+        tipos:           r.tipos || [],
+        refs:            r.refs  || [],
+        imovelDesc:      r.imovel_desc,
+        dataCriacao:     r.data_criacao,
+        lastNotaData:    r.last_nota_data,
+        lastNotaAutor:   r.last_nota_autor,
+        notaPreview:     r.nota_preview || [],
+        n_opps:          r.n_opps || 1,
+        responsavel:     r.last_nota_autor || '',
+        naoAtendeCount:  r.nao_atende_count || 0,
+        naoAtendeDates:  r.nao_atende_dates || []
       }
     })
+
+    // Popular dropdown CONSULTOR
+    var selC = document.getElementById('ol-f-consultor')
+    if (selC) {
+      var autores = []
+      _olAllData.forEach(function(g){ if (g.responsavel && autores.indexOf(g.responsavel)<0) autores.push(g.responsavel) })
+      autores.sort()
+      selC.innerHTML = '<option value="">Todos</option>'
+      autores.forEach(function(a){ selC.innerHTML += '<option value="'+esc(a)+'">'+esc(a)+'</option>' })
+    }
 
     var filtersEl = document.getElementById('ol-filters')
     if (filtersEl) filtersEl.style.display = 'flex'
@@ -7085,16 +7146,30 @@ async function olSearch() {
   if (btn) { btn.disabled = false; btn.textContent = '🔄 Carregar Old Leads' }
 }
 
+function olApplyFiltersDebounced() {
+  clearTimeout(_olDebounceT)
+  _olDebounceT = setTimeout(olApplyFilters, 300)
+}
+
 function olApplyFilters() {
-  var tipo    = (document.getElementById('ol-f-tipo')||{}).value || ''
-  var periodo = (document.getElementById('ol-f-periodo')||{}).value || ''
-  var notas   = (document.getElementById('ol-f-notas')||{}).value || ''
+  var tipo      = (document.getElementById('ol-f-tipo')||{}).value || ''
+  var periodo   = (document.getElementById('ol-f-periodo')||{}).value || ''
+  var notas     = (document.getElementById('ol-f-notas')||{}).value || ''
+  var consultor = (document.getElementById('ol-f-consultor')||{}).value || ''
+  var ref       = ((document.getElementById('ol-f-ref')||{}).value||'').toLowerCase().trim()
+  var contacto  = ((document.getElementById('ol-f-contacto')||{}).value||'').toLowerCase().trim()
+  var morada    = ((document.getElementById('ol-f-morada')||{}).value||'').toLowerCase().trim()
+  var countEl   = document.getElementById('ol-count')
+
+  // Evitar freeze: mínimo de chars para filtros livres
+  if ((contacto.length > 0 && contacto.length < 4) || (ref.length > 0 && ref.length < 3)) {
+    if (countEl) countEl.textContent = _olAllData.length + ' contactos — escreve mais para filtrar'
+    return
+  }
 
   var filtered = _olAllData.filter(function(g) {
-    // Filtro tipo: pelo menos uma oportunidade do grupo com este tipo
     if (tipo === '__null__') { if (g.tipos.length > 0) return false }
     else if (tipo && g.tipos.indexOf(tipo) < 0) return false
-    // Filtro período: data da última nota ou data criação
     if (periodo) {
       var parts = periodo.split('-')
       var anoMin = parseInt(parts[0]), anoMax = parseInt(parts[1])
@@ -7102,32 +7177,47 @@ function olApplyFilters() {
       var ano = dataRef ? parseInt(dataRef.slice(0,4)) : 0
       if (ano < anoMin || ano > anoMax) return false
     }
-    // Filtro notas
     if (notas === 'com' && !g.notaPreview.length) return false
     if (notas === 'sem' && g.notaPreview.length) return false
+    if (consultor && g.responsavel !== consultor) return false
+    if (ref && !g.refs.some(function(u){ return (u.ref||'').toLowerCase().indexOf(ref) >= 0 })) return false
+    if (contacto && (g.tel||'').toLowerCase().indexOf(contacto) < 0 && (g.email||'').toLowerCase().indexOf(contacto) < 0) return false
+    if (morada && (g.imovelDesc||'').toLowerCase().indexOf(morada) < 0) return false
     return true
   })
 
-  var countEl = document.getElementById('ol-count')
-  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de ' + _olAllData.length + ')' : '')
+  if (countEl) countEl.textContent = filtered.length + ' contactos' + (filtered.length < _olAllData.length ? ' (filtrado de '+_olAllData.length+')' : '')
   olRender(filtered)
 }
 
 function olResetFilters() {
-  var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas']
+  var ids = ['ol-f-tipo','ol-f-periodo','ol-f-notas','ol-f-consultor','ol-f-ref','ol-f-contacto','ol-f-morada']
   ids.forEach(function(id){ var el = document.getElementById(id); if (el) el.value = '' })
-  olApplyFilters()
+  var countEl = document.getElementById('ol-count')
+  if (countEl) countEl.textContent = _olAllData.length + ' contactos'
+  olRender(_olAllData)
 }
 
-function olRender(grupos) {
+function olRenderPage() {
+  var grupos = _olFiltered
   if (!grupos.length) {
     document.getElementById('ol-results').innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280">Sem old leads encontradas com os critérios actuais.</div>'
     return
   }
+  var totalPages = Math.ceil(grupos.length / _olPageSize)
+  if (_olPage < 1) _olPage = 1
+  if (_olPage > totalPages) _olPage = totalPages
+  var start = (_olPage - 1) * _olPageSize
+  var pageItems = grupos.slice(start, start + _olPageSize)
+
+  // Separar válidos e inválidos (3+ não atende)
+  var validos   = pageItems.filter(function(g){ return g.naoAtendeCount < 3 })
+  var invalidos = _olFiltered.filter(function(g){ return g.naoAtendeCount >= 3 })
+
   var html = ''
-  grupos.forEach(function(g, idx) {
-    // Responsável = autor da última nota
-    var responsavel = g.lastNotaAutor || '—'
+  validos.forEach(function(g) {
+    var idx = grupos.indexOf(g)
+    var responsavel  = g.lastNotaAutor || '—'
     var refPrincipal = (g.refs[0]||{}).ref || ''
     var tipoPrincipal = (g.tipos[0]||'')
     var ref  = refPrincipal.replace(/'/g,"&#39;")
@@ -7145,11 +7235,13 @@ function olRender(grupos) {
     if (g.dataCriacao) html += '<span class="ol-tag" style="background:#f0fdf4;color:#166534">🗓 '+esc(g.dataCriacao.slice(0,10))+'</span>'
     if (g.n_opps > 1) html += '<span class="ol-tag" style="background:#ede9fe;color:#5b21b6">'+g.n_opps+' oport.</span>'
     html += '</div></div>'
-
-    if (g.imovelDesc) {
-      html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">🏠 '+esc(g.imovelDesc)+'</div>'
+    if (g.imovelDesc) html += '<div style="font-size:.78rem;color:#6b7280;margin:4px 0 6px;padding-left:2px;">🏠 '+esc(g.imovelDesc)+'</div>'
+    if (g.naoAtendeCount > 0) {
+      var datesStr = (g.naoAtendeDates||[]).map(function(d){ return (d||'').slice(0,10) }).join(', ')
+      var cor = g.naoAtendeCount >= 2 ? '#dc2626' : '#d97706'
+      html += '<div style="font-size:.76rem;color:'+cor+';margin:3px 0 5px;padding:4px 8px;background:#fef2f2;border-radius:5px;border-left:3px solid '+cor+'">'
+      html += '📵 Sem resposta: '+esc(datesStr)+' — <strong>'+g.naoAtendeCount+'/3</strong> tentativas</div>'
     }
-
     if (g.notaPreview.length) {
       html += '<div class="ol-notas-preview" id="ol-prev-'+idx+'">'
       g.notaPreview.forEach(function(t){ html += '<div class="ol-nota-line">· '+esc(t)+'</div>' })
@@ -7157,61 +7249,119 @@ function olRender(grupos) {
     } else {
       html += '<div class="ol-no-notas" id="ol-prev-'+idx+'">Sem notas registadas.</div>'
     }
-
     html += '<div class="ol-actions">'
     g.refs.slice(0,2).forEach(function(u,i){
       if (u.url) html += '<a href="'+esc(u.url)+'" target="_blank" class="ol-btn ol-btn-link">🔗 eGO'+(g.refs.length>1?' '+(i+1):'')+'</a>'
     })
     html += '<button class="ol-btn ol-btn-nota" onclick="olOpenNota('+idx+')">✍️ Registar nota</button>'
     html += '</div>'
-
     html += '<div class="ol-nota-form" id="ol-form-'+idx+'" style="display:none">'
+    html += '<div style="margin-bottom:6px;font-size:.76rem;font-weight:600;color:#374151">Resultado da chamada:</div>'
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px">'
+    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD']
+    resultados.forEach(function(r){ html += '<label style="display:flex;align-items:center;gap:4px;font-size:.77rem;cursor:pointer;white-space:nowrap"><input type="radio" name="ol-res-'+idx+'" value="'+esc(r)+'"> '+esc(r)+'</label>' })
+    html += '</div>'
     html += '<textarea id="ol-txt-'+idx+'" placeholder="Escreve aqui a nota após a chamada..." rows="3"></textarea>'
     html += '<div class="ol-form-row">'
     html += '<input type="date" id="ol-date-'+idx+'" value="'+new Date().toISOString().slice(0,10)+'">'
     html += '<button class="ol-btn ol-btn-save" onclick="olSaveNota('+idx+',\''+ref+'\',\''+tipo+'\',\''+nome+'\')">💾 Guardar nota</button>'
+    html += '<button class="ol-btn" style="background:#fef2f2;border-color:#fca5a5;color:#dc2626" onclick="olNaoAtende('+idx+',\''+ref+'\',\''+nome+'\')">📵 Não atende</button>'
     html += '<button class="ol-btn" onclick="olCloseNota('+idx+')">✕ Cancelar</button>'
     html += '</div></div>'
     html += '</div>'
   })
+
+  // Paginação
+  if (totalPages > 1) {
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:20px 0;border-top:1px solid #e5e7eb;margin-top:16px">'
+    html += '<button onclick="olGoPage(-1)" '+(_olPage<=1?'disabled':'')+' style="padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem'+(_olPage<=1?';opacity:.4':'')+'">&larr; Anterior</button>'
+    html += '<span style="font-size:.82rem;color:#6b7280">Página <strong>'+_olPage+'</strong> de <strong>'+totalPages+'</strong> ('+grupos.length+' total)</span>'
+    html += '<button onclick="olGoPage(1)" '+(_olPage>=totalPages?'disabled':'')+' style="padding:6px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem'+(_olPage>=totalPages?';opacity:.4':'')+'"">Seguinte &rarr;</button>'
+    html += '</div>'
+  }
+
   document.getElementById('ol-results').innerHTML = html
+
+  // Inválidos
+  var invSec  = document.getElementById('ol-invalidos-section')
+  var invList = document.getElementById('ol-invalidos-list')
+  if (invSec) invSec.style.display = invalidos.length ? 'block' : 'none'
+  if (invList && invalidos.length) {
+    var ih = ''
+    invalidos.forEach(function(g){
+      ih += '<div style="padding:10px;border:1px solid #fca5a5;border-radius:8px;margin-bottom:8px;background:#fff5f5">'
+      ih += '<span style="font-weight:600;color:#111827">'+esc(g.nome||'—')+'</span>'
+      ih += '<span style="margin-left:8px;font-size:.8rem;color:#6b7280">📞 '+esc(g.tel)+'</span>'
+      ih += '<span style="margin-left:8px;font-size:.75rem;color:#dc2626">📵 '+g.naoAtendeCount+' sem resposta</span>'
+      ih += '</div>'
+    })
+    invList.innerHTML = ih
+  }
 }
 
-function olOpenNota(idx) {
-  var f = document.getElementById('ol-form-'+idx)
-  if (f) { f.style.display = 'block'; document.getElementById('ol-txt-'+idx).focus() }
+function olGoPage(delta) {
+  _olPage += delta
+  olRenderPage()
+  var el = document.getElementById('ol-results')
+  if (el) window.scrollTo(0, el.offsetTop - 80)
 }
-function olCloseNota(idx) {
+
+function olRender(grupos) {
+  _olFiltered = grupos
+  _olPage = 1
+  olRenderPage()
+}
+
+function olOpenNota(idx, preRes) {
   var f = document.getElementById('ol-form-'+idx)
-  if (f) f.style.display = 'none'
+  if (!f) return
+  f.style.display = 'block'
+  if (preRes) { var r = f.querySelector('input[name="ol-res-'+idx+'"][value="'+preRes+'"]'); if (r) r.checked = true }
+  document.getElementById('ol-txt-'+idx).focus()
+}
+function olCloseNota(idx) { var f = document.getElementById('ol-form-'+idx); if (f) f.style.display = 'none' }
+
+async function olNaoAtende(idx, ref, nome) {
+  var autor = _olCaller || (document.getElementById('ol-caller')||{}).value || ''
+  if (!autor) { alert('Seleciona quem está a ligar.'); return }
+  var data = document.getElementById('ol-date-'+idx).value
+  var ego = _getEgoClient()
+  var { error } = await ego.from('notas').insert({
+    oportunidade_ref: ref, cliente_nome: nome,
+    nota_texto: 'Nao atende', nota_resultado: 'Nao atende',
+    nota_autor: autor, nota_data_iso: data, nota_origem: 'portal'
+  })
+  if (error) { alert('Erro: '+error.message); return }
+  _olHistLoaded = false
+  olCloseNota(idx)
+  olSearch()
 }
 
 async function olSaveNota(idx, ref, tipo, nome) {
-  var text = (document.getElementById('ol-txt-'+idx).value||'').trim()
-  var data = document.getElementById('ol-date-'+idx).value
+  var text  = (document.getElementById('ol-txt-'+idx).value||'').trim()
+  var data  = document.getElementById('ol-date-'+idx).value
   var autor = _olCaller || (document.getElementById('ol-caller')||{}).value || ''
+  if (!autor) { alert('Seleciona quem está a ligar.'); return }
+  var resChecked = document.querySelector('input[name="ol-res-'+idx+'"]:checked')
+  var resultado  = resChecked ? resChecked.value : null
+  if (!text && resultado === 'Nao atende') text = 'Nao atende'
   if (!text) { alert('Escreve uma nota antes de guardar.'); return }
-  if (!autor) { alert('Seleciona quem está a ligar (campo "Quem estás a ligar como?").'); return }
 
   var btn = document.querySelector('#ol-form-'+idx+' .ol-btn-save')
   if (btn) { btn.disabled = true; btn.textContent = '⏳' }
 
   var ego = _getEgoClient()
   var { error } = await ego.from('notas').insert({
-    oportunidade_ref: ref,
-    tipo_oportunidade: tipo || null,
-    cliente_nome: nome || null,
-    nota_texto: text,
-    nota_data_raw: data,
-    nota_data_iso: data,
-    nota_autor: autor,
-    origem_lista: 'Ativas'
+    oportunidade_ref: ref, tipo_oportunidade: tipo||null, cliente_nome: nome||null,
+    nota_texto: text, nota_data_raw: data, nota_data_iso: data,
+    nota_autor: autor, nota_resultado: resultado,
+    origem_lista: 'Ativas', nota_origem: 'portal'
   })
 
   if (error) {
     alert('Erro ao guardar: ' + error.message)
   } else {
-    // Atualizar preview no card
+    _olHistLoaded = false
     var prevEl = document.getElementById('ol-prev-'+idx)
     var newLine = '<div class="ol-nota-line ol-nota-new">· '+esc(text)+'</div>'
     if (prevEl && prevEl.classList.contains('ol-no-notas')) {
@@ -7219,7 +7369,6 @@ async function olSaveNota(idx, ref, tipo, nome) {
     } else if (prevEl) {
       prevEl.insertAdjacentHTML('afterbegin', newLine)
     }
-    // Atualizar tag de data
     var dateTag = document.querySelector('#ol-card-'+idx+' .ol-tag-date')
     if (dateTag) dateTag.textContent = '📅 '+data
     olCloseNota(idx)
@@ -7227,8 +7376,228 @@ async function olSaveNota(idx, ref, tipo, nome) {
   }
   if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar nota' }
 }
+
+// ── Tab switcher ──────────────────────────────────────────────────────────────
+function _olSetTabStyle(mode) {
+  var tL = document.getElementById('ol-tab-leads'), tH = document.getElementById('ol-tab-hist')
+  var title = document.getElementById('ol-mode-title'), loadBtn = document.getElementById('ol-load-btn')
+  if (mode === 'hist') {
+    if (tL) { tL.style.background='#f9fafb'; tL.style.color='#6b7280'; tL.style.fontWeight='600' }
+    if (tH) { tH.style.background='#1d4ed8'; tH.style.color='#fff';    tH.style.fontWeight='700' }
+    if (title) { title.textContent='Historico de Contactos'; title.style.color='#1d4ed8'; title.style.display='block' }
+    if (loadBtn) loadBtn.style.display='none'
+  } else {
+    if (tL) { tL.style.background='#1e3a5f'; tL.style.color='#fff';    tL.style.fontWeight='700' }
+    if (tH) { tH.style.background='#f9fafb'; tH.style.color='#6b7280'; tH.style.fontWeight='600' }
+    if (title) { title.textContent='Old Leads'; title.style.color='#1e3a5f'; title.style.display='block' }
+    if (loadBtn) loadBtn.style.display=''
+  }
+}
+
+function olSwitchToLeads() {
+  if (!_olHistMode) return
+  _olHistMode = false
+  _olSetTabStyle('leads')
+  document.getElementById('ol-results').style.display   = ''
+  document.getElementById('ol-hist-view').style.display = 'none'
+  var fil = document.getElementById('ol-filters'); if (fil) fil.style.display = _olAllData.length ? 'flex' : 'none'
+  var inv = document.getElementById('ol-invalidos-section'); if (inv) inv.style.display = ''
+}
+
+function olToggleHistorico() {
+  if (_olHistMode) return
+  _olHistMode = true
+  _olSetTabStyle('hist')
+  document.getElementById('ol-results').style.display   = 'none'
+  document.getElementById('ol-hist-view').style.display = ''
+  var fil = document.getElementById('ol-filters'); if (fil) fil.style.display = 'none'
+  var inv = document.getElementById('ol-invalidos-section'); if (inv) inv.style.display = 'none'
+  olHistLoad()
+}
+
+// ── Historico Old Leads ───────────────────────────────────────────────────────
+var _olHistResultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD','Nao atende']
+
+function histResultadoBadge(r) {
+  if (!r) return '<span style="font-size:.72rem;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:4px">—</span>'
+  var colors = { 'Vender na Figueira':'#166534;background:#dcfce7', 'Vender na Figueira mais tarde':'#1e40af;background:#dbeafe', 'Sem interesse':'#9ca3af;background:#f3f4f6', 'Nao atende':'#dc2626;background:#fee2e2', 'Pretende retirar contacto da BD':'#7c3aed;background:#ede9fe' }
+  var style = colors[r] || '#374151;background:#f3f4f6'
+  return '<span style="font-size:.72rem;color:'+style+';padding:2px 8px;border-radius:4px;white-space:nowrap">'+esc(r)+'</span>'
+}
+
+async function olHistLoad() {
+  var histView = document.getElementById('ol-hist-view')
+  if (_olHistLoaded) { olHistRenderPage(); return }
+  if (histView) histView.innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280">A carregar...</div>'
+  var ego = _getEgoClient()
+  var { data, error } = await ego.from('notas')
+    .select('id,oportunidade_ref,cliente_nome,nota_autor,nota_texto,nota_resultado,nota_data_iso,criado_em')
+    .eq('nota_origem','portal')
+    .order('criado_em',{ascending:false})
+    .limit(5000)
+  if (error) { if (histView) histView.innerHTML='<div style="color:#dc2626;padding:20px">Erro: '+error.message+'</div>'; return }
+  var byRef = {}
+  ;(data||[]).forEach(function(n) {
+    var ref = n.oportunidade_ref||''
+    if (!byRef[ref]) byRef[ref] = { ref:ref, nome:n.cliente_nome||'—', notas:[], lastDate:'', lastResultado:null, autor:n.nota_autor }
+    byRef[ref].notas.push(n)
+    if (!byRef[ref].lastDate) { byRef[ref].lastDate=(n.nota_data_iso||n.criado_em||'').slice(0,10); byRef[ref].lastResultado=n.nota_resultado }
+  })
+  _olHistData = Object.values(byRef).sort(function(a,b){ return (b.lastDate||'')>(a.lastDate||'')?1:-1 })
+  _olHistPage   = 1
+  _olHistLoaded = true
+  olHistRenderPage()
+}
+
+function olHistRenderPage() {
+  var total      = _olHistData.length
+  var totalPages = Math.max(1, Math.ceil(total / _olHistSize))
+  _olHistPage    = Math.max(1, Math.min(_olHistPage, totalPages))
+  var start = (_olHistPage - 1) * _olHistSize
+  olHistRender(_olHistData.slice(start, start + _olHistSize), total, totalPages)
+}
+
+function olHistGoPage(delta) {
+  var totalPages = Math.max(1, Math.ceil(_olHistData.length / _olHistSize))
+  _olHistPage = Math.max(1, Math.min(_olHistPage + delta, totalPages))
+  olHistRenderPage()
+  var hv = document.getElementById('ol-hist-view'); if (hv) hv.scrollIntoView({behavior:'smooth',block:'start'})
+}
+
+function olHistRender(rows, total, totalPages) {
+  var histView = document.getElementById('ol-hist-view')
+  if (!histView) return
+  if (!rows.length) { histView.innerHTML='<div style="padding:40px;text-align:center;color:#6b7280">Sem contactos encontrados.</div>'; return }
+  var html = '<div style="font-size:.82rem;color:#6b7280;margin-bottom:12px">'+total+' contacto'+(total!==1?'s':'')+' contactado'+(total!==1?'s':'')
+  if (totalPages>1) html += ' — pagina '+_olHistPage+' de '+totalPages
+  html += '</div>'
+  rows.forEach(function(c, rowIdx) {
+    var globalIdx = (_olHistPage-1)*_olHistSize + rowIdx
+    html += '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer" '
+    html += 'onclick="olHistOpenContact('+globalIdx+')" '
+    html += 'onmouseover="this.style.borderColor=\'#93c5fd\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.07)\'" '
+    html += 'onmouseout="this.style.borderColor=\'#e5e7eb\';this.style.boxShadow=\'\'">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">'
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    html += '<span style="font-weight:700;color:#111827;font-size:.9rem">'+esc(c.nome)+'</span>'
+    html += '<span style="font-size:.73rem;color:#9ca3af">'+esc(c.ref)+'</span>'
+    html += '</div>'
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+    html += histResultadoBadge(c.lastResultado)
+    html += '<span style="font-size:.75rem;color:#6b7280;white-space:nowrap">'+esc(c.lastDate)+'</span>'
+    html += '<span style="font-size:.72rem;color:#9ca3af;white-space:nowrap">'+c.notas.length+' nota'+(c.notas.length!==1?'s':'')+'</span>'
+    html += '</div></div>'
+    var lastNota = c.notas[0]
+    if (lastNota && lastNota.nota_texto) {
+      var preview = (lastNota.nota_texto||'').slice(0,130)
+      html += '<div style="font-size:.78rem;color:#6b7280;margin-top:7px;padding-top:7px;border-top:1px solid #f3f4f6">'+esc(preview)+(lastNota.nota_texto.length>130?'…':'')+'</div>'
+    }
+    html += '</div>'
+  })
+  if (totalPages > 1) {
+    var bS = 'padding:7px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem;color:#374151'
+    var bD = 'padding:7px 16px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;font-size:.82rem;color:#9ca3af;cursor:default'
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:20px 0">'
+    html += '<button onclick="olHistGoPage(-1)" style="'+(_olHistPage<=1?bD:bS)+'" '+(_olHistPage<=1?'disabled':'')+'>&lsaquo; Anterior</button>'
+    html += '<span style="font-size:.82rem;font-weight:500;color:#374151">Pagina '+_olHistPage+' de '+totalPages+'</span>'
+    html += '<button onclick="olHistGoPage(1)" style="'+(_olHistPage>=totalPages?bD:bS)+'" '+(_olHistPage>=totalPages?'disabled':'')+'>Proxima &rsaquo;</button>'
+    html += '</div>'
+  }
+  histView.innerHTML = html
+}
+
+function olHistBuildNotaCard(n, editMode) {
+  var html = '<div id="ol-nota-card-'+n.id+'" style="border:1px solid '+(editMode?'#93c5fd':'#e5e7eb')+';border-radius:10px;padding:14px;margin-bottom:12px">'
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
+  html += '<div style="display:flex;align-items:center;gap:8px">'
+  html += '<span style="font-size:.82rem;font-weight:700;color:#374151">'+esc((n.nota_data_iso||'').slice(0,10))+'</span>'
+  if (n.nota_autor) html += '<span style="font-size:.73rem;color:#6b7280;background:#f3f4f6;padding:1px 7px;border-radius:4px">'+esc(n.nota_autor)+'</span>'
+  html += '</div>'
+  if (!editMode) html += '<button onclick="olHistEditNota('+n.id+')" style="padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:.78rem;cursor:pointer;color:#374151;font-weight:600">&#9998; Editar</button>'
+  html += '</div>'
+  html += '<div style="margin-bottom:10px">'
+  html += '<div style="font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Resultado da chamada</div>'
+  html += '<div style="display:flex;flex-wrap:wrap;gap:5px 16px">'
+  _olHistResultados.forEach(function(r) {
+    var checked = n.nota_resultado === r
+    html += '<label style="display:flex;align-items:center;gap:5px;font-size:.79rem;cursor:'+(editMode?'pointer':'default')+';white-space:nowrap;'+(checked?'font-weight:700;color:#1d4ed8':'color:#6b7280')+'">'
+    html += '<input type="radio" name="ol-nm-res-'+n.id+'" value="'+esc(r)+'"'+(checked?' checked':'')+' '+(editMode?'':'disabled')+'>'
+    html += esc(r)+'</label>'
+  })
+  html += '</div></div>'
+  if (editMode) {
+    html += '<textarea id="ol-nm-txt-'+n.id+'" style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:.84rem;font-family:inherit;resize:vertical;min-height:80px" rows="4">'+esc(n.nota_texto||'')+'</textarea>'
+    html += '<div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">'
+    html += '<button onclick="olHistCancelEdit('+n.id+')" style="padding:6px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:.8rem;cursor:pointer;color:#374151">Cancelar</button>'
+    html += '<button onclick="olHistSaveNota('+n.id+')" style="padding:6px 16px;border:none;border-radius:6px;background:#1d4ed8;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer">&#128190; Guardar</button>'
+    html += '</div>'
+  } else {
+    if (n.nota_texto) html += '<div style="font-size:.84rem;color:#374151;line-height:1.55;white-space:pre-wrap;background:#f8fafc;border-radius:6px;padding:10px 12px">'+esc(n.nota_texto)+'</div>'
+  }
+  html += '</div>'
+  return html
+}
+
+function olHistOpenContact(idx) {
+  var c = _olHistData[idx]
+  if (!c) return
+  c.notas.forEach(function(n){ _histDataMap[n.id] = n })
+  var title = document.getElementById('ol-hist-modal-title')
+  var body  = document.getElementById('ol-hist-modal-body')
+  if (title) title.innerHTML = '<span>'+esc(c.nome)+'</span><span style="font-size:.78rem;color:#9ca3af;font-weight:400;margin-left:8px">'+esc(c.ref)+'</span>'
+  var sorted = c.notas.slice().sort(function(a,b){ return (b.nota_data_iso||b.criado_em||'').localeCompare(a.nota_data_iso||a.criado_em||'') })
+  var html = sorted.map(function(n){ return olHistBuildNotaCard(n, false) }).join('')
+  if (body) body.innerHTML = html || '<div style="padding:20px;text-align:center;color:#6b7280">Sem notas registadas.</div>'
+  document.getElementById('ol-hist-overlay').style.display = 'block'
+  document.getElementById('ol-hist-modal').style.display   = 'block'
+}
+
+function olHistEditNota(id) {
+  var n = _histDataMap[id]; if (!n) return
+  var card = document.getElementById('ol-nota-card-'+id)
+  if (card) card.outerHTML = olHistBuildNotaCard(n, true)
+}
+
+function olHistCancelEdit(id) {
+  var n = _histDataMap[id]; if (!n) return
+  var card = document.getElementById('ol-nota-card-'+id)
+  if (card) card.outerHTML = olHistBuildNotaCard(n, false)
+}
+
+async function olHistSaveNota(id) {
+  var n = _histDataMap[id]; if (!n) return
+  var textEl = document.getElementById('ol-nm-txt-'+id)
+  var text   = textEl ? textEl.value.trim() : (n.nota_texto||'')
+  var resChecked = document.querySelector('input[name="ol-nm-res-'+id+'"]:checked')
+  var resultado  = resChecked ? resChecked.value : null
+  var ego = _getEgoClient()
+  var { error } = await ego.from('notas').update({ nota_texto:text, nota_resultado:resultado }).eq('id',id)
+  if (error) { alert('Erro ao guardar: '+error.message); return }
+  n.nota_texto = text; n.nota_resultado = resultado; _histDataMap[id] = n
+  _olHistData.forEach(function(c){ c.notas.forEach(function(nn,i){ if (nn.id===id){ c.notas[i]=n; if (i===0) c.lastResultado=resultado } }) })
+  var card = document.getElementById('ol-nota-card-'+id)
+  if (card) card.outerHTML = olHistBuildNotaCard(n, false)
+}
+
+function olHistCloseModal() {
+  document.getElementById('ol-hist-overlay').style.display = 'none'
+  document.getElementById('ol-hist-modal').style.display   = 'none'
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 </script>
+
+<!-- ── Modal Histórico Contacto (Old Leads) ── -->
+<div id="ol-hist-overlay" onclick="olHistCloseModal()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;"></div>
+<div id="ol-hist-modal"
+  style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:501;background:#fff;border-radius:14px;padding:24px;width:min(640px,94vw);max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+    <div id="ol-hist-modal-title" style="font-weight:700;font-size:1rem;color:#111827;line-height:1.4"></div>
+    <button onclick="olHistCloseModal()" style="border:none;background:none;cursor:pointer;font-size:1.3rem;color:#9ca3af;padding:0 0 0 12px;flex-shrink:0">&#10005;</button>
+  </div>
+  <div id="ol-hist-modal-body"></div>
+</div>
 
 <!-- ── Modal de Publicação Rápida de Vídeo ── -->
 <div id="pub-rapida-overlay" onclick="fecharPublicacaoRapida()"
