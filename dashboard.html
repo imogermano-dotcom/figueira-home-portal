@@ -927,8 +927,11 @@ function tvRender(){
 
 // ── ANGARIACAO ─────────────────────────────────────────────────────────────────
 function buildCap(){
-  const anos=D.anos_cap,cap=D.angariacao,yr=D.yearly_cap,cs=Object.keys(cap).sort();
-  let tC=0,tG=0,tP=0,tA=0; Object.values(yr).forEach(y=>{tC+=y.criadas;tG+=y.ganhas;tP+=y.perdidas;tA+=y.activas;});
+  const agg=capAgg(capSt);
+  const tC=agg.criadas,tG=agg.ganhas,tP=agg.perdidas,tA=agg.activas;
+  const cap=D.angariacao;
+  const anos=capSt.ano?[capSt.ano]:D.anos_cap;
+  const cs=(capSt.cons&&capSt.cons.length?capSt.cons:Object.keys(cap)).sort();
   const r=(tC?(tG/tC*100):0).toFixed(1);
   document.getElementById('kpi-cap').innerHTML=
     '<div class="kpi"><label>Oportunidades Criadas</label><div class="val">'+fmt(tC)+'</div><div class="sub">total angaria&#231;&#245;es</div></div>'+
