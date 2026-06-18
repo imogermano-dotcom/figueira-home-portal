@@ -7348,6 +7348,7 @@ async function olSaveNota(idx, ref, tipo, nome) {
   var resChecked = document.querySelector('input[name="ol-res-'+idx+'"]:checked')
   var resultado  = resChecked ? resChecked.value : null
   if (!text && resultado === 'Nao atende') text = 'Nao atende'
+  if (!text && resultado === 'Numero nao atribuido') text = 'Numero nao atribuido'
   if (!text) { alert('Escreve uma nota antes de guardar.'); return }
 
   var btn = document.querySelector('#ol-form-'+idx+' .ol-btn-save')
