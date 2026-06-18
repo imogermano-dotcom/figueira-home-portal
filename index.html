@@ -128,6 +128,23 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ctrl-btn.more{background:#1a3c5e;color:#fff}.ctrl-btn.more:hover{background:#2d6a9f}.ctrl-btn.more:disabled{opacity:.6;cursor:not-allowed}
 .ctrl-btn.export{background:#15803d;color:#fff}.ctrl-btn.export:hover{background:#166534}
 
+/* META Ads */
+.meta-preset-btn{padding:5px 12px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .15s}
+.meta-preset-btn:hover{border-color:#2d6a9f;color:#1a3c5e}
+.meta-preset-btn.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.meta-kpi{background:#fff;border:1.5px solid #e0e6f0;border-radius:10px;padding:14px 16px}
+.meta-kpi-label{font-size:.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.meta-kpi-value{font-size:1.3rem;font-weight:700;color:#1a3c5e;line-height:1.1}
+.meta-kpi-sub{font-size:.72rem;color:#6b7280;margin-top:2px}
+.meta-ftab{padding:4px 12px;border:1.5px solid #d1d5db;border-radius:20px;font-size:.76rem;font-weight:600;cursor:pointer;background:#fff;color:#4b5563;transition:all .15s}
+.meta-ftab:hover{border-color:#2d6a9f;color:#1a3c5e}
+.meta-ftab.active{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.meta-tr{border-bottom:1px solid #f3f4f6;transition:background .1s}
+.meta-tr:hover{background:#f8fafc}
+.meta-tr td{padding:9px 12px;color:#374151;vertical-align:middle}
+.meta-status-active{display:inline-block;background:#d1fae5;color:#065f46;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid #a7f3d0}
+.meta-status-paused{display:inline-block;background:#f3f4f6;color:#6b7280;font-size:.68rem;font-weight:600;padding:2px 7px;border-radius:10px;border:1px solid #e5e7eb}
+
 /* KPI iframe */
 #page-kpi{flex-direction:column}
 #kpi-frame{flex:1;border:none;width:100%;min-height:calc(100vh - 104px)}
@@ -712,6 +729,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-biblioteca" onclick="showTab('biblioteca')">🖼️ Biblioteca</button>
     <button class="pnav-btn" id="tab-old-leads" onclick="showTab('old-leads')">📞 Old Leads</button>
     <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
+    <button class="pnav-btn" id="tab-meta" onclick="showTab('meta')">📱 META Ads</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
@@ -1648,6 +1666,86 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     </main>
   </div>
 
+  <!-- META Ads -->
+  <div class="portal-page" id="page-meta">
+    <main style="flex:1;padding:24px;max-width:1280px;margin:0 auto;width:100%">
+
+      <!-- Controls -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:16px 20px">
+        <div>
+          <h2 style="font-size:1rem;font-weight:700;color:#1a3c5e;margin:0">📱 META Ads — Figueira Home</h2>
+          <p style="font-size:.75rem;color:#9ca3af;margin:2px 0 0">Conta <code style="font-size:.72rem;background:#f3f4f6;padding:1px 5px;border-radius:4px">452624345589682</code></p>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-left:auto" id="meta-presets">
+          <button class="meta-preset-btn active" onclick="metaSetPreset(this,'last_7d')">7 dias</button>
+          <button class="meta-preset-btn" onclick="metaSetPreset(this,'last_30d')">30 dias</button>
+          <button class="meta-preset-btn" onclick="metaSetPreset(this,'this_month')">Este mês</button>
+          <button class="meta-preset-btn" onclick="metaSetPreset(this,'last_90d')">90 dias</button>
+          <button class="meta-preset-btn" onclick="metaSetPreset(this,'custom')">Personalizado</button>
+        </div>
+        <div id="meta-custom-range" style="display:none;align-items:center;gap:6px">
+          <input type="date" id="meta-since" style="padding:5px 8px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none">
+          <span style="color:#9ca3af;font-size:.8rem">→</span>
+          <input type="date" id="meta-until" style="padding:5px 8px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none">
+        </div>
+        <button onclick="metaLoad()" id="meta-load-btn" style="padding:8px 18px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.84rem;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap">🔄 Carregar</button>
+      </div>
+
+      <!-- Loading -->
+      <div id="meta-loading" class="loading" style="display:none">A carregar dados META Ads…</div>
+
+      <!-- Error / Setup msg -->
+      <div id="meta-error" class="err-box" style="display:none"></div>
+
+      <!-- Setup guide (shown when token missing) -->
+      <div id="meta-setup" style="display:none;background:#fff;border:1.5px solid #fde68a;border-radius:12px;padding:20px">
+        <h3 style="font-size:.9rem;font-weight:700;color:#92400e;margin:0 0 8px">⚙️ Configuração necessária</h3>
+        <p style="font-size:.84rem;color:#374151;margin:0 0 12px">Para ligar ao META Ads é preciso adicionar o teu access token como secret no Supabase:</p>
+        <ol style="font-size:.83rem;color:#374151;padding-left:18px;line-height:2">
+          <li>Vai ao <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:#2563eb">Meta Graph API Explorer</a> e gera um token com permissão <code>ads_read</code></li>
+          <li>Acede ao <a href="https://supabase.com/dashboard/project/zphasvfopnbzwnaidsnw/settings/functions" target="_blank" style="color:#2563eb">Supabase → Settings → Edge Functions → Secrets</a></li>
+          <li>Adiciona um secret: <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">META_ACCESS_TOKEN</code> = o teu token</li>
+          <li>Clica "Carregar" aqui novamente</li>
+        </ol>
+        <p style="font-size:.78rem;color:#6b7280;margin:8px 0 0">💡 Para um token de longa duração usa o <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank" style="color:#2563eb">Access Token Tool</a> e converte para long-lived token (60 dias).</p>
+      </div>
+
+      <!-- Summary cards -->
+      <div id="meta-summary" style="display:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px"></div>
+
+      <!-- Status filter + table -->
+      <div id="meta-table-wrap" style="display:none;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap">
+          <h3 style="font-size:.88rem;font-weight:700;color:#1a3c5e;margin:0;flex:1">Campanhas</h3>
+          <div id="meta-status-tabs" style="display:flex;gap:4px">
+            <button class="meta-ftab active" onclick="metaFilterStatus('all',this)">Todas</button>
+            <button class="meta-ftab" onclick="metaFilterStatus('ACTIVE',this)">Ativas</button>
+            <button class="meta-ftab" onclick="metaFilterStatus('PAUSED',this)">Pausadas</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="meta-table" style="width:100%;border-collapse:collapse;font-size:.83rem">
+            <thead>
+              <tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb">
+                <th style="text-align:left;padding:10px 16px;font-weight:700;color:#374151;min-width:220px">Campanha</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('spend')">Gasto ▾</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('impressions')">Impressões</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('reach')">Alcance</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('clicks')">Cliques</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('ctr')">CTR</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('cpc')">CPC</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('leads')">Leads</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('cpp')">CPL</th>
+              </tr>
+            </thead>
+            <tbody id="meta-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
   <!-- Configuração (admin only) -->
   <div class="portal-page" id="page-config">
     <main>
@@ -1775,7 +1873,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -1789,6 +1887,7 @@ function showTab(name) {
   if (name === 'biblioteca') bibLoad()
   if (name === 'old-leads') olInit()
   if (name === 'mercado') mercadoInit()
+  if (name === 'meta' && !_metaLoaded) metaInit()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -8960,6 +9059,181 @@ async function mercadoValidarDuplicado(id, confirmado, cardEl) {
   } catch(e) {
     alert('Erro: '+e.message)
   }
+}
+
+// ── META Ads ──────────────────────────────────────────────────────────────────
+var _metaLoaded = false
+var _metaPreset = 'last_7d'
+var _metaData = []
+var _metaSortKey = 'spend'
+var _metaSortAsc = false
+var _metaStatusFilter = 'all'
+var META_FN = 'https://zphasvfopnbzwnaidsnw.supabase.co/functions/v1/meta-ads-proxy'
+
+function metaInit() {
+  _metaLoaded = true
+  metaLoad()
+}
+
+function metaSetPreset(btn, preset) {
+  document.querySelectorAll('.meta-preset-btn').forEach(function(b){ b.classList.remove('active') })
+  btn.classList.add('active')
+  _metaPreset = preset
+  var customRange = document.getElementById('meta-custom-range')
+  customRange.style.display = preset === 'custom' ? 'flex' : 'none'
+}
+
+async function metaLoad() {
+  var loadBtn = document.getElementById('meta-load-btn')
+  loadBtn.disabled = true
+  loadBtn.textContent = '⏳ A carregar…'
+  document.getElementById('meta-loading').style.display = 'block'
+  document.getElementById('meta-error').style.display = 'none'
+  document.getElementById('meta-setup').style.display = 'none'
+  document.getElementById('meta-summary').style.display = 'none'
+  document.getElementById('meta-table-wrap').style.display = 'none'
+
+  try {
+    var body = {}
+    if (_metaPreset === 'custom') {
+      var since = document.getElementById('meta-since').value
+      var until = document.getElementById('meta-until').value
+      if (!since || !until) { alert('Selecciona as datas de início e fim.'); return }
+      body = { since: since, until: until }
+    } else {
+      body = { date_preset: _metaPreset }
+    }
+
+    var res = await fetch(META_FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    var json = await res.json()
+
+    if (json.error) {
+      if (json.error.includes('META_ACCESS_TOKEN')) {
+        document.getElementById('meta-setup').style.display = 'block'
+      } else {
+        document.getElementById('meta-error').textContent = '❌ ' + json.error
+        document.getElementById('meta-error').style.display = 'block'
+      }
+      return
+    }
+
+    _metaData = json.campaigns || []
+    metaRenderSummary(json.totals)
+    metaRenderTable()
+    document.getElementById('meta-summary').style.display = 'grid'
+    document.getElementById('meta-table-wrap').style.display = 'block'
+
+  } catch(e) {
+    document.getElementById('meta-error').textContent = '❌ Erro de ligação: ' + e.message
+    document.getElementById('meta-error').style.display = 'block'
+  } finally {
+    document.getElementById('meta-loading').style.display = 'none'
+    loadBtn.disabled = false
+    loadBtn.textContent = '🔄 Carregar'
+  }
+}
+
+function metaFmtEur(v) {
+  var n = parseFloat(v)
+  if (isNaN(n)) return '—'
+  return n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+}
+function metaFmtNum(v) {
+  var n = parseInt(v)
+  return isNaN(n) ? '—' : n.toLocaleString('pt-PT')
+}
+function metaFmtPct(v) {
+  var n = parseFloat(v)
+  return isNaN(n) ? '—' : n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'
+}
+function metaGetLeads(actions) {
+  if (!Array.isArray(actions)) return 0
+  var leadTypes = ['lead', 'onsite_conversion.lead_grouped', 'leadgen_grouped']
+  var total = 0
+  actions.forEach(function(a) { if (leadTypes.indexOf(a.action_type) >= 0) total += parseInt(a.value || 0) })
+  return total
+}
+function metaObjLabel(obj) {
+  var map = { OUTCOME_LEADS: 'Leads', OUTCOME_ENGAGEMENT: 'Engagement', OUTCOME_AWARENESS: 'Awareness',
+    LINK_CLICKS: 'Tráfego', MESSAGES: 'Mensagens', CONVERSIONS: 'Conversão', VIDEO_VIEWS: 'Vídeo', POST_ENGAGEMENT: 'Publicação' }
+  return map[obj] || obj
+}
+
+function metaRenderSummary(totals) {
+  var el = document.getElementById('meta-summary')
+  if (!totals) { el.innerHTML = ''; return }
+  var leads = metaGetLeads(totals.actions)
+  var cpl = leads > 0 && parseFloat(totals.spend) > 0 ? parseFloat(totals.spend) / leads : null
+  el.innerHTML = [
+    { label: 'Gasto Total', value: metaFmtEur(totals.spend), sub: '' },
+    { label: 'Impressões', value: metaFmtNum(totals.impressions), sub: '' },
+    { label: 'Alcance', value: metaFmtNum(totals.reach), sub: '' },
+    { label: 'Cliques', value: metaFmtNum(totals.clicks), sub: '' },
+    { label: 'CTR Médio', value: metaFmtPct(totals.ctr), sub: '' },
+    { label: 'CPC Médio', value: metaFmtEur(totals.cpc), sub: '' },
+    { label: 'Leads', value: leads > 0 ? leads.toLocaleString('pt-PT') : '—', sub: '' },
+    { label: 'Custo/Lead', value: cpl ? metaFmtEur(cpl) : '—', sub: '' },
+  ].map(function(k) {
+    return '<div class="meta-kpi"><div class="meta-kpi-label">'+k.label+'</div><div class="meta-kpi-value">'+k.value+'</div></div>'
+  }).join('')
+}
+
+function metaFilterStatus(status, btn) {
+  _metaStatusFilter = status
+  document.querySelectorAll('.meta-ftab').forEach(function(b){ b.classList.remove('active') })
+  btn.classList.add('active')
+  metaRenderTable()
+}
+
+function metaSort(key) {
+  if (_metaSortKey === key) _metaSortAsc = !_metaSortAsc
+  else { _metaSortKey = key; _metaSortAsc = false }
+  metaRenderTable()
+}
+
+function metaRenderTable() {
+  var rows = _metaData.filter(function(c) {
+    return _metaStatusFilter === 'all' || c.status === _metaStatusFilter
+  })
+
+  var key = _metaSortKey
+  rows.sort(function(a, b) {
+    var av, bv
+    if (key === 'leads') { av = metaGetLeads(a.ins.actions); bv = metaGetLeads(b.ins.actions) }
+    else if (key === 'cpp') {
+      var al = metaGetLeads(a.ins.actions), bl = metaGetLeads(b.ins.actions)
+      av = al > 0 ? parseFloat(a.ins.spend||0)/al : 0
+      bv = bl > 0 ? parseFloat(b.ins.spend||0)/bl : 0
+    }
+    else { av = parseFloat(a.ins[key]||0); bv = parseFloat(b.ins[key]||0) }
+    return _metaSortAsc ? av - bv : bv - av
+  })
+
+  var html = ''
+  rows.forEach(function(c) {
+    var ins = c.ins || {}
+    var leads = metaGetLeads(ins.actions)
+    var cpl = leads > 0 && parseFloat(ins.spend) > 0 ? parseFloat(ins.spend) / leads : null
+    var statusBadge = c.status === 'ACTIVE'
+      ? '<span class="meta-status-active">Ativa</span>'
+      : '<span class="meta-status-paused">Pausada</span>'
+    var objBadge = '<span style="font-size:.68rem;background:#e0e7ff;color:#3730a3;padding:1px 7px;border-radius:10px;font-weight:600">'+metaObjLabel(c.objective)+'</span>'
+    html += '<tr class="meta-tr">'
+      + '<td style="padding:9px 16px"><div style="font-weight:600;color:#111827;font-size:.83rem;margin-bottom:3px">'+esc(c.name)+'</div>'
+      + '<div style="display:flex;gap:4px;flex-wrap:wrap">'+statusBadge+objBadge+'</div></td>'
+      + '<td style="text-align:right;padding:9px 12px;font-weight:700;color:#1a3c5e">'+metaFmtEur(ins.spend)+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum(ins.impressions)+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum(ins.reach)+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum(ins.clicks)+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtPct(ins.ctr)+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtEur(ins.cpc)+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;font-weight:700;color:'+(leads>0?'#15803d':'#9ca3af')+'">'+( leads>0 ? leads.toLocaleString('pt-PT') : '—' )+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+( cpl ? metaFmtEur(cpl) : '—' )+'</td>'
+      + '</tr>'
+  })
+
+  if (!html) html = '<tr><td colspan="9" style="padding:32px;text-align:center;color:#9ca3af;font-style:italic">Sem campanhas com dados para o período seleccionado.</td></tr>'
+  document.getElementById('meta-tbody').innerHTML = html
 }
 </script>
 
