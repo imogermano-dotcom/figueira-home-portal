@@ -8409,7 +8409,7 @@ async function mercadoLoadImoveisPagina() {
     var f = _mercadoFiltros
     var porPagina = 20
     var query = sb.from('idealista_imoveis')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,tem_elevador,tem_parking',{count:'exact'})
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
       .eq('ativo',true)
       .order('primeiro_visto_em',{ascending:false})
       .range((f.pagina-1)*porPagina, f.pagina*porPagina-1)
@@ -8428,7 +8428,7 @@ async function mercadoLoadImoveisPagina() {
     if (f.verSoNovos) query = query.gte('primeiro_visto_em', _novoDesdeSt)
     if (f._fonteSync) query = query.eq('fonte', f._fonteSync).gte('primeiro_visto_em', f._desde)
     if (f._retiradosDesde) { query = sb.from('idealista_imoveis')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,tem_elevador,tem_parking',{count:'exact'})
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
       .eq('fonte', f._fonteSync).eq('ativo', false).gte('retirado_em', f._retiradosDesde)
       .order('retirado_em',{ascending:false}).range((f.pagina-1)*porPagina, f.pagina*porPagina-1) }
     var { data, count, error } = await query
@@ -8467,7 +8467,7 @@ async function mercadoLoadImoveisPagina() {
         var ehNovo = im.primeiro_visto_em && im.primeiro_visto_em >= _novoDesdeSt
         return '<div class="mkt-imovel-card" onclick="mercadoAbrirFicha(\''+esc(im.property_code)+'\')" style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;cursor:pointer;transition:box-shadow .15s" onmouseenter="this.style.boxShadow=\'0 4px 16px rgba(0,0,0,.13)\'" onmouseleave="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.07)\'">'
           + '<div style="position:relative;height:160px;background:#e0e6f0;overflow:hidden">'
-          + (im.thumbnail_url ? '<img src="'+esc(im.thumbnail_url)+'" onerror="mercadoImgFallback(this,\''+esc(im.property_code)+'\',\''+esc(im.property_type||'')+'\',160)" style="width:100%;height:160px;object-fit:cover;display:block">' : '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="font-size:2.5rem">'+mercadoTipoEmoji(im.property_type)+'</span><a href="https://www.idealista.pt/imovel/'+esc(im.property_code)+'/" target="_blank" onclick="event.stopPropagation()" style="font-size:.72rem;color:#2d6a9f;text-decoration:none">Ver no Idealista →</a></div>')
+          + ((im.thumbnail_storage_url || im.thumbnail_url) ? '<img src="'+esc(im.thumbnail_storage_url || im.thumbnail_url)+'" onerror="mercadoImgFallback(this,\''+esc(im.property_code)+'\',\''+esc(im.property_type||'')+'\',160)" style="width:100%;height:160px;object-fit:cover;display:block">' : '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="font-size:2.5rem">'+mercadoTipoEmoji(im.property_type)+'</span><a href="https://www.idealista.pt/imovel/'+esc(im.property_code)+'/" target="_blank" onclick="event.stopPropagation()" style="font-size:.72rem;color:#2d6a9f;text-decoration:none">Ver no Idealista →</a></div>')
           + '<span style="position:absolute;top:8px;left:8px;background:'+opBg+';color:'+opColor+';font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+opLabel+'</span>'
           + (im.num_alteracoes_preco > 0 ? '<span style="position:absolute;top:8px;right:8px;background:#fef9c3;color:#854d0e;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+im.num_alteracoes_preco+' alt. preço</span>' : '')
           + (ehNovo ? '<span style="position:absolute;bottom:8px;left:8px;background:#0ea5e9;color:#fff;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:10px">⚡ NOVO</span>' : '')
@@ -8728,7 +8728,7 @@ async function mercadoAbrirFicha(propertyCode) {
       + '<button onclick="mercadoRenderImoveis()" style="padding:6px 14px;background:#f0f4f8;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;color:#374151">← Voltar à listagem</button>'
       + '</div>'
       + '<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:16px">'
-      + (im.thumbnail_url ? '<img src="'+esc(im.thumbnail_url)+'" onerror="mercadoImgFallback(this,\''+esc(im.property_code)+'\',\''+esc(im.property_type||'')+'\',240)" style="width:100%;max-height:320px;object-fit:cover;display:block">' : '<div style="height:120px;background:#e8edf5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:3rem">'+mercadoTipoEmoji(im.property_type)+'</span><a href="https://www.idealista.pt/imovel/'+esc(im.property_code)+'/" target="_blank" style="font-size:.78rem;color:#2d6a9f;text-decoration:none">Ver no Idealista →</a></div>')
+      + ((im.thumbnail_storage_url || im.thumbnail_url) ? '<img src="'+esc(im.thumbnail_storage_url || im.thumbnail_url)+'" onerror="mercadoImgFallback(this,\''+esc(im.property_code)+'\',\''+esc(im.property_type||'')+'\',240)" style="width:100%;max-height:320px;object-fit:cover;display:block">' : '<div style="height:120px;background:#e8edf5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><span style="font-size:3rem">'+mercadoTipoEmoji(im.property_type)+'</span><a href="https://www.idealista.pt/imovel/'+esc(im.property_code)+'/" target="_blank" style="font-size:.78rem;color:#2d6a9f;text-decoration:none">Ver no Idealista →</a></div>')
       + '<div style="padding:20px">'
       + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">'
       + '<div>'
