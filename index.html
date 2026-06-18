@@ -7363,21 +7363,19 @@ async function olSaveNota(idx, ref, tipo, nome) {
 
   if (error) {
     alert('Erro ao guardar: ' + error.message)
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar nota' }
   } else {
     _olHistLoaded = false
-    var prevEl = document.getElementById('ol-prev-'+idx)
-    var newLine = '<div class="ol-nota-line ol-nota-new">· '+esc(text)+'</div>'
-    if (prevEl && prevEl.classList.contains('ol-no-notas')) {
-      prevEl.outerHTML = '<div class="ol-notas-preview" id="ol-prev-'+idx+'">'+newLine+'</div>'
-    } else if (prevEl) {
-      prevEl.insertAdjacentHTML('afterbegin', newLine)
+    // Atualizar dados locais e re-renderizar página — fica nos mesmos filtros/página
+    var entry = _olAllData.find(function(g){ return g.refs && g.refs.indexOf(ref) >= 0 })
+    if (entry) {
+      entry.lastNotaData = data
+      if (!entry.notaPreview) entry.notaPreview = []
+      entry.notaPreview.unshift(text)
     }
-    var dateTag = document.querySelector('#ol-card-'+idx+' .ol-tag-date')
-    if (dateTag) dateTag.textContent = '📅 '+data
     olCloseNota(idx)
-    document.getElementById('ol-txt-'+idx).value = ''
+    olRenderPage()
   }
-  if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar nota' }
 }
 
 // ── Tab switcher ──────────────────────────────────────────────────────────────
