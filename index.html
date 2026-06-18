@@ -7258,7 +7258,7 @@ function olRenderPage() {
     html += '<div class="ol-nota-form" id="ol-form-'+idx+'" style="display:none">'
     html += '<div style="margin-bottom:6px;font-size:.76rem;font-weight:600;color:#374151">Resultado da chamada:</div>'
     html += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px">'
-    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD']
+    var resultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Comprou na Figueira e nao quer vender','Numero nao atribuido','Pretende retirar contacto da BD']
     resultados.forEach(function(r){ html += '<label style="display:flex;align-items:center;gap:4px;font-size:.77rem;cursor:pointer;white-space:nowrap"><input type="radio" name="ol-res-'+idx+'" value="'+esc(r)+'"> '+esc(r)+'</label>' })
     html += '</div>'
     html += '<textarea id="ol-txt-'+idx+'" placeholder="Escreve aqui a nota após a chamada..." rows="3"></textarea>'
@@ -7333,8 +7333,11 @@ async function olNaoAtende(idx, ref, nome) {
   })
   if (error) { alert('Erro: '+error.message); return }
   _olHistLoaded = false
+  // Atualizar contador localmente — fica na mesma página/filtros
+  var entry = _olAllData.find(function(g){ return g.refs && g.refs.indexOf(ref) >= 0 })
+  if (entry) entry.naoAtendeCount = (entry.naoAtendeCount || 0) + 1
   olCloseNota(idx)
-  olSearch()
+  olRenderPage()
 }
 
 async function olSaveNota(idx, ref, tipo, nome) {
@@ -7416,11 +7419,11 @@ function olToggleHistorico() {
 }
 
 // ── Historico Old Leads ───────────────────────────────────────────────────────
-var _olHistResultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Pretende retirar contacto da BD','Nao atende']
+var _olHistResultados = ['Vender na Figueira','Vender na Figueira mais tarde','Vender fora da Figueira','Sem interesse','Comprou na Figueira e nao quer vender','Numero nao atribuido','Pretende retirar contacto da BD','Nao atende']
 
 function histResultadoBadge(r) {
   if (!r) return '<span style="font-size:.72rem;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:4px">—</span>'
-  var colors = { 'Vender na Figueira':'#166534;background:#dcfce7', 'Vender na Figueira mais tarde':'#1e40af;background:#dbeafe', 'Sem interesse':'#9ca3af;background:#f3f4f6', 'Nao atende':'#dc2626;background:#fee2e2', 'Pretende retirar contacto da BD':'#7c3aed;background:#ede9fe' }
+  var colors = { 'Vender na Figueira':'#166534;background:#dcfce7', 'Vender na Figueira mais tarde':'#1e40af;background:#dbeafe', 'Sem interesse':'#9ca3af;background:#f3f4f6', 'Nao atende':'#dc2626;background:#fee2e2', 'Pretende retirar contacto da BD':'#7c3aed;background:#ede9fe', 'Comprou na Figueira e nao quer vender':'#92400e;background:#fef3c7', 'Numero nao atribuido':'#374151;background:#f3f4f6' }
   var style = colors[r] || '#374151;background:#f3f4f6'
   return '<span style="font-size:.72rem;color:'+style+';padding:2px 8px;border-radius:4px;white-space:nowrap">'+esc(r)+'</span>'
 }
