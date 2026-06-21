@@ -1736,6 +1736,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
                 <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('cpc')">CPC</th>
                 <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('leads')">Leads</th>
                 <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('cpp')">CPL</th>
+                <th style="text-align:right;padding:10px 12px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap" onclick="metaSort('frequency')">Freq.</th>
               </tr>
             </thead>
             <tbody id="meta-tbody"></tbody>
@@ -9146,6 +9147,10 @@ function metaFmtPct(v) {
   var n = parseFloat(v)
   return isNaN(n) ? '—' : n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'
 }
+function metaFmtNum2(v) {
+  var n = parseFloat(v)
+  return isNaN(n) ? '—' : n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 function metaGetLeads(actions) {
   if (!Array.isArray(actions)) return 0
   var leadTypes = ['lead', 'onsite_conversion.lead_grouped', 'leadgen_grouped']
@@ -9173,6 +9178,7 @@ function metaRenderSummary(totals) {
     { label: 'CPC Médio', value: metaFmtEur(totals.cpc), sub: '' },
     { label: 'Leads', value: leads > 0 ? leads.toLocaleString('pt-PT') : '—', sub: '' },
     { label: 'Custo/Lead', value: cpl ? metaFmtEur(cpl) : '—', sub: '' },
+    { label: 'Frequência', value: metaFmtNum2(totals.frequency), sub: '' },
   ].map(function(k) {
     return '<div class="meta-kpi"><div class="meta-kpi-label">'+k.label+'</div><div class="meta-kpi-value">'+k.value+'</div></div>'
   }).join('')
@@ -9229,10 +9235,11 @@ function metaRenderTable() {
       + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtEur(ins.cpc)+'</td>'
       + '<td style="text-align:right;padding:9px 12px;font-weight:700;color:'+(leads>0?'#15803d':'#9ca3af')+'">'+( leads>0 ? leads.toLocaleString('pt-PT') : '—' )+'</td>'
       + '<td style="text-align:right;padding:9px 12px;color:#374151">'+( cpl ? metaFmtEur(cpl) : '—' )+'</td>'
+      + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum2(ins.frequency)+'</td>'
       + '</tr>'
   })
 
-  if (!html) html = '<tr><td colspan="9" style="padding:32px;text-align:center;color:#9ca3af;font-style:italic">Sem campanhas com dados para o período seleccionado.</td></tr>'
+  if (!html) html = '<tr><td colspan="10" style="padding:32px;text-align:center;color:#9ca3af;font-style:italic">Sem campanhas com dados para o período seleccionado.</td></tr>'
   document.getElementById('meta-tbody').innerHTML = html
 }
 </script>
