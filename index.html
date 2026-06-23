@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Figueira Home</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
@@ -1741,6 +1742,43 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             </thead>
             <tbody id="meta-tbody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Campaign Drill-down -->
+      <div id="meta-drilldown" style="display:none;margin-top:16px;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.1);overflow:hidden">
+        <div style="background:linear-gradient(135deg,#1a3c5e,#2d6a9f);padding:16px 20px;display:flex;align-items:center;gap:14px">
+          <button onclick="metaCloseDrilldown()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:.84rem;font-weight:600;white-space:nowrap">← Voltar</button>
+          <div>
+            <div id="meta-dd-name" style="font-weight:700;color:#fff;font-size:.95rem"></div>
+            <div id="meta-dd-subtitle" style="font-size:.75rem;color:rgba(255,255,255,.75);margin-top:2px"></div>
+          </div>
+        </div>
+        <div id="meta-dd-loading" style="padding:40px;text-align:center;color:#6b7280;font-size:.88rem">⏳ A analisar campanha…</div>
+        <div id="meta-dd-content" style="display:none;padding:20px">
+          <div id="meta-dd-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div style="background:#f8fafc;border-radius:10px;padding:16px">
+              <h4 style="font-size:.82rem;font-weight:700;color:#1a3c5e;margin:0 0 12px">📅 Leads por dia</h4>
+              <canvas id="meta-chart-daily" height="200"></canvas>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:16px">
+              <h4 style="font-size:.82rem;font-weight:700;color:#1a3c5e;margin:0 0 12px">🚀 Leads acumulados vs top 5 (dia desde lançamento)</h4>
+              <canvas id="meta-chart-cumulative" height="200"></canvas>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+            <div style="background:#f8fafc;border-radius:10px;padding:16px">
+              <h4 style="font-size:.82rem;font-weight:700;color:#1a3c5e;margin:0 0 12px">📊 CTR diário</h4>
+              <canvas id="meta-chart-ctr" height="200"></canvas>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:16px">
+              <h4 style="font-size:.82rem;font-weight:700;color:#1a3c5e;margin:0 0 12px">💰 Gasto diário</h4>
+              <canvas id="meta-chart-spend" height="200"></canvas>
+            </div>
+          </div>
+          <div id="meta-dd-suggestions" style="margin-bottom:16px"></div>
+          <div id="meta-dd-top5"></div>
         </div>
       </div>
 
@@ -9153,10 +9191,8 @@ function metaFmtNum2(v) {
 }
 function metaGetLeads(actions) {
   if (!Array.isArray(actions)) return 0
-  var leadTypes = ['lead', 'onsite_conversion.lead_grouped', 'leadgen_grouped']
-  var total = 0
-  actions.forEach(function(a) { if (leadTypes.indexOf(a.action_type) >= 0) total += parseInt(a.value || 0) })
-  return total
+  return actions.filter(function(a){ return a.action_type === 'lead' })
+    .reduce(function(s, a){ return s + parseInt(a.value || 0) }, 0)
 }
 function metaObjLabel(obj) {
   var map = { OUTCOME_LEADS: 'Leads', OUTCOME_ENGAGEMENT: 'Engagement', OUTCOME_AWARENESS: 'Awareness',
@@ -9224,8 +9260,8 @@ function metaRenderTable() {
       ? '<span class="meta-status-active">Ativa</span>'
       : '<span class="meta-status-paused">Pausada</span>'
     var objBadge = '<span style="font-size:.68rem;background:#e0e7ff;color:#3730a3;padding:1px 7px;border-radius:10px;font-weight:600">'+metaObjLabel(c.objective)+'</span>'
-    html += '<tr class="meta-tr">'
-      + '<td style="padding:9px 16px"><div style="font-weight:600;color:#111827;font-size:.83rem;margin-bottom:3px">'+esc(c.name)+'</div>'
+    html += '<tr class="meta-tr" style="cursor:pointer" onclick="metaOpenDrilldown(\''+c.id+'\')" title="Clica para análise detalhada">'
+      + '<td style="padding:9px 16px"><div style="font-weight:600;color:#111827;font-size:.83rem;margin-bottom:3px">'+esc(c.name)+' <span style="font-size:.68rem;color:#9ca3af">🔍</span></div>'
       + '<div style="display:flex;gap:4px;flex-wrap:wrap">'+statusBadge+objBadge+'</div></td>'
       + '<td style="text-align:right;padding:9px 12px;font-weight:700;color:#1a3c5e">'+metaFmtEur(ins.spend)+'</td>'
       + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum(ins.impressions)+'</td>'
@@ -9241,6 +9277,177 @@ function metaRenderTable() {
 
   if (!html) html = '<tr><td colspan="10" style="padding:32px;text-align:center;color:#9ca3af;font-style:italic">Sem campanhas com dados para o período seleccionado.</td></tr>'
   document.getElementById('meta-tbody').innerHTML = html
+}
+
+// ── META Drill-down ───────────────────────────────────────────────────────────
+var _metaCharts = {}
+
+function metaOpenDrilldown(campaignId) {
+  var c = (_metaData || []).find(function(x){ return x.id === campaignId })
+  if (!c) return
+  var dd = document.getElementById('meta-drilldown')
+  dd.style.display = 'block'
+  document.getElementById('meta-dd-name').textContent = c.name
+  document.getElementById('meta-dd-subtitle').textContent = metaObjLabel(c.objective) + ' · ' + c.status
+  document.getElementById('meta-dd-loading').style.display = 'block'
+  document.getElementById('meta-dd-content').style.display = 'none'
+  setTimeout(function(){ dd.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50)
+  metaDestroyCharts()
+  fetch(META_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'campaign_analysis', campaign_id: campaignId })
+  }).then(function(r){ return r.json() }).then(function(data){
+    document.getElementById('meta-dd-loading').style.display = 'none'
+    document.getElementById('meta-dd-content').style.display = 'block'
+    metaRenderDrilldown(data, c)
+  }).catch(function(e){
+    document.getElementById('meta-dd-loading').textContent = '❌ Erro: ' + e.message
+  })
+}
+
+function metaCloseDrilldown() {
+  document.getElementById('meta-drilldown').style.display = 'none'
+  metaDestroyCharts()
+}
+
+function metaDestroyCharts() {
+  Object.keys(_metaCharts).forEach(function(k){ _metaCharts[k].destroy() })
+  _metaCharts = {}
+}
+
+function metaRenderDrilldown(data, campaign) {
+  var daily = data.daily || []
+  var top5 = data.top5 || []
+  var suggestions = data.suggestions
+
+  var totalLeads = 0, totalSpend = 0, totalClicks = 0, totalImp = 0
+  daily.forEach(function(d){
+    totalLeads += metaGetLeads(d.actions)
+    totalSpend += parseFloat(d.spend || 0)
+    totalClicks += parseInt(d.clicks || 0)
+    totalImp += parseInt(d.impressions || 0)
+  })
+  var cpl = totalLeads > 0 ? totalSpend / totalLeads : null
+  var avgCTR = totalImp > 0 ? (totalClicks / totalImp * 100) : 0
+  var lastFreq = daily.length > 0 ? parseFloat(daily[daily.length - 1].frequency || 0) : 0
+
+  // KPI mini-cards
+  var kpis = [
+    { label: 'Dias activos', value: daily.length },
+    { label: 'Gasto total', value: metaFmtEur(totalSpend) },
+    { label: 'Leads', value: totalLeads > 0 ? totalLeads : '—' },
+    { label: 'CPL', value: cpl ? metaFmtEur(cpl) : '—' },
+    { label: 'CTR médio', value: metaFmtPct(avgCTR) },
+    { label: 'Frequência', value: metaFmtNum2(lastFreq) }
+  ]
+  document.getElementById('meta-dd-kpis').innerHTML = kpis.map(function(k){
+    return '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px">'
+      + '<div style="font-size:.69rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px">'+k.label+'</div>'
+      + '<div style="font-size:1.05rem;font-weight:700;color:#1a3c5e;margin-top:3px">'+k.value+'</div>'
+      + '</div>'
+  }).join('')
+
+  // Chart 1 — leads por dia
+  var dailyLeads = daily.map(function(d){ return metaGetLeads(d.actions) })
+  var dailyLabels = daily.map(function(d){ return (d.date_start || '').slice(5) })
+  if (daily.length > 0) {
+    _metaCharts['daily'] = new Chart(document.getElementById('meta-chart-daily'), {
+      type: 'bar',
+      data: { labels: dailyLabels, datasets: [{ label: 'Leads', data: dailyLeads,
+        backgroundColor: 'rgba(45,106,159,0.7)', borderColor: '#1a3c5e', borderWidth: 1, borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { maxTicksLimit: 14 } } } }
+    })
+  }
+
+  // Chart 2 — leads acumulados normalizados
+  var thisCum = []; var s = 0
+  daily.forEach(function(d){ s += metaGetLeads(d.actions); thisCum.push(s) })
+  var allLengths = [thisCum.length].concat(top5.map(function(c){ return (c.daily || []).length }))
+  var maxDays = Math.max.apply(null, allLengths)
+  var dayLabels = Array.from({ length: maxDays }, function(_, i){ return 'D'+(i+1) })
+  var palette = ['#94a3b8','#38bdf8','#4ade80','#f87171','#c084fc','#fb923c']
+  var ds2 = top5.map(function(c, i){
+    var cum = []; var s2 = 0
+    ;(c.daily || []).forEach(function(d){ s2 += metaGetLeads(d.actions); cum.push(s2) })
+    return { label: c.name.length > 22 ? c.name.slice(0,22)+'…' : c.name, data: cum,
+      borderColor: palette[i % palette.length], backgroundColor: 'transparent',
+      borderWidth: 1.5, borderDash: [5,3], pointRadius: 0, tension: 0.3 }
+  })
+  ds2.unshift({ label: campaign ? (campaign.name.length > 22 ? campaign.name.slice(0,22)+'…' : campaign.name) : 'Esta campanha',
+    data: thisCum, borderColor: '#1a3c5e', backgroundColor: 'rgba(26,60,94,.08)',
+    borderWidth: 3, pointRadius: 0, tension: 0.3, fill: true })
+  if (maxDays > 0) {
+    _metaCharts['cumulative'] = new Chart(document.getElementById('meta-chart-cumulative'), {
+      type: 'line', data: { labels: dayLabels, datasets: ds2 },
+      options: { responsive: true, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 16, padding: 8 } } },
+        scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 12 } } } }
+    })
+  }
+
+  // Chart 3 — CTR diário
+  if (daily.length > 0) {
+    _metaCharts['ctr'] = new Chart(document.getElementById('meta-chart-ctr'), {
+      type: 'line',
+      data: { labels: dailyLabels, datasets: [{ label: 'CTR %',
+        data: daily.map(function(d){ return parseFloat(d.ctr || 0) }),
+        borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.1)', borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 14 } } } }
+    })
+  }
+
+  // Chart 4 — Gasto diário
+  if (daily.length > 0) {
+    _metaCharts['spend'] = new Chart(document.getElementById('meta-chart-spend'), {
+      type: 'line',
+      data: { labels: dailyLabels, datasets: [{ label: 'Gasto €',
+        data: daily.map(function(d){ return parseFloat(d.spend || 0) }),
+        borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,.1)', borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 14 } } } }
+    })
+  }
+
+  // Sugestões IA
+  var sugEl = document.getElementById('meta-dd-suggestions')
+  if (suggestions && suggestions.sugestoes && suggestions.sugestoes.length > 0) {
+    sugEl.innerHTML = '<h4 style="font-size:.85rem;font-weight:700;color:#1a3c5e;margin:0 0 10px">🤖 Sugestões de acção (IA)</h4>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">'
+      + suggestions.sugestoes.map(function(su){
+        return '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px 16px">'
+          + '<div style="font-size:1.3rem;margin-bottom:5px">'+su.icone+'</div>'
+          + '<div style="font-weight:700;font-size:.84rem;color:#0369a1;margin-bottom:4px">'+esc(su.titulo)+'</div>'
+          + '<div style="font-size:.81rem;color:#374151;line-height:1.55">'+esc(su.texto)+'</div>'
+          + '</div>'
+      }).join('') + '</div>'
+  } else {
+    sugEl.innerHTML = '<p style="font-size:.8rem;color:#9ca3af;font-style:italic;margin:0">Sugestões IA não disponíveis (ANTHROPIC_API_KEY não configurado no Supabase).</p>'
+  }
+
+  // Top 5 tabela
+  var t5el = document.getElementById('meta-dd-top5')
+  if (top5.length > 0) {
+    t5el.innerHTML = '<h4 style="font-size:.85rem;font-weight:700;color:#1a3c5e;margin:16px 0 10px">🏆 Top 5 campanhas por CPL (referência)</h4>'
+      + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.8rem">'
+      + '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb">'
+      + ['Campanha','Leads','Gasto','CPL','Dias'].map(function(h, i){
+        return '<th style="padding:8px '+(i===0?'12px':'10px')+';text-align:'+(i===0?'left':'right')+';color:#374151;font-weight:700">'+h+'</th>'
+      }).join('') + '</tr></thead><tbody>'
+      + top5.map(function(c, i){
+        return '<tr style="border-top:1px solid #f1f5f9">'
+          + '<td style="padding:8px 12px;font-weight:600;color:#1a3c5e">'+(i+1)+'. '+(c.name.length>45?c.name.slice(0,45)+'…':esc(c.name))+'</td>'
+          + '<td style="text-align:right;padding:8px 10px;color:#15803d;font-weight:700">'+c.leads+'</td>'
+          + '<td style="text-align:right;padding:8px 10px">'+metaFmtEur(c.spend)+'</td>'
+          + '<td style="text-align:right;padding:8px 10px;font-weight:700;color:#1a3c5e">'+metaFmtEur(c.cpl)+'</td>'
+          + '<td style="text-align:right;padding:8px 10px;color:#6b7280">'+((c.daily||[]).length||'—')+'</td>'
+          + '</tr>'
+      }).join('') + '</tbody></table></div>'
+  } else {
+    t5el.innerHTML = '<p style="font-size:.8rem;color:#9ca3af;font-style:italic;margin:16px 0 0">Não há outras campanhas com leads suficientes para comparação (mín. 3 leads).</p>'
+  }
 }
 </script>
 
