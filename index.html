@@ -1748,11 +1748,27 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <!-- Status filter + table -->
       <div id="meta-table-wrap" style="display:none;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden">
         <div style="display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap">
-          <h3 style="font-size:.88rem;font-weight:700;color:#1a3c5e;margin:0;flex:1">Campanhas</h3>
+          <h3 style="font-size:.88rem;font-weight:700;color:#1a3c5e;margin:0">Campanhas</h3>
+          <div style="flex:1;min-width:180px;max-width:300px">
+            <input id="meta-search-input" type="text" placeholder="🔍 Pesquisar campanha (mín. 4 letras)…"
+              oninput="metaSearchInput(this.value)"
+              style="width:100%;padding:6px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;outline:none;font-family:inherit"
+              onfocus="this.style.borderColor='#2d6a9f'" onblur="this.style.borderColor='#d1d5db'">
+          </div>
           <div id="meta-status-tabs" style="display:flex;gap:4px">
             <button class="meta-ftab active" onclick="metaFilterStatus('all',this)">Todas</button>
             <button class="meta-ftab" onclick="metaFilterStatus('ACTIVE',this)">Ativas</button>
             <button class="meta-ftab" onclick="metaFilterStatus('PAUSED',this)">Pausadas</button>
+          </div>
+        </div>
+        <!-- Banner: campanha fora do período -->
+        <div id="meta-search-banner" style="display:none;margin:12px 16px;background:#fef9c3;border:1.5px solid #fde68a;border-radius:10px;padding:12px 16px">
+          <div style="font-size:.84rem;font-weight:700;color:#92400e;margin-bottom:4px">⚠️ Campanha fora do período seleccionado</div>
+          <div style="font-size:.82rem;color:#374151;margin-bottom:2px"><strong id="meta-banner-name"></strong> existe mas não tem dados no período actual.</div>
+          <div style="font-size:.8rem;color:#6b7280;margin-bottom:10px">Período em que decorreu: <strong id="meta-banner-period"></strong></div>
+          <div style="display:flex;gap:8px">
+            <button onclick="metaExpandToCampaign()" style="padding:6px 14px;background:#1a3c5e;color:#fff;border:none;border-radius:7px;font-size:.81rem;font-weight:600;cursor:pointer">✅ Expandir datas</button>
+            <button onclick="metaDismissBanner()" style="padding:6px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:7px;font-size:.81rem;font-weight:600;cursor:pointer">✖ Manter período</button>
           </div>
         </div>
         <div style="overflow-x:auto">
@@ -9139,6 +9155,9 @@ var _metaData = []
 var _metaSortKey = 'spend'
 var _metaSortAsc = false
 var _metaStatusFilter = 'all'
+var _metaSearchQuery = ''
+var _metaSearchTimer = null
+var _metaSearchBannerCampaign = null
 var META_FN = 'https://zphasvfopnbzwnaidsnw.supabase.co/functions/v1/meta-ads-proxy'
 
 function metaInit() {
@@ -9267,8 +9286,11 @@ function metaSort(key) {
 }
 
 function metaRenderTable() {
+  var q = _metaSearchQuery.toLowerCase()
   var rows = _metaData.filter(function(c) {
-    return _metaStatusFilter === 'all' || c.status === _metaStatusFilter
+    var statusOk = _metaStatusFilter === 'all' || c.status === _metaStatusFilter
+    var searchOk = q.length < 4 || c.name.toLowerCase().indexOf(q) >= 0
+    return statusOk && searchOk
   })
 
   var key = _metaSortKey
@@ -9313,6 +9335,81 @@ function metaRenderTable() {
 }
 
 // ── META Drill-down ───────────────────────────────────────────────────────────
+function metaSearchInput(val) {
+  clearTimeout(_metaSearchTimer)
+  var q = val.trim()
+  if (q.length < 4) {
+    _metaSearchQuery = ''
+    _metaSearchBannerCampaign = null
+    document.getElementById('meta-search-banner').style.display = 'none'
+    metaRenderTable()
+    return
+  }
+  _metaSearchTimer = setTimeout(function() { metaDoSearch(q) }, 350)
+}
+
+function metaDoSearch(q) {
+  _metaSearchQuery = q
+  document.getElementById('meta-search-banner').style.display = 'none'
+  _metaSearchBannerCampaign = null
+  metaRenderTable()
+
+  // If no results in current data, search all campaigns
+  var matches = _metaData.filter(function(c) {
+    return (_metaStatusFilter === 'all' || c.status === _metaStatusFilter) &&
+           c.name.toLowerCase().indexOf(q.toLowerCase()) >= 0
+  })
+  if (matches.length === 0) metaSearchAllCampaigns(q)
+}
+
+async function metaSearchAllCampaigns(q) {
+  try {
+    var res = await fetch(META_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'find_campaign', query: q })
+    })
+    var json = await res.json()
+    var found = json.campaigns || []
+    if (found.length === 0) return
+
+    var c = found[0]
+    _metaSearchBannerCampaign = c
+    var startRaw = (c.start_time || c.created_time || '').split('T')[0]
+    var stopRaw = c.stop_time ? c.stop_time.split('T')[0] : null
+    var startFmt = startRaw ? startRaw.split('-').reverse().join('/') : '?'
+    var stopFmt = stopRaw ? stopRaw.split('-').reverse().join('/') : 'presente'
+
+    document.getElementById('meta-banner-name').textContent = c.name
+    document.getElementById('meta-banner-period').textContent = startFmt + ' → ' + stopFmt
+    document.getElementById('meta-search-banner').style.display = 'block'
+  } catch(_) {}
+}
+
+function metaExpandToCampaign() {
+  if (!_metaSearchBannerCampaign) return
+  var c = _metaSearchBannerCampaign
+  var since = (c.start_time || c.created_time || '').split('T')[0]
+  var until = new Date().toISOString().split('T')[0]
+
+  var customBtn = document.querySelector('#meta-presets .meta-preset-btn:last-child')
+  metaSetPreset(customBtn, 'custom')
+  document.getElementById('meta-since').value = since
+  document.getElementById('meta-until').value = until
+
+  // Limpa pesquisa para que a campanha apareça na lista actualizada
+  _metaSearchQuery = ''
+  document.getElementById('meta-search-input').value = ''
+  document.getElementById('meta-search-banner').style.display = 'none'
+  _metaSearchBannerCampaign = null
+  metaLoad()
+}
+
+function metaDismissBanner() {
+  document.getElementById('meta-search-banner').style.display = 'none'
+  _metaSearchBannerCampaign = null
+}
+
 async function metaLoadYearStats() {
   try {
     var now = new Date()
