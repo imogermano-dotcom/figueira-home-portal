@@ -527,13 +527,14 @@ function finRender(){
         +'<td>'+(r.resp||'&#8212;')+'</td>'
         +'<td style="text-align:right">&#8364;'+Math.round(Number(r.preco)||0).toLocaleString('pt-PT')+'</td>'
         +'<td style="text-align:right">&#8364;'+Math.round(Number(r.proposta)||0).toLocaleString('pt-PT')+'</td>'
+        +'<td style="text-align:right;color:#27ae60">&#8364;'+Math.round((parseFloat(r.xlsx_comm_ag)||((parseFloat(r.proposta)||0)*0.05))).toLocaleString('pt-PT')+'</td>'
         +'<td style="text-align:right">'+pctStr+'</td>'
         +'<td style="font-size:.75rem;color:#555">'+(r.etapa||'&#8212;')+'</td>'
         +'</tr>';
     });
     const aceiteSection = aceiteRows.length ? '<details open><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:#27ae60;text-transform:uppercase;letter-spacing:.6px;padding:8px 0;margin-top:16px">&#10003; Propostas Aceites — Aguarda Fecho ('+aceiteRows.length+')</summary>'
       +'<div class="card" style="margin-top:8px;overflow-x:auto"><table>'
-      +'<thead><tr><th>Data Proposta</th><th style="text-align:left">Oportunidade</th><th style="text-align:left">Imóvel</th><th style="text-align:left">Consultor</th><th>Preço</th><th>Proposta</th><th>% Neg.</th><th style="text-align:left">Etapa</th></tr></thead>'
+      +'<thead><tr><th>Data Proposta</th><th style="text-align:left">Oportunidade</th><th style="text-align:left">Imóvel</th><th style="text-align:left">Consultor</th><th>Preço</th><th>Proposta</th><th>Comissão est.</th><th>% Neg.</th><th style="text-align:left">Etapa</th></tr></thead>'
       +'<tbody>'+tbA+'</tbody></table></div></details>' : '';
 
     // Totals
@@ -550,7 +551,7 @@ function finRender(){
       +'<td colspan="5" style="text-align:right;font-size:.8rem;color:#555">Total</td>'
       +'<td style="text-align:right">&#8364;'+Math.round(totalAceitesValor).toLocaleString('pt-PT')+'</td>'
       +'<td style="text-align:right;color:#27ae60">&#8364;'+Math.round(totalAceitesComm).toLocaleString('pt-PT')+' est.</td>'
-      +'<td></td>'
+      +'<td></td><td></td>'
       +'</tr></tfoot>' : '';
 
     sec.innerHTML='<details open><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;padding:8px 0">&#128196; Negócios fechados ('+rows.length+')</summary>'
