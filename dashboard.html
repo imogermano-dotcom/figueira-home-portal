@@ -970,7 +970,7 @@ function tvRender(){
       +'<div class="note" style="padding:8px 12px;font-size:.75rem;color:#999">'+rows.length+' neg&#243;cios &middot; Dias = data CMI ganha &#8594; data proposta aceite</div>'
       +'</div>';
 
-  sec.innerHTML = kpiHtml + tableHtml;
+  sec.innerHTML = kpiHtml + (tableHtml ? '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;padding:8px 0">&#128202; Detalhe Tempo de Venda ('+rows.length+')</summary>' + tableHtml + '</details>' : '');
 }
 
 
