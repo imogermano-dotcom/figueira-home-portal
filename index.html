@@ -4191,7 +4191,8 @@ function countWords(s) {
 }
 
 async function contGuardar(agendar) {
-  if (!_contGerado) return
+  var textoBase = (document.getElementById('cont-texto').value || '').trim()
+  if (!_contGerado && !textoBase) return
   // If a video from biblioteca is selected, save to videos_sociais instead
   if (_isVideoPost && _vidBibUrl) {
     await contGuardarVideo(agendar)
@@ -4202,7 +4203,7 @@ async function contGuardar(agendar) {
   if (agendar && !data) { alert('Define uma data de agendamento para agendar.'); return }
   var status = agendar && data ? 'agendado' : 'rascunho'
   var payload = {
-    texto_base: document.getElementById('cont-texto').value.trim(),
+    texto_base: textoBase,
     redes_seleccionadas: redes,
     data_agendada: agendar && data ? new Date(data).toISOString() : null,
     imagens_urls: _imgUrls.length ? _imgUrls : [],
@@ -4217,8 +4218,12 @@ async function contGuardar(agendar) {
   payload['noticia_categoria'] = _noticiaCategoria || null
   payload['perfil_conteudo'] = _perfilConteudo || null
   payload['categoria'] = _contCategoria || null
+  // If no AI content, just mark all selected networks as rascunho
+  if (!_contGerado) {
+    redes.forEach(function(r) { payload['status_' + r] = status })
+  }
   redes.forEach(function(r) {
-    var d = _contGerado[r]; if (!d) return
+    var d = _contGerado && _contGerado[r]; if (!d) return
     var isYt = r === 'youtube'
     var isIgCarrossel = r === 'instagram' && _igFormato === 'carrossel'
     var mainEl = document.getElementById('main-'+r)
@@ -4458,13 +4463,36 @@ function histModalOpen(id) {
     html += '</div>'
   })
   if (r.data_agendada) html += '<div class="modal-section"><div class="modal-section-title">Agendado para</div><p style="font-size:.85rem">'+esc(fmtDate(r.data_agendada))+'</p></div>'
-  html += '<button class="modal-close" onclick="histModalClose()">Fechar</button>'
+  html += '<div style="display:flex;gap:8px;margin-top:4px">'
+  html += '<button class="cont-btn secondary" style="flex:1" onclick="histUsarParaVideo(\''+r.id+'\')">📹 Usar para Vídeo</button>'
+  html += '<button class="modal-close" style="flex:1" onclick="histModalClose()">Fechar</button>'
+  html += '</div>'
   document.getElementById('hist-modal-box').innerHTML = html
   document.getElementById('hist-modal').style.display = 'flex'
 }
 
 function histModalClose() {
   document.getElementById('hist-modal').style.display = 'none'
+}
+
+async function histUsarParaVideo(id) {
+  var r = _histRows.find(function(x){ return x.id === id })
+  if (!r || !r.texto_base) { alert('Sem texto para guardar.'); return }
+  var titulo = r.texto_base.slice(0, 80) + (r.texto_base.length > 80 ? '…' : '')
+  var { error } = await sb.from('biblioteca_imagens').insert({
+    user_id: _currentUserId,
+    tipo: 'script',
+    titulo: titulo,
+    roteiro: r.texto_base,
+    descricao: r.texto_base,
+    status_video: 'aguarda_video',
+    origem: 'upload',
+    conteudo_id: r.id,
+    categoria: r.categoria || null
+  })
+  if (error) { alert('Erro ao guardar na Biblioteca: ' + error.message); return }
+  alert('✅ Texto guardado na Biblioteca em "Aguarda Vídeo"!')
+  histModalClose()
 }
 
 // ── Agendamento Editorial ─────────────────────────────────────────────────────
@@ -5132,7 +5160,7 @@ function bibRender() {
     if (_bibFilter.origem === 'ia' && r.origem !== 'ia') return false
     if (_bibFilter.origem === 'upload' && r.origem !== 'upload') return false
     if (_bibFilter.categoria && r.categoria !== _bibFilter.categoria) return false
-    if (_bibStatusVideoFilter && tipo === 'video' && (r.status_video || 'pronto') !== _bibStatusVideoFilter) return false
+    if (_bibStatusVideoFilter && (tipo === 'video' || tipo === 'script') && (r.status_video || 'pronto') !== _bibStatusVideoFilter) return false
     if (_bibFilter.search) {
       var q = _bibFilter.search.toLowerCase()
       var hay = ((r.titulo || '') + ' ' + (r.descricao || '') + ' ' + (r.categoria || '') + ' ' + (r.tags || []).join(' ')).toLowerCase()
@@ -5153,6 +5181,9 @@ function bibRender() {
       : '<span class="bib-item-badge bib-badge-upload">📁 Upload</span>'
     if (tipo === 'video') {
       return bibRenderCardVideo(r)
+    }
+    if (tipo === 'script') {
+      return bibRenderCardScript(r)
     }
     return '<div class="bib-item" onclick="bibOpenModal(\'' + r.id + '\')">'
       + '<img src="' + esc(r.url) + '" alt="" loading="lazy">'
@@ -6724,6 +6755,32 @@ function bibSetStatusVideo(status) {
   var activBtn = document.getElementById(btnId)
   if (activBtn) activBtn.classList.add('active')
   bibRender()
+}
+
+function bibRenderCardScript(item) {
+  var preview = (item.roteiro || item.descricao || item.titulo || '').slice(0, 120)
+  return '<div class="bib-item" style="background:#f8faff;border:1.5px solid #c7d7f0;display:flex;flex-direction:column;justify-content:space-between;padding:12px;cursor:default">'
+    + '<div>'
+    + '<div style="font-size:.7rem;font-weight:700;color:#2d6a9f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📝 Script / Texto</div>'
+    + '<div style="font-size:.8rem;color:#374151;line-height:1.45;word-break:break-word">' + esc(preview) + (preview.length >= 120 ? '…' : '') + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:6px;margin-top:10px">'
+    + '<button class="bib-action-btn" style="flex:1;background:#1a3c5e;color:#fff;font-size:.72rem" onclick="bibScriptUsarParaVideo(\''+item.id+'\')">🎬 Usar para Vídeo</button>'
+    + '<button class="bib-action-btn" style="color:#dc2626;font-size:.72rem" onclick="bibDelete(\''+item.id+'\',\'script\')">🗑</button>'
+    + '</div>'
+    + '</div>'
+}
+
+async function bibScriptUsarParaVideo(id) {
+  var r = _bibRows.find(function(x){ return x.id === id })
+  if (!r) return
+  // Pré-preencher o campo de texto no Conteúdo Social e mudar para essa tab
+  showTab('conteudos')
+  contShowView('gerar')
+  var el = document.getElementById('cont-texto')
+  if (el) { el.value = r.roteiro || r.descricao || ''; el.dispatchEvent(new Event('input')) }
+  // Marcar como usado (status aguarda_video → em_uso não existe, mas podemos só informar)
+  alert('✅ Texto pré-preenchido! Seleciona o vídeo na Biblioteca para completar o post.')
 }
 
 function bibRenderCardVideo(item) {
@@ -8595,7 +8652,7 @@ async function mercadoLoadImoveisPagina() {
     var f = _mercadoFiltros
     var porPagina = 20
     var query = sb.from('idealista_imoveis')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
       .eq('ativo',true)
       .order('primeiro_visto_em',{ascending:false})
       .range((f.pagina-1)*porPagina, f.pagina*porPagina-1)
@@ -8614,7 +8671,7 @@ async function mercadoLoadImoveisPagina() {
     if (f.verSoNovos) query = query.gte('primeiro_visto_em', _novoDesdeSt)
     if (f._fonteSync) query = query.eq('fonte', f._fonteSync).gte('primeiro_visto_em', f._desde)
     if (f._retiradosDesde) { query = sb.from('idealista_imoveis')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
       .eq('fonte', f._fonteSync).eq('ativo', false).gte('retirado_em', f._retiradosDesde)
       .order('retirado_em',{ascending:false}).range((f.pagina-1)*porPagina, f.pagina*porPagina-1) }
     var { data, count, error } = await query
@@ -8672,8 +8729,15 @@ async function mercadoLoadImoveisPagina() {
           + (im.wcs ? '<span>·</span><span>'+im.wcs+' WC</span>' : '')
           + (im.piso != null ? '<span>·</span><span>Piso '+im.piso+'</span>' : '')
           + '</div>'
-          + '<div style="margin-top:8px;font-size:.72rem;color:#9ca3af;display:flex;justify-content:space-between">'
-          + '<span>'+esc(im.agencia_nome_atual||'—')+'</span>'
+          + '<div style="margin-top:8px;font-size:.72rem;color:#9ca3af;display:flex;justify-content:space-between;align-items:center">'
+          + (im.vendedor_tipo === 'private'
+            ? '<span style="color:#7c3aed;font-weight:600">👤 '
+              + esc(im.vendedor_nome||'Particular')
+              + (im.vendedor_telefone
+                ? ' · <a href="tel:'+esc(im.vendedor_telefone)+'" onclick="event.stopPropagation()" style="color:#7c3aed;text-decoration:none">'+esc(im.vendedor_telefone)+'</a>'
+                : ' · <a href="'+esc(im.url||'https://www.idealista.pt/imovel/'+im.property_code+'/')+'" target="_blank" onclick="event.stopPropagation()" style="color:#2d6a9f;text-decoration:none" title="Ver anúncio no Idealista para obter contacto">🔗 ver contacto</a>')
+              + '</span>'
+            : '<span>'+esc(im.agencia_nome_atual||'—')+'</span>')
           + '<span>'+mercadoDiasLabel(im)+'</span>'
           + '</div>'
           + '</div></div>'
@@ -8939,6 +9003,17 @@ async function mercadoAbrirFicha(propertyCode) {
       + _mktDetalhe('Preço inicial', mercadoFmtEur(im.preco_inicial))
       + _mktDetalhe('Alt. preço', im.num_alteracoes_preco || 0)
       + '</div>'
+      + (im.vendedor_tipo === 'private'
+        ? '<div style="margin-top:14px;padding:14px 16px;background:#f5f3ff;border-radius:10px;border-left:3px solid #7c3aed">'
+          + '<div style="font-size:.72rem;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">👤 Particular — Venda Direta</div>'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'
+          + '<div style="font-size:.9rem;font-weight:700;color:#1a1a2e">'+esc(im.vendedor_nome||'Nome não disponível')+'</div>'
+          + (im.vendedor_telefone
+            ? '<a href="tel:'+esc(im.vendedor_telefone)+'" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#7c3aed;color:#fff;border-radius:8px;font-size:.85rem;font-weight:600;text-decoration:none">📞 '+esc(im.vendedor_telefone)+'</a>'
+            : '<a href="'+esc(im.url||'https://www.idealista.pt/imovel/'+im.property_code+'/')+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#2d6a9f;color:#fff;border-radius:8px;font-size:.85rem;font-weight:600;text-decoration:none">🔗 Abrir anúncio para ver contacto</a>')
+          + '</div>'
+          + '</div>'
+        : '')
       + '</div></div>'
 
     // Histórico de preço
