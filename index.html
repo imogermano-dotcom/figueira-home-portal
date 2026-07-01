@@ -1161,6 +1161,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <div class="cont-cards" id="cont-cards"></div>
           <div class="cont-btn-row">
             <button class="cont-btn secondary" id="cont-rascunho-btn" onclick="contGuardar(false)">💾 Guardar Rascunho</button>
+            <button class="cont-btn secondary" id="cont-video-btn" onclick="contGuardarParaVideo()" style="background:#1a3c5e;color:#fff;border-color:#1a3c5e">🎬 Guardar para Vídeo</button>
             <button class="cont-btn primary" id="cont-agendar-btn" onclick="contGuardar(true)">📅 Guardar e Agendar</button>
           </div>
         </div>
@@ -4188,6 +4189,34 @@ function contCopy(id, btn) {
 
 function countWords(s) {
   return s && s.trim() ? s.trim().split(/\s+/).length : 0
+}
+
+async function contGuardarParaVideo() {
+  var textoBase = (document.getElementById('cont-texto').value || '').trim()
+  if (!textoBase) { alert('Escreve um texto antes de guardar.'); return }
+  var btn = document.getElementById('cont-video-btn')
+  btn.disabled = true; btn.textContent = '⏳ A guardar...'
+  try {
+    var titulo = textoBase.slice(0, 80) + (textoBase.length > 80 ? '…' : '')
+    var { error } = await sb.from('biblioteca_imagens').insert({
+      user_id: _currentUserId,
+      tipo: 'script',
+      titulo: titulo,
+      roteiro: textoBase,
+      descricao: textoBase,
+      status_video: 'aguarda_video',
+      origem: 'upload',
+      categoria: _contCategoria || null
+    })
+    if (error) throw error
+    alert('✅ Texto guardado na Biblioteca — aparece em "Aguarda Vídeo"!')
+    document.getElementById('cont-texto').value = ''
+    document.getElementById('cont-results').style.display = 'none'
+    _contGerado = null
+  } catch(e) {
+    alert('Erro: ' + e.message)
+  }
+  btn.disabled = false; btn.textContent = '🎬 Guardar para Vídeo'
 }
 
 async function contGuardar(agendar) {
