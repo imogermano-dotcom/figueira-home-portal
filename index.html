@@ -9481,6 +9481,7 @@ function metaOpenDrilldown(campaignId) {
   }).then(function(r){ return r.json() }).then(function(data){
     document.getElementById('meta-dd-loading').style.display = 'none'
     document.getElementById('meta-dd-content').style.display = 'block'
+    metaDestroyCharts()
     metaRenderDrilldown(data, c)
   }).catch(function(e){
     document.getElementById('meta-dd-loading').textContent = '❌ Erro: ' + e.message
