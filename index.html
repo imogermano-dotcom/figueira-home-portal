@@ -8682,9 +8682,10 @@ async function mercadoLoadImoveisPagina() {
   try {
     var f = _mercadoFiltros
     var porPagina = 20
-    var query = sb.from('idealista_imoveis')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
+    var query = sb.from('idealista_imoveis_agrupados')
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking,is_secundario,num_duplicados',{count:'exact'})
       .eq('ativo',true)
+      .eq('is_secundario',false)
       .order('primeiro_visto_em',{ascending:false})
       .range((f.pagina-1)*porPagina, f.pagina*porPagina-1)
     if (f.operacao) query = query.eq('operacao',f.operacao)
@@ -8745,6 +8746,7 @@ async function mercadoLoadImoveisPagina() {
           + '<span style="position:absolute;top:8px;left:8px;background:'+opBg+';color:'+opColor+';font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+opLabel+'</span>'
           + (im.num_alteracoes_preco > 0 ? '<span style="position:absolute;top:8px;right:8px;background:#fef9c3;color:#854d0e;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+im.num_alteracoes_preco+' alt. preço</span>' : '')
           + (ehNovo ? '<span style="position:absolute;bottom:8px;left:8px;background:#0ea5e9;color:#fff;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:10px">⚡ NOVO</span>' : '')
+          + (im.num_duplicados > 0 ? '<span style="position:absolute;bottom:8px;right:8px;background:rgba(251,191,36,.9);color:#78350f;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px" title="Possível duplicado — ver painel Admin">≡ '+(im.num_duplicados+1)+' anúncios</span>' : '')
           + '</div>'
           + '<div style="padding:14px">'
           + '<div style="font-size:.83rem;font-weight:700;color:#111827;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(im.titulo||'—')+'</div>'
