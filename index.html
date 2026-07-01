@@ -4209,10 +4209,12 @@ async function contGuardarParaVideo() {
       categoria: _contCategoria || null
     })
     if (error) throw error
-    alert('✅ Texto guardado na Biblioteca — aparece em "Aguarda Vídeo"!')
     document.getElementById('cont-texto').value = ''
     document.getElementById('cont-results').style.display = 'none'
     _contGerado = null
+    // Navegar para a Biblioteca com filtro "Aguarda Vídeo"
+    bibSetStatusVideo('aguarda_video')
+    showTab('biblioteca')
   } catch(e) {
     alert('Erro: ' + e.message)
   }
