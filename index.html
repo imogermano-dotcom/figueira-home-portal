@@ -8694,7 +8694,7 @@ async function mercadoLoadImoveisPagina() {
     var _ordCols = { recentes:'primeiro_visto_em', antigos:'primeiro_visto_em', preco_asc:'preco_atual', preco_desc:'preco_atual', area_desc:'area_m2' }
     var _ordAsc  = { recentes:false, antigos:true, preco_asc:true, preco_desc:false, area_desc:false }
     var query = sb.from('idealista_imoveis_agrupados')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking,is_secundario,num_duplicados,num_duplicados_confirmados',{count:'exact'})
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking,is_secundario,num_duplicados,num_duplicados_confirmados,agencias_duplicadas',{count:'exact'})
       .eq('ativo',true)
       .eq('is_secundario',false)
       .order(_ordCols[f.ordenacao]||'primeiro_visto_em',{ascending:!!_ordAsc[f.ordenacao]})
@@ -8775,7 +8775,7 @@ async function mercadoLoadImoveisPagina() {
           + (im.wcs ? '<span>·</span><span>'+im.wcs+' WC</span>' : '')
           + (im.piso != null ? '<span>·</span><span>Piso '+im.piso+'</span>' : '')
           + '</div>'
-          + (im.num_duplicados > 0 ? '<div style="margin-top:7px;padding:5px 8px;background:#fff7ed;border-radius:6px;border-left:2px solid #ea580c;font-size:.7rem;color:#c2410c;font-weight:600">🎯 Sem exclusividade · anunciado por '+(im.num_duplicados+1)+' agências · oportunidade de angariação</div>' : '')
+          + (im.num_duplicados > 0 ? '<div style="margin-top:7px;padding:5px 8px;background:#fff7ed;border-radius:6px;border-left:2px solid #ea580c;font-size:.7rem;color:#9a3412"><b style="color:#c2410c">🎯 Sem exclusividade</b> — '+mercadoAgenciasLinksCard(im)+'</div>' : '')
           + '<div style="margin-top:8px;font-size:.72rem;color:#9ca3af;display:flex;justify-content:space-between;align-items:center">'
           + (im.vendedor_tipo === 'private'
             ? '<span style="color:#7c3aed;font-weight:600">👤 '
@@ -8846,6 +8846,16 @@ function mercadoToggleAngariacao() {
   _mercadoFiltros.angariacao = !_mercadoFiltros.angariacao
   _mercadoFiltros.pagina = 1
   mercadoRenderImoveis()
+}
+
+function mercadoAgenciasLinksCard(im) {
+  var links = []
+  var thisUrl = esc(im.url || 'https://www.idealista.pt/imovel/' + im.property_code + '/')
+  links.push('<a href="' + thisUrl + '" target="_blank" onclick="event.stopPropagation()" style="color:#c2410c;font-weight:700;text-decoration:underline">' + esc(im.agencia_nome_atual || 'Esta agência') + '</a>')
+  ;(im.agencias_duplicadas || []).forEach(function(a) {
+    links.push('<a href="' + esc(a.url) + '" target="_blank" onclick="event.stopPropagation()" style="color:#c2410c;font-weight:700;text-decoration:underline">' + esc(a.nome || 'Agência') + '</a>')
+  })
+  return links.join(' · ')
 }
 
 function mercadoLimparFiltros() {
@@ -9014,7 +9024,7 @@ async function mercadoAbrirFicha(propertyCode) {
   el.innerHTML = '<div class="loading">A carregar ficha...</div>'
   try {
     var results = await Promise.all([
-      sb.from('idealista_imoveis').select('*').eq('property_code',propertyCode).single(),
+      sb.from('idealista_imoveis_agrupados').select('*').eq('property_code',propertyCode).single(),
       sb.from('idealista_imovel_agencias').select('agencia_nome,agente_nome,agente_telefone,preco,preco_m2,primeiro_visto_em,ultimo_visto_em,ativa').eq('property_code',propertyCode).order('primeiro_visto_em',{ascending:true}),
       sb.from('idealista_historico_preco').select('preco_anterior,preco_novo,variacao_eur,variacao_pct,direcao,registado_em').eq('property_code',propertyCode).order('registado_em',{ascending:true}),
       sb.from('idealista_historico_caracteristicas').select('campo,valor_anterior,valor_novo,registado_em').eq('property_code',propertyCode).order('registado_em',{ascending:true})
@@ -9072,6 +9082,23 @@ async function mercadoAbrirFicha(propertyCode) {
             : '<a href="'+esc(im.url||'https://www.idealista.pt/imovel/'+im.property_code+'/')+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#2d6a9f;color:#fff;border-radius:8px;font-size:.85rem;font-weight:600;text-decoration:none">🔗 Abrir anúncio para ver contacto</a>')
           + '</div>'
           + '</div>'
+        : '')
+      + (im.num_duplicados > 0 && (im.agencias_duplicadas || []).length > 0
+        ? '<div style="margin-top:14px;padding:14px 16px;background:#fff7ed;border-radius:10px;border-left:3px solid #ea580c">'
+          + '<div style="font-size:.72rem;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">🎯 Sem Exclusividade — Oportunidade de Angariação</div>'
+          + '<div style="font-size:.8rem;color:#7c2d12;margin-bottom:10px">Anunciado em simultâneo por <b>' + (im.num_duplicados + 1) + '</b> entidades:</div>'
+          + '<div style="display:flex;flex-direction:column;gap:6px">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #fed7aa">'
+          + '<span style="font-size:.85rem;font-weight:700;color:#1a3c5e">' + esc(im.agencia_nome_atual || im.vendedor_nome || 'Este anúncio') + '</span>'
+          + '<a href="' + esc(im.url || 'https://www.idealista.pt/imovel/' + im.property_code + '/') + '" target="_blank" style="font-size:.76rem;padding:4px 10px;background:#ea580c;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">Ver anúncio ↗</a>'
+          + '</div>'
+          + (im.agencias_duplicadas || []).map(function(a) {
+            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #fed7aa">'
+              + '<span style="font-size:.85rem;font-weight:700;color:#1a3c5e">' + esc(a.nome || 'Agência') + '</span>'
+              + '<a href="' + esc(a.url) + '" target="_blank" style="font-size:.76rem;padding:4px 10px;background:#ea580c;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">Ver anúncio ↗</a>'
+              + '</div>'
+          }).join('')
+          + '</div></div>'
         : '')
       + '</div></div>'
 
