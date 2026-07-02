@@ -5187,7 +5187,7 @@ async function bibLoad() {
 function bibRender() {
   var rows = _bibRows.filter(function(r) {
     var tipo = r.tipo || 'imagem'
-    if (_bibFilter.tipo && tipo !== _bibFilter.tipo) return false
+    if (_bibFilter.tipo && tipo !== _bibFilter.tipo && !(_bibFilter.tipo === 'video' && tipo === 'script')) return false
     if (_bibFilter.origem === 'ia' && r.origem !== 'ia') return false
     if (_bibFilter.origem === 'upload' && r.origem !== 'upload') return false
     if (_bibFilter.categoria && r.categoria !== _bibFilter.categoria) return false
@@ -8370,7 +8370,7 @@ async function bibLoteSubmit() {
 
 var _mercadoInited = false
 var _mercadoTabAtual = 'dashboard'
-var _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, novosDias: 3, verSoNovos: false, particulares: false, ordenacao: 'recentes', pagina: 1 }
+var _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, novosDias: 3, verSoNovos: false, particulares: false, angariacao: false, ordenacao: 'recentes', pagina: 1 }
 var _mercadoPesquisaTimer = null
 var _mercadoTotal = 0
 var _mercadoSearchTimer = null
@@ -8662,6 +8662,7 @@ async function mercadoRenderImoveis() {
     + '</div>'
     + '<button onclick="mercadoToggleNovosHoje()" style="padding:7px 14px;background:'+(f.novosHoje?'#0ea5e9':'#f0f9ff')+';border:1.5px solid '+(f.novosHoje?'#0284c7':'#bae6fd')+';border-radius:8px;font-size:.8rem;cursor:pointer;color:'+(f.novosHoje?'#fff':'#0369a1')+';font-weight:'+(f.novosHoje?'700':'500')+'">⚡ Novos hoje</button>'
     + '<button onclick="mercadoToggleParticulares()" style="padding:7px 14px;background:'+(f.particulares?'#7c3aed':'#f5f3ff')+';border:1.5px solid '+(f.particulares?'#6d28d9':'#ddd6fe')+';border-radius:8px;font-size:.8rem;cursor:pointer;color:'+(f.particulares?'#fff':'#6d28d9')+';font-weight:'+(f.particulares?'700':'500')+'">👤 Particulares</button>'
+    + '<button onclick="mercadoToggleAngariacao()" style="padding:7px 14px;background:'+(f.angariacao?'#ea580c':'#fff7ed')+';border:1.5px solid '+(f.angariacao?'#c2410c':'#fed7aa')+';border-radius:8px;font-size:.8rem;cursor:pointer;color:'+(f.angariacao?'#fff':'#c2410c')+';font-weight:'+(f.angariacao?'700':'600')+'" title="Imóveis anunciados por múltiplas agências — sem exclusividade">🎯 Angariação</button>'
     + '<select onchange="mercadoFiltroChange(\'ordenacao\',this.value)" style="padding:7px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.8rem;background:#fff;color:#374151;cursor:pointer">'
     + '<option value="recentes"'+(f.ordenacao==='recentes'?' selected':'')+'>↓ Mais recentes</option>'
     + '<option value="antigos"'+(f.ordenacao==='antigos'?' selected':'')+'>↑ Mais antigos</option>'
@@ -8693,7 +8694,7 @@ async function mercadoLoadImoveisPagina() {
     var _ordCols = { recentes:'primeiro_visto_em', antigos:'primeiro_visto_em', preco_asc:'preco_atual', preco_desc:'preco_atual', area_desc:'area_m2' }
     var _ordAsc  = { recentes:false, antigos:true, preco_asc:true, preco_desc:false, area_desc:false }
     var query = sb.from('idealista_imoveis_agrupados')
-      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking,is_secundario,num_duplicados',{count:'exact'})
+      .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking,is_secundario,num_duplicados,num_duplicados_confirmados',{count:'exact'})
       .eq('ativo',true)
       .eq('is_secundario',false)
       .order(_ordCols[f.ordenacao]||'primeiro_visto_em',{ascending:!!_ordAsc[f.ordenacao]})
@@ -8710,6 +8711,7 @@ async function mercadoLoadImoveisPagina() {
     if (f.rua && f.rua.trim()) query = query.ilike('morada','%'+f.rua.trim()+'%')
     if (f.agencia && f.agencia.trim()) query = query.ilike('agencia_nome_atual','%'+f.agencia.trim()+'%')
     if (f.particulares) query = query.eq('vendedor_tipo','private')
+    if (f.angariacao) query = query.gt('num_duplicados',0)
     if (f.novosHoje) { var hoje = new Date().toISOString().split('T')[0]; query = query.gte('primeiro_visto_em', hoje) }
     if (f.verSoNovos) query = query.gte('primeiro_visto_em', _novoDesdeSt)
     if (f._fonteSync) query = query.eq('fonte', f._fonteSync).gte('primeiro_visto_em', f._desde)
@@ -8757,7 +8759,7 @@ async function mercadoLoadImoveisPagina() {
           + '<span style="position:absolute;top:8px;left:8px;background:'+opBg+';color:'+opColor+';font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+opLabel+'</span>'
           + (im.num_alteracoes_preco > 0 ? '<span style="position:absolute;top:8px;right:8px;background:#fef9c3;color:#854d0e;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px">'+im.num_alteracoes_preco+' alt. preço</span>' : '')
           + (ehNovo ? '<span style="position:absolute;bottom:8px;left:8px;background:#0ea5e9;color:#fff;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:10px">⚡ NOVO</span>' : '')
-          + (im.num_duplicados > 0 ? '<span style="position:absolute;bottom:8px;right:8px;background:rgba(251,191,36,.9);color:#78350f;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px" title="Possível duplicado — ver painel Admin">≡ '+(im.num_duplicados+1)+' anúncios</span>' : '')
+          + (im.num_duplicados > 0 ? '<span style="position:absolute;bottom:8px;right:8px;background:rgba(234,88,12,.92);color:#fff;font-size:.7rem;font-weight:800;padding:3px 9px;border-radius:10px;letter-spacing:.1px" title="Anunciado por '+(im.num_duplicados+1)+' agências — oportunidade de angariação">🎯 '+(im.num_duplicados+1)+' agências</span>' : '')
           + '</div>'
           + '<div style="padding:14px">'
           + '<div style="font-size:.83rem;font-weight:700;color:#111827;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(im.titulo||'—')+'</div>'
@@ -8773,6 +8775,7 @@ async function mercadoLoadImoveisPagina() {
           + (im.wcs ? '<span>·</span><span>'+im.wcs+' WC</span>' : '')
           + (im.piso != null ? '<span>·</span><span>Piso '+im.piso+'</span>' : '')
           + '</div>'
+          + (im.num_duplicados > 0 ? '<div style="margin-top:7px;padding:5px 8px;background:#fff7ed;border-radius:6px;border-left:2px solid #ea580c;font-size:.7rem;color:#c2410c;font-weight:600">🎯 Sem exclusividade · anunciado por '+(im.num_duplicados+1)+' agências · oportunidade de angariação</div>' : '')
           + '<div style="margin-top:8px;font-size:.72rem;color:#9ca3af;display:flex;justify-content:space-between;align-items:center">'
           + (im.vendedor_tipo === 'private'
             ? '<span style="color:#7c3aed;font-weight:600">👤 '
@@ -8816,13 +8819,13 @@ function mercadoPesquisaChange(campo, valor) {
 
 function mercadoVerNovosSync(fonte, dataIso) {
   // Abre tab Imóveis filtrado pelos novos desta fonte desde o sync
-  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, particulares: false, ordenacao: 'recentes', pagina: 1, _fonteSync: fonte, _desde: dataIso }
+  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, particulares: false, angariacao: false, ordenacao: 'recentes', pagina: 1, _fonteSync: fonte, _desde: dataIso }
   mercadoShowTab('imoveis')
   mercadoRenderImoveis()
 }
 
 function mercadoVerRetiradosSync(fonte, dataIso) {
-  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, particulares: false, ordenacao: 'recentes', pagina: 1, _fonteSync: fonte, _retiradosDesde: dataIso }
+  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, particulares: false, angariacao: false, ordenacao: 'recentes', pagina: 1, _fonteSync: fonte, _retiradosDesde: dataIso }
   mercadoShowTab('imoveis')
   mercadoRenderImoveis()
 }
@@ -8839,8 +8842,14 @@ function mercadoToggleParticulares() {
   mercadoRenderImoveis()
 }
 
+function mercadoToggleAngariacao() {
+  _mercadoFiltros.angariacao = !_mercadoFiltros.angariacao
+  _mercadoFiltros.pagina = 1
+  mercadoRenderImoveis()
+}
+
 function mercadoLimparFiltros() {
-  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, novosDias: _mercadoFiltros.novosDias || 3, verSoNovos: false, particulares: false, ordenacao: 'recentes', pagina: 1 }
+  _mercadoFiltros = { operacao: null, tipo: null, quartos: null, precoMin: null, precoMax: null, referencia: '', rua: '', agencia: '', novosHoje: false, novosDias: _mercadoFiltros.novosDias || 3, verSoNovos: false, particulares: false, angariacao: false, ordenacao: 'recentes', pagina: 1 }
   mercadoRenderImoveis()
 }
 
