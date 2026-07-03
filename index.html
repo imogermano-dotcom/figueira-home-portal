@@ -65,7 +65,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 #results{margin-top:20px;display:grid;gap:10px}
 .result-meta{font-size:.82rem;color:#6b7280;margin-bottom:4px}
 .card{background:#fff;border:1px solid #e5e7eb;border-left:4px solid #2d6a9f;border-radius:8px;padding:12px 16px}
-.card.hot{background:#fff7f7;border-color:#fca5a5;border-left-color:#dc2626}.card.engano{background:#f9fafb;border-color:#e5e7eb;border-left-color:#9ca3af;opacity:.75}.card-summary.engano-sum{background:#f3f4f6;border-left-color:#d1d5db;color:#9ca3af}
+.card.hot{background:#fff7f7;border-color:#fca5a5;border-left-color:#dc2626}.card.engano{background:#f9fafb;border-color:#e5e7eb;border-left-color:#9ca3af;opacity:.75}.card-summary.engano-sum{background:#f3f4f6;border-left-color:#d1d5db;color:#9ca3af}.card.colega{background:#fafafa;border-left-color:#9ca3af;opacity:.88}.card-resp-colega{background:#dbeafe;color:#1e40af;font-size:.71rem;padding:2px 8px;border-radius:10px;font-weight:600}
 .card-header{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .card-ref{font-weight:700;color:#1a3c5e;font-size:.92rem}
 .card-client{color:#374151;font-size:.83rem}
@@ -2290,14 +2290,17 @@ function buildCardHtml(r) {
   var h = ''
     var isHot = r.hot === true && !r.engano
     var isEngano = r.engano === true
-    h += '<div class="card'+(isEngano?' engano':(isHot?' hot':''))+'">'
+    var isColega = r.is_own === false
+    h += '<div class="card'+(isEngano?' engano':(isHot?' hot':(isColega?' colega':'')))+'">'
     h += '<div class="card-header">'
     if (isEngano) h += '<span title="Lead inválida — engano">❌</span>'
     else if (isHot) h += '<span title="Lead quente">🔥</span>'
+    else if (isColega) h += '<span title="Oportunidade de colega">👥</span>'
     h += '<span class="card-ref" style="'+(isEngano?'text-decoration:line-through;color:#9ca3af':'')+'">'+esc(r.oportunidade_ref)+'</span>'
-    if (r.cliente_nome) h += '<span class="card-client">· '+esc(r.cliente_nome)+'</span>'
+    if (isColega) h += '<span class="card-client" style="color:#9ca3af">· 🔒 confidencial</span>'
+    else if (r.cliente_nome) h += '<span class="card-client">· '+esc(r.cliente_nome)+'</span>'
     if (r.tipo_oportunidade) h += '<span class="card-resp">'+esc(r.tipo_oportunidade)+'</span>'
-    if (r.responsavel && (!_profile || _profile.role === 'admin')) h += '<span class="card-resp">'+esc(r.responsavel)+'</span>'
+    if (r.responsavel && (isColega || !_profile || _profile.role === 'admin')) h += '<span class="'+(isColega?'card-resp-colega':'card-resp')+'">'+esc(r.responsavel)+'</span>'
     if (r.origem_label) h += '<span style="background:#f1f5f9;color:#475569;font-size:.68rem;padding:1px 6px;border-radius:10px;border:1px solid #e2e8f0">'+esc(r.origem_label)+'</span>'
     if (r.url) h += '<a class="card-link" href="'+esc(r.url)+'" target="_blank" rel="noopener">Ver no eGO ↗</a>'
     else h += '<span style="font-size:.74rem;color:#9ca3af;margin-left:auto">'+esc(r.oportunidade_ref)+'</span>'
