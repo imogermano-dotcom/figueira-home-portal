@@ -6,6 +6,11 @@
 <title>Portal Figueira Home</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
@@ -1661,6 +1666,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <button class="pnav-btn" id="mtab-duplicados" style="display:none" onclick="mercadoShowTab('duplicados')">⚠️ Duplicados</button>
         <button class="pnav-btn" id="mtab-alteracoes" onclick="mercadoShowTab('alteracoes')">🔔 Alterações</button>
         <button class="pnav-btn" id="mtab-tendencias" onclick="mercadoShowTab('tendencias')">📈 Tendências</button>
+        <button class="pnav-btn" id="mtab-mapa" onclick="mercadoShowTab('mapa')">🗺️ Mapa</button>
       </div>
       <div id="mercado-dashboard"></div>
       <div id="mercado-imoveis" style="display:none"></div>
@@ -1668,6 +1674,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div id="mercado-duplicados" style="display:none"></div>
       <div id="mercado-alteracoes" style="display:none"></div>
       <div id="mercado-tendencias" style="display:none"></div>
+      <div id="mercado-mapa" style="display:none">
+        <div id="mapa-filtros" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:14px 0 16px"></div>
+        <div id="mapa-info" style="font-size:.8rem;color:#6b7280;margin-bottom:8px"></div>
+        <div id="mapa-container" style="height:600px;border-radius:12px;overflow:hidden;border:1px solid #e0e6f0"></div>
+      </div>
     </main>
   </div>
 
@@ -8619,7 +8630,7 @@ function mercadoInit() {
 
 function mercadoShowTab(tab) {
   _mercadoTabAtual = tab
-  ;['dashboard','imoveis','agencias','duplicados','alteracoes','tendencias'].forEach(function(t) {
+  ;['dashboard','imoveis','agencias','duplicados','alteracoes','tendencias','mapa'].forEach(function(t) {
     var el = document.getElementById('mercado-'+t)
     var btn = document.getElementById('mtab-'+t)
     if (el) el.style.display = t === tab ? '' : 'none'
@@ -8631,6 +8642,7 @@ function mercadoShowTab(tab) {
   if (tab === 'duplicados') mercadoLoadDuplicados()
   if (tab === 'alteracoes') mercadoLoadAlteracoes()
   if (tab === 'tendencias') mercadoLoadTendencias()
+  if (tab === 'mapa') mercadoLoadMapa()
 }
 
 // ── Tendências de Mercado ─────────────────────────────────────────────────────
@@ -8826,6 +8838,189 @@ async function mercadoRenderTend() {
     }
   } else {
     document.getElementById('tend-tabela').innerHTML = ''
+  }
+}
+
+// ── Mapa de Imóveis ───────────────────────────────────────────────────────────
+var _mapaInst = null, _mapaFiltros = { op: '', tipo: '', vendidos: false }
+
+// Centróides aproximados das freguesias de Figueira da Foz (fallback sem GPS)
+var _ZONE_CENTROIDS = {
+  'São Julião da Figueira da Foz': [40.1503, -8.8598],
+  'Buarcos':                       [40.1672, -8.8786],
+  'Tavarede':                      [40.1356, -8.8399],
+  'Marinha das Ondas':             [40.1915, -8.8073],
+  'Alhadas':                       [40.1694, -8.7756],
+  'Quiaios':                       [40.2131, -8.8256],
+  'Maiorca':                       [40.1053, -8.7915],
+  'Brenha':                        [40.0952, -8.8051],
+  'Ferreira-a-Nova':               [40.0755, -8.8059],
+  'Moinhos':                       [40.1219, -8.8118],
+  'Vila Verde':                    [40.1350, -8.8650],
+  'Paião':                         [40.0812, -8.7682],
+  'Lavos':                         [40.0975, -8.8530],
+  'Fontela':                       [40.1180, -8.7920],
+  'Portunhos':                     [40.1450, -8.7650],
+}
+var _ZONE_DEFAULT = [40.1503, -8.8598] // Centro de Figueira da Foz
+
+function _mapaGetCoords(im) {
+  if (im.latitude && im.longitude) return { coords: [im.latitude, im.longitude], exact: true }
+  var c = _ZONE_CENTROIDS[im.municipio]
+  if (c) {
+    // Pequeno jitter para não empilhar exactamente no centróide
+    var jitter = function(n){ return n + (Math.random() - 0.5) * 0.004 }
+    return { coords: [jitter(c[0]), jitter(c[1])], exact: false }
+  }
+  return null
+}
+
+function _mapaIcon(im, exact) {
+  var cor = im.operacao === 'rent' ? '#92400e' : im.vendedor_tipo === 'private' ? '#7c3aed' : '#1e40af'
+  var border = exact ? '#fff' : '#ddd'
+  var opacity = exact ? 1 : 0.75
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">'
+    + '<path d="M14 0C6.27 0 0 6.27 0 14c0 9.6 14 22 14 22S28 23.6 28 14C28 6.27 21.73 0 14 0z" fill="' + cor + '" opacity="' + opacity + '"/>'
+    + '<circle cx="14" cy="14" r="7" fill="' + border + '"/>'
+    + '</svg>'
+  return L.divIcon({
+    html: svg,
+    iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -36],
+    className: ''
+  })
+}
+
+function _mapaPopup(im, exact) {
+  var img = im.thumbnail_storage_url || im.thumbnail_url || ''
+  var preco = im.assumido_vendido ? im.preco_venda : im.preco_atual
+  var precoLabel = im.assumido_vendido ? '✅ Vendido por' : (im.operacao === 'rent' ? '🏷️ Arrend.' : '🏷️ Venda')
+  var tipologia = im.quartos != null ? 'T' + im.quartos : ''
+  var area = im.area_m2 ? im.area_m2 + ' m²' : ''
+  var agencia = im.agencia_nome_atual || im.vendedor_nome || ''
+  var inexact = exact ? '' : '<div style="font-size:.68rem;color:#f59e0b;margin-top:4px">⚠️ Posição aproximada (sem GPS)</div>'
+  return '<div style="width:220px;font-family:inherit">'
+    + (img ? '<img src="' + img + '" style="width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:8px">' : '')
+    + '<div style="font-size:.8rem;font-weight:700;color:#1a3c5e;margin-bottom:3px;line-height:1.3">' + (im.titulo || '—') + '</div>'
+    + '<div style="font-size:.75rem;color:#6b7280;margin-bottom:6px">' + (im.municipio || '') + '</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">'
+    + (tipologia ? '<span style="background:#dbeafe;color:#1e40af;font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:8px">' + tipologia + '</span>' : '')
+    + (area ? '<span style="background:#f0f4f8;color:#374151;font-size:.7rem;padding:2px 7px;border-radius:8px">' + area + '</span>' : '')
+    + '</div>'
+    + '<div style="font-size:.9rem;font-weight:800;color:#1a3c5e">' + precoLabel + ' ' + (preco ? Math.round(preco).toLocaleString('pt-PT') + ' €' : '—') + '</div>'
+    + (im.preco_m2_atual ? '<div style="font-size:.72rem;color:#9ca3af">' + Math.round(im.preco_m2_atual) + ' €/m²</div>' : '')
+    + (agencia ? '<div style="font-size:.72rem;color:#6b7280;margin-top:4px">' + agencia + '</div>' : '')
+    + inexact
+    + '<a href="' + (im.url || 'https://www.idealista.pt/imovel/' + im.property_code + '/') + '" target="_blank" '
+    + 'style="display:block;margin-top:8px;text-align:center;padding:5px;background:#1a3c5e;color:#fff;border-radius:6px;font-size:.75rem;font-weight:600;text-decoration:none">Ver anúncio →</a>'
+    + '</div>'
+}
+
+async function mercadoLoadMapa() {
+  var infoEl = document.getElementById('mapa-info')
+  infoEl.textContent = 'A carregar imóveis...'
+
+  // Render filtros
+  var filtrosEl = document.getElementById('mapa-filtros')
+  filtrosEl.innerHTML = [
+    ['Operação', 'mapa-op', [['','Todos'],['sale','Venda'],['rent','Arrendamento']]],
+    ['Tipo', 'mapa-tipo', [['','Todos'],['flat','Apartamento'],['house','Moradia'],['land','Terreno']]],
+  ].map(function(f) {
+    var sel = '<select id="' + f[1] + '" onchange="_mapaFiltros.' + f[1].replace('mapa-','') + '=this.value;mercadoAplicarMapaFiltros()" '
+      + 'style="padding:6px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.83rem">'
+      + f[2].map(function(o){ return '<option value="' + o[0] + '">' + o[1] + '</option>' }).join('')
+      + '</select>'
+    return '<label style="font-size:.75rem;color:#555">' + f[0] + '<br>' + sel + '</label>'
+  }).join('')
+    + '<label style="font-size:.75rem;color:#555;display:flex;align-items:center;gap:6px;padding-top:18px">'
+    + '<input type="checkbox" id="mapa-vendidos" onchange="_mapaFiltros.vendidos=this.checked;mercadoAplicarMapaFiltros()" style="width:15px;height:15px"> Mostrar vendidos</label>'
+    + '<div style="display:flex;gap:12px;padding-top:18px;font-size:.75rem">'
+    + '<span><span style="display:inline-block;width:12px;height:12px;background:#1e40af;border-radius:50%;margin-right:4px"></span>Venda</span>'
+    + '<span><span style="display:inline-block;width:12px;height:12px;background:#92400e;border-radius:50%;margin-right:4px"></span>Arrend.</span>'
+    + '<span><span style="display:inline-block;width:12px;height:12px;background:#7c3aed;border-radius:50%;margin-right:4px"></span>Particular</span>'
+    + '<span><span style="display:inline-block;width:12px;height:12px;background:#16a34a;border-radius:50%;margin-right:4px"></span>Vendido</span>'
+    + '</div>'
+
+  // Init mapa (só uma vez)
+  if (!_mapaInst) {
+    _mapaInst = L.map('mapa-container').setView(_ZONE_DEFAULT, 12)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(_mapaInst)
+  }
+
+  await mercadoAplicarMapaFiltros()
+}
+
+var _mapaLayerGroup = null
+
+async function mercadoAplicarMapaFiltros() {
+  var infoEl = document.getElementById('mapa-info')
+  infoEl.textContent = 'A carregar...'
+
+  // Remover camada anterior
+  if (_mapaLayerGroup) { _mapaInst.removeLayer(_mapaLayerGroup) }
+  _mapaLayerGroup = L.markerClusterGroup({ maxClusterRadius: 50, disableClusteringAtZoom: 16 })
+
+  var op      = _mapaFiltros.op    || ''
+  var tipo    = _mapaFiltros.tipo  || ''
+  var verVend = _mapaFiltros.vendidos
+
+  // Carregar activos
+  var qAct = sb.from('idealista_imoveis')
+    .select('property_code,titulo,operacao,property_type,quartos,area_m2,preco_atual,preco_m2_atual,municipio,latitude,longitude,thumbnail_storage_url,thumbnail_url,url,agencia_nome_atual,vendedor_nome,vendedor_tipo')
+    .eq('ativo', true).eq('fonte', 'idealista')
+    .limit(1500)
+  if (op)   qAct = qAct.eq('operacao', op)
+  if (tipo) qAct = qAct.eq('property_type', tipo)
+
+  var { data: activos } = await qAct
+  activos = activos || []
+
+  // Carregar vendidos (se pedido)
+  var vendidos = []
+  if (verVend) {
+    var qVend = sb.from('idealista_imoveis')
+      .select('property_code,titulo,operacao,property_type,quartos,area_m2,preco_venda,preco_m2_atual,municipio,latitude,longitude,thumbnail_storage_url,thumbnail_url,url,agencia_nome_atual,vendedor_nome,assumido_vendido,data_venda')
+      .eq('assumido_vendido', true).eq('fonte', 'idealista')
+      .not_.is_('preco_venda', null).gt('preco_venda', 0)
+      .order('data_venda', {ascending: false}).limit(500)
+    if (op)   qVend = qVend.eq('operacao', op)
+    if (tipo) qVend = qVend.eq('property_type', tipo)
+    var { data: vd } = await qVend
+    vendidos = (vd || []).map(function(v){ return Object.assign({}, v, {_isVendido: true}) })
+  }
+
+  var todos = activos.concat(vendidos)
+  var semGPS = 0, comGPS = 0
+
+  todos.forEach(function(im) {
+    var loc = _mapaGetCoords(im)
+    if (!loc) return
+    if (loc.exact) comGPS++; else semGPS++
+
+    var cor = im._isVendido ? '#16a34a' : im.operacao === 'rent' ? '#92400e' : im.vendedor_tipo === 'private' ? '#7c3aed' : '#1e40af'
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 28 36">'
+      + '<path d="M14 0C6.27 0 0 6.27 0 14c0 9.6 14 22 14 22S28 23.6 28 14C28 6.27 21.73 0 14 0z" fill="' + cor + '" opacity="' + (loc.exact ? 1 : 0.65) + '"/>'
+      + '<circle cx="14" cy="14" r="6" fill="rgba(255,255,255,0.9)"/>'
+      + '</svg>'
+    var icon = L.divIcon({ html: svg, iconSize: [26, 34], iconAnchor: [13, 34], popupAnchor: [0, -34], className: '' })
+    L.marker(loc.coords, { icon: icon })
+      .bindPopup(_mapaPopup(im, loc.exact), { maxWidth: 240 })
+      .addTo(_mapaLayerGroup)
+  })
+
+  _mapaLayerGroup.addTo(_mapaInst)
+
+  var total = todos.length
+  infoEl.innerHTML = '<b>' + total + '</b> imóveis · '
+    + '<span style="color:#16a34a">' + comGPS + ' com GPS exacto</span> · '
+    + '<span style="color:#f59e0b">' + semGPS + ' posição aproximada</span>'
+    + (verVend ? ' · <span style="color:#16a34a">' + vendidos.length + ' vendidos</span>' : '')
+
+  // Ajustar zoom se houver marcadores
+  if (_mapaLayerGroup.getLayers().length > 0) {
+    try { _mapaInst.fitBounds(_mapaLayerGroup.getBounds().pad(0.05)) } catch(e) {}
   }
 }
 
