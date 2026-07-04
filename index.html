@@ -1667,6 +1667,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <button class="pnav-btn" id="mtab-alteracoes" onclick="mercadoShowTab('alteracoes')">🔔 Alterações</button>
         <button class="pnav-btn" id="mtab-tendencias" onclick="mercadoShowTab('tendencias')">📈 Tendências</button>
         <button class="pnav-btn" id="mtab-mapa" onclick="mercadoShowTab('mapa')">🗺️ Mapa</button>
+        <button class="pnav-btn" id="mtab-avaliacao" onclick="mercadoShowTab('avaliacao')">🔍 Avaliação</button>
       </div>
       <div id="mercado-dashboard"></div>
       <div id="mercado-imoveis" style="display:none"></div>
@@ -1679,6 +1680,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <div id="mapa-info" style="font-size:.8rem;color:#6b7280;margin-bottom:8px"></div>
         <div id="mapa-container" style="height:600px;border-radius:12px;overflow:hidden;border:1px solid #e0e6f0"></div>
       </div>
+      <div id="mercado-avaliacao" style="display:none"></div>
     </main>
   </div>
 
@@ -8630,7 +8632,7 @@ function mercadoInit() {
 
 function mercadoShowTab(tab) {
   _mercadoTabAtual = tab
-  ;['dashboard','imoveis','agencias','duplicados','alteracoes','tendencias','mapa'].forEach(function(t) {
+  ;['dashboard','imoveis','agencias','duplicados','alteracoes','tendencias','mapa','avaliacao'].forEach(function(t) {
     var el = document.getElementById('mercado-'+t)
     var btn = document.getElementById('mtab-'+t)
     if (el) el.style.display = t === tab ? '' : 'none'
@@ -8643,6 +8645,7 @@ function mercadoShowTab(tab) {
   if (tab === 'alteracoes') mercadoLoadAlteracoes()
   if (tab === 'tendencias') mercadoLoadTendencias()
   if (tab === 'mapa') mercadoLoadMapa()
+  if (tab === 'avaliacao') mercadoLoadAvaliacao()
 }
 
 // ── Tendências de Mercado ─────────────────────────────────────────────────────
@@ -9071,6 +9074,289 @@ function _mapaAplicar() {
     +' · <span style="color:#9ca3af">'+semGPS+' sem GPS exacto</span>'
   if (_mapaLayerGroup.getLayers().length>0)
     try { _mapaInst.fitBounds(_mapaLayerGroup.getBounds().pad(0.05)) } catch(e){}
+}
+
+// ── Avaliação de Imóvel ───────────────────────────────────────────────────────
+var _avZonas = []
+
+async function mercadoLoadAvaliacao() {
+  var el = document.getElementById('mercado-avaliacao')
+  el.innerHTML = '<div class="loading">A carregar...</div>'
+  if (!_avZonas.length) {
+    var { data } = await sb.from('idealista_imoveis')
+      .select('municipio').eq('ativo', true).eq('fonte', 'idealista').not_.is_('municipio', null)
+    _avZonas = [...new Set((data||[]).map(function(r){return r.municipio}))].sort()
+  }
+  el.innerHTML =
+    '<div style="max-width:780px">'
+    + '<div style="background:#f8faff;border:1px solid #e0e6f0;border-radius:14px;padding:24px 28px;margin-bottom:24px">'
+    + '<div style="font-size:1.05rem;font-weight:700;color:#1a3c5e;margin-bottom:18px">🔍 Avaliação de Imóvel</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">'
+    + '<label style="font-size:.78rem;color:#555">Operação<br>'
+    + '<select id="av-op" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
+    + '<option value="sale">Venda</option><option value="rent">Arrendamento</option>'
+    + '</select></label>'
+    + '<label style="font-size:.78rem;color:#555">Tipologia<br>'
+    + '<select id="av-tipo" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
+    + '<option value="flat">Apartamento</option><option value="house">Moradia</option>'
+    + '<option value="land">Terreno</option><option value="">Qualquer</option>'
+    + '</select></label>'
+    + '<label style="font-size:.78rem;color:#555">Quartos<br>'
+    + '<select id="av-quartos" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
+    + '<option value="">Qualquer</option><option value="0">T0</option><option value="1">T1</option>'
+    + '<option value="2" selected>T2</option><option value="3">T3</option><option value="4">T4</option><option value="5">T5+</option>'
+    + '</select></label>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:2fr 1fr 3fr;gap:14px;margin-bottom:20px">'
+    + '<label style="font-size:.78rem;color:#555">Área (m²)<br>'
+    + '<input id="av-area" type="number" min="10" max="2000" value="100" '
+    + 'style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem;box-sizing:border-box">'
+    + '</label>'
+    + '<label style="font-size:.78rem;color:#555">Tolerância<br>'
+    + '<select id="av-tol" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
+    + '<option value="20">± 20%</option><option value="30" selected>± 30%</option><option value="40">± 40%</option>'
+    + '</select></label>'
+    + '<label style="font-size:.78rem;color:#555">Zona / Freguesia<br>'
+    + '<select id="av-zona" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
+    + '<option value="">— Selecciona zona —</option>'
+    + _avZonas.map(function(z){return '<option value="'+z+'">'+z+'</option>'}).join('')
+    + '</select></label>'
+    + '</div>'
+    + '<button onclick="mercadoRunAvaliacao()" '
+    + 'style="background:#1a3c5e;color:#fff;border:none;padding:11px 28px;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer">Analisar →</button>'
+    + '</div>'
+    + '<div id="av-resultado"></div>'
+    + '</div>'
+}
+
+function _avMedian(arr) {
+  if (!arr.length) return null
+  var s = arr.slice().sort(function(a,b){return a-b})
+  var n = s.length
+  return n%2 ? s[Math.floor(n/2)] : (s[n/2-1]+s[n/2])/2
+}
+function _avMean(arr) { return arr.length ? arr.reduce(function(a,b){return a+b},0)/arr.length : null }
+function _avFmt(n) { return n ? Math.round(n).toLocaleString('pt-PT')+' €' : '—' }
+function _avFmtM2(n) { return n ? Math.round(n).toLocaleString('pt-PT')+' €/m²' : '—' }
+
+function _avMargem(im) {
+  var base = 0.07
+  var vp = im.variacao_preco_pct
+  var dias = null
+  try {
+    if (im.primeiro_visto_em && im.retirado_em)
+      dias = (new Date(im.retirado_em) - new Date(im.primeiro_visto_em)) / 86400000
+  } catch(e) {}
+  if (vp && vp < -3) base = Math.max(0.03, base - 0.03)
+  if (dias !== null) {
+    if (dias > 180) base = Math.min(0.14, base + 0.02)
+    else if (dias < 45) base = Math.max(0.02, base - 0.02)
+  }
+  return { margem: base, diasMercado: dias ? Math.round(dias) : null }
+}
+
+async function mercadoRunAvaliacao() {
+  var op      = document.getElementById('av-op').value
+  var tipo    = document.getElementById('av-tipo').value
+  var quartos = document.getElementById('av-quartos').value
+  var area    = parseFloat(document.getElementById('av-area').value)
+  var tol     = parseFloat(document.getElementById('av-tol').value) / 100
+  var zona    = document.getElementById('av-zona').value
+
+  var resEl = document.getElementById('av-resultado')
+  if (!area || !zona) {
+    resEl.innerHTML = '<div style="color:#dc2626;font-size:.85rem;padding:12px">Preenche a área e a zona para analisar.</div>'
+    return
+  }
+  resEl.innerHTML = '<div class="loading">A pesquisar comparáveis...</div>'
+
+  var areaMin = Math.round(area * (1 - tol))
+  var areaMax = Math.round(area * (1 + tol))
+  var ha2anos = new Date(); ha2anos.setFullYear(ha2anos.getFullYear() - 2)
+  var ha2ISO  = ha2anos.toISOString().split('T')[0]
+
+  var SEL_ACT = 'property_code,titulo,quartos,area_m2,preco_atual,preco_m2_atual,municipio,url,thumbnail_url,thumbnail_storage_url,vendedor_tipo,agencia_nome_atual'
+  var SEL_VND = 'property_code,titulo,quartos,area_m2,preco_venda,preco_m2_atual,variacao_preco_pct,municipio,url,thumbnail_url,thumbnail_storage_url,primeiro_visto_em,retirado_em,data_venda'
+
+  var qAct = sb.from('idealista_imoveis').select(SEL_ACT)
+    .eq('ativo',true).eq('fonte','idealista').eq('operacao',op)
+    .gte('area_m2',areaMin).lte('area_m2',areaMax).eq('municipio',zona)
+  var qVnd = sb.from('idealista_imoveis').select(SEL_VND)
+    .eq('assumido_vendido',true).eq('fonte','idealista').eq('operacao',op)
+    .gte('area_m2',areaMin).lte('area_m2',areaMax).eq('municipio',zona)
+    .gte('data_venda',ha2ISO).gt('preco_venda',0)
+
+  if (tipo)    { qAct = qAct.eq('property_type',tipo); qVnd = qVnd.eq('property_type',tipo) }
+  if (quartos !== '') {
+    qAct = qAct.eq('quartos',parseInt(quartos))
+    qVnd = qVnd.eq('quartos',parseInt(quartos))
+  }
+
+  var [rAct, rVnd] = await Promise.all([
+    qAct.order('preco_atual',{ascending:true}).limit(50),
+    qVnd.order('data_venda',{ascending:false}).limit(50)
+  ])
+  var activos  = rAct.data || []
+  var vendidos = rVnd.data || []
+
+  // ── Stats activos ────────────────────────────────────────────────────────
+  var actPrecos = activos.map(function(r){return r.preco_atual}).filter(Boolean)
+  var actM2s    = activos.map(function(r){return r.preco_m2_atual}).filter(Boolean)
+
+  // ── Stats vendidos + margens de negociação ───────────────────────────────
+  var margens   = vendidos.map(_avMargem)
+  var vndPrecos = vendidos.map(function(r){return r.preco_venda}).filter(Boolean)
+  var estimMins = vendidos.map(function(r,i){
+    var m = Math.min(margens[i].margem + 0.02, 0.15)
+    return r.preco_venda * (1 - m)
+  }).filter(Boolean)
+  var estimMaxs = vendidos.map(function(r,i){
+    var m = Math.max(margens[i].margem - 0.02, 0.01)
+    return r.preco_venda * (1 - m)
+  }).filter(Boolean)
+  var diasArr   = margens.map(function(m){return m.diasMercado}).filter(function(d){return d!==null})
+
+  var actMediana = _avMedian(actPrecos), actMin = actPrecos.length ? Math.min.apply(null,actPrecos) : null
+  var actMax = actPrecos.length ? Math.max.apply(null,actPrecos) : null
+  var actM2med   = _avMedian(actM2s)
+  var vndMediana = _avMedian(vndPrecos)
+  var estimMin   = estimMins.length ? Math.min.apply(null,estimMins) : null
+  var estimMax   = estimMaxs.length ? Math.max.apply(null,estimMaxs) : null
+  var diasMed    = diasArr.length ? Math.round(_avMean(diasArr)) : null
+  var margemMed  = margens.length ? Math.round(_avMean(margens.map(function(m){return m.margem}))*100) : 7
+
+  var opLabel   = op === 'sale' ? 'Venda' : 'Arrendamento'
+  var tipLabel  = {'flat':'Apartamento','house':'Moradia','land':'Terreno','':'Imóvel'}[tipo] || 'Imóvel'
+  var qtLabel   = quartos !== '' ? 'T'+quartos : ''
+  var titulo    = [tipLabel, qtLabel, area+'m²', zona].filter(Boolean).join(' · ')
+
+  // ── Confiança do resultado ───────────────────────────────────────────────
+  var confiancaN = Math.min(activos.length, vendidos.length)
+  var confianca  = confiancaN >= 5 ? '🟢 Alta' : confiancaN >= 2 ? '🟡 Média' : '🔴 Baixa'
+
+  // ── Recomendação de preço de listagem ────────────────────────────────────
+  var recBase  = actMediana || (vndMediana ? vndMediana * 1.07 : null)
+  var recMin   = recBase ? Math.round(recBase * 0.97) : null
+  var recMax   = recBase ? Math.round(recBase * 1.03) : null
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  var html =
+    '<div style="border:1px solid #e0e6f0;border-radius:14px;overflow:hidden">'
+    // Header
+    + '<div style="background:#1a3c5e;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center">'
+    + '<div><div style="font-size:.78rem;opacity:.7;margin-bottom:2px">'+opLabel+'</div>'
+    + '<div style="font-weight:700;font-size:1rem">'+titulo+'</div></div>'
+    + '<div style="text-align:right;font-size:.78rem;opacity:.8">Confiança: <b>'+confianca+'</b></div>'
+    + '</div>'
+    // Dois painéis: activos + vendidos
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e0e6f0">'
+    // Activos
+    + '<div style="padding:20px 24px;border-right:1px solid #e0e6f0">'
+    + '<div style="font-size:.78rem;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">📋 Activos · '+activos.length+' imóveis</div>'
+    + '<div style="font-size:1.6rem;font-weight:800;color:#1a3c5e">'+_avFmt(actMediana)+'</div>'
+    + '<div style="font-size:.78rem;color:#6b7280;margin-bottom:10px">mediana · '+_avFmtM2(actM2med)+'</div>'
+    + (actMin && actMax ? '<div style="font-size:.82rem;color:#374151">Range: <b>'+_avFmt(actMin)+'</b> → <b>'+_avFmt(actMax)+'</b></div>' : '')
+    + '</div>'
+    // Vendidos
+    + '<div style="padding:20px 24px">'
+    + '<div style="font-size:.78rem;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">✅ Vendidos (2 anos) · '+vendidos.length+' imóveis</div>'
+    + '<div style="font-size:1.6rem;font-weight:800;color:#1a3c5e">'+_avFmt(vndMediana)+'</div>'
+    + '<div style="font-size:.78rem;color:#6b7280;margin-bottom:10px">preço anunciado mediano</div>'
+    + (estimMin && estimMax
+      ? '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-top:4px">'
+        + '<div style="font-size:.72rem;color:#166534;font-weight:600;margin-bottom:3px">ESTIMATIVA DE TRANSAÇÃO</div>'
+        + '<div style="font-size:1rem;font-weight:700;color:#166534">'+_avFmt(estimMin)+' — '+_avFmt(estimMax)+'</div>'
+        + '<div style="font-size:.7rem;color:#16a34a;margin-top:2px">após margem de negociação ~'+margemMed+'%</div>'
+        + '</div>'
+      : '')
+    + '</div>'
+    + '</div>'
+    // Linha de contexto
+    + '<div style="display:flex;gap:0;border-bottom:1px solid #e0e6f0">'
+    + _avKpi('📅 Dias no mercado', diasMed !== null ? diasMed+' dias' : '—', diasMed > 120 ? '#dc2626' : diasMed < 60 ? '#16a34a' : '#92400e')
+    + _avKpi('💡 Recomendação de listagem', recMin && recMax ? _avFmt(recMin)+' – '+_avFmt(recMax) : '—', '#1a3c5e')
+    + _avKpi('📐 Área pesquisada', areaMin+'–'+areaMax+' m²', '#6b7280')
+    + '</div>'
+
+  // Nota sobre margem
+  if (vendidos.length) {
+    html += '<div style="padding:12px 24px;font-size:.76rem;color:#9ca3af;background:#fafbff;border-bottom:1px solid #e0e6f0">'
+      + '⚠️ Margem de negociação estimada com base em médias do mercado secundário português (~7%). '
+      + 'Imóveis com reduções de preço activas têm margem efectiva menor; propriedades há mais de 180 dias têm margem maior. '
+      + 'Os preços reais de transação não estão disponíveis — apenas os preços de anúncio.'
+      + '</div>'
+  }
+
+  // Comparáveis activos
+  if (activos.length) {
+    html += '<div style="padding:16px 24px">'
+      + '<div style="font-size:.85rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">Comparáveis activos</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + activos.map(function(im) {
+        var img = im.thumbnail_storage_url || im.thumbnail_url || ''
+        var isPrivate = im.vendedor_tipo === 'private'
+        var tag = isPrivate
+          ? '<span style="background:#f3e8ff;color:#7c3aed;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:4px">PARTICULAR</span>'
+          : ''
+        return '<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:#f8faff;border-radius:8px;border:1px solid #e0e6f0">'
+          + (img ? '<img src="'+img+'" style="width:64px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0">' : '<div style="width:64px;height:48px;background:#e0e6f0;border-radius:6px;flex-shrink:0"></div>')
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:.82rem;font-weight:600;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+tag+' '+(im.titulo||'—')+'</div>'
+          + '<div style="font-size:.74rem;color:#6b7280">'+(im.area_m2||'?')+' m² · '+(im.quartos!=null?'T'+im.quartos:'')+'</div>'
+          + '</div>'
+          + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:.95rem;font-weight:700;color:#1a3c5e">'+_avFmt(im.preco_atual)+'</div>'
+          + '<div style="font-size:.72rem;color:#9ca3af">'+_avFmtM2(im.preco_m2_atual)+'</div>'
+          + '</div>'
+          + '<a href="'+(im.url||'https://www.idealista.pt/imovel/'+im.property_code+'/')+'" target="_blank" '
+          + 'style="background:#1a3c5e;color:#fff;padding:6px 12px;border-radius:6px;font-size:.75rem;font-weight:600;text-decoration:none;flex-shrink:0">Ver</a>'
+          + '</div>'
+      }).join('')
+      + '</div></div>'
+  }
+
+  // Comparáveis vendidos
+  if (vendidos.length) {
+    html += '<div style="padding:16px 24px;border-top:1px solid #e0e6f0">'
+      + '<div style="font-size:.85rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">Comparáveis vendidos (últimos 2 anos)</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + vendidos.map(function(im, idx) {
+        var img = im.thumbnail_storage_url || im.thumbnail_url || ''
+        var m = margens[idx]
+        var estimado = im.preco_venda * (1 - m.margem)
+        var dataVenda = im.data_venda ? im.data_venda.slice(0,7) : ''
+        var diasStr = m.diasMercado !== null ? m.diasMercado+' dias' : '—'
+        return '<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">'
+          + (img ? '<img src="'+img+'" style="width:64px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;opacity:.85">' : '<div style="width:64px;height:48px;background:#bbf7d0;border-radius:6px;flex-shrink:0"></div>')
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:.82rem;font-weight:600;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(im.titulo||'—')+'</div>'
+          + '<div style="font-size:.74rem;color:#6b7280">'+(im.area_m2||'?')+' m² · '+(im.quartos!=null?'T'+im.quartos:'')+' · '+diasStr+' mercado</div>'
+          + '</div>'
+          + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:.78rem;color:#9ca3af;text-decoration:line-through">'+_avFmt(im.preco_venda)+'</div>'
+          + '<div style="font-size:.88rem;font-weight:700;color:#16a34a">~'+_avFmt(estimado)+'</div>'
+          + '<div style="font-size:.68rem;color:#9ca3af">'+dataVenda+' · −'+Math.round(m.margem*100)+'%</div>'
+          + '</div>'
+          + '</div>'
+      }).join('')
+      + '</div></div>'
+  }
+
+  if (!activos.length && !vendidos.length) {
+    html += '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:.88rem">'
+      + 'Sem comparáveis encontrados para estes critérios.<br>Tenta alargar a tolerância de área ou alterar a zona.'
+      + '</div>'
+  }
+
+  html += '</div>'
+  document.getElementById('av-resultado').innerHTML = html
+}
+
+function _avKpi(label, valor, cor) {
+  return '<div style="flex:1;padding:14px 20px;border-right:1px solid #e0e6f0;last-child:border-right:none">'
+    + '<div style="font-size:.72rem;color:#9ca3af;margin-bottom:3px">'+label+'</div>'
+    + '<div style="font-size:.95rem;font-weight:700;color:'+cor+'">'+valor+'</div>'
+    + '</div>'
 }
 
 async function mercadoLoadDashboard() {
