@@ -731,6 +731,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-old-leads" onclick="showTab('old-leads')">📞 Old Leads</button>
     <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
     <button class="pnav-btn" id="tab-meta" onclick="showTab('meta')">📱 META Ads</button>
+    <button class="pnav-btn" id="tab-ce" onclick="showTab('ce')">🏡 Certificados CE</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
@@ -1834,6 +1835,66 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     </main>
   </div>
 
+  <!-- Certificados Energéticos -->
+  <div class="portal-page" id="page-ce">
+    <main style="flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%">
+
+      <!-- Filtros -->
+      <div style="background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:20px;margin-bottom:20px">
+        <h2 style="font-size:1rem;font-weight:700;color:#1a3c5e;margin:0 0 16px">🏡 Certificados Energéticos — Pesquisa de Imóveis</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:12px">
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Rua / Morada</label>
+            <input id="ce-f-morada" type="text" placeholder="ex: Av. Saraiva de Carvalho" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none" oninput="ceClearEnter()" onkeydown="if(event.key==='Enter')ceSearch()">
+          </div>
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Freguesia</label>
+            <input id="ce-f-freguesia" type="text" placeholder="ex: Buarcos" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none" oninput="ceClearEnter()" onkeydown="if(event.key==='Enter')ceSearch()">
+          </div>
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Zona</label>
+            <input id="ce-f-zona" type="text" placeholder="ex: Quiaios" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none" oninput="ceClearEnter()" onkeydown="if(event.key==='Enter')ceSearch()">
+          </div>
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Classe Energética</label>
+            <select id="ce-f-classe" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none;background:#fff">
+              <option value="">Todas</option>
+              <option>A+</option><option>A</option><option>B</option><option>B-</option>
+              <option>C</option><option>D</option><option>E</option><option>F</option><option>G</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Emissão — De</label>
+            <input id="ce-f-desde" type="date" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none">
+          </div>
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Emissão — Até</label>
+            <input id="ce-f-ate" type="date" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none">
+          </div>
+          <div>
+            <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Artigo Matricial</label>
+            <input id="ce-f-artigo" type="text" placeholder="ex: U-2345" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none" onkeydown="if(event.key==='Enter')ceSearch()">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button onclick="ceSearch()" style="padding:9px 22px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer">🔍 Pesquisar</button>
+          <button onclick="ceClear()" style="padding:9px 16px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;cursor:pointer">Limpar</button>
+          <span id="ce-count" style="font-size:.78rem;color:#9ca3af;margin-left:4px"></span>
+        </div>
+      </div>
+
+      <!-- Loading / erro -->
+      <div id="ce-loading" style="display:none;text-align:center;padding:30px;color:#6b7280;font-size:.9rem">A carregar…</div>
+      <div id="ce-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:14px;font-size:.85rem;margin-bottom:16px"></div>
+
+      <!-- Resultados -->
+      <div id="ce-results" style="display:grid;gap:10px"></div>
+
+      <!-- Paginação -->
+      <div id="ce-pag" style="display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap"></div>
+    </main>
+  </div>
+
   <!-- Configuração (admin only) -->
   <div class="portal-page" id="page-config">
     <main>
@@ -1885,6 +1946,9 @@ function getNewsClient() {
 }
 
 var sb = supabase.createClient(DOORSTEP_URL, DOORSTEP_ANON)
+var EGO_URL  = 'https://zphasvfopnbzwnaidsnw.supabase.co'
+var EGO_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODI3NzgsImV4cCI6MjA5MDM1ODc3OH0.tzA42a3Ual4iOKs8riE1x5YoUzBtpSOJ_iQf5GgqjoA'
+var sbEgo = supabase.createClient(EGO_URL, EGO_ANON)
 var _profile = null
 var _kpiLoaded = false
 var _allResults = []
@@ -1957,11 +2021,25 @@ async function loadApp() {
     })
     loadAdminPanel()
   }
+
+  // Auto-navegar via URL params (links do email de sync)
+  // Exemplo: ?tab=mercado&f=novos&desde=2026-07-05T05:00:00Z
+  var _up = new URLSearchParams(window.location.search)
+  var _upTab = _up.get('tab'), _upF = _up.get('f'), _upDesde = _up.get('desde')
+  if (_upTab === 'mercado' && _upF) {
+    var _df = { operacao:null, tipo:null, quartos:null, precoMin:null, precoMax:null, referencia:'', rua:'', agencia:'', novosHoje:false, novosDias:3, verSoNovos:false, particulares:false, angariacao:false, ordenacao:'recentes', pagina:1 }
+    if (_upF === 'novos')       _mercadoFiltros = Object.assign({}, _df, { _fonteSync:'idealista', _desde: _upDesde || new Date().toISOString() })
+    else if (_upF === 'retirados')  _mercadoFiltros = Object.assign({}, _df, { _fonteSync:'idealista', _retiradosDesde: _upDesde || new Date().toISOString() })
+    else if (_upF === 'angariacao') _mercadoFiltros = Object.assign({}, _df, { angariacao: true })
+    else if (_upF === 'particulares') _mercadoFiltros = Object.assign({}, _df, { particulares: true })
+    else if (_upF === 'preco')  _mercadoFiltros = Object.assign({}, _df, { _precoAlteradoDesde: _upDesde || new Date().toISOString() })
+    showTab('mercado')
+  }
 }
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -8722,6 +8800,12 @@ async function mercadoLoadImoveisPagina() {
       .select('property_code,url,titulo,operacao,property_type,preco_atual,preco_m2_atual,area_m2,quartos,wcs,piso,agencia_nome_atual,agente_telefone_atual,vendedor_tipo,vendedor_nome,vendedor_telefone,morada,municipio,ativo,primeiro_visto_em,retirado_em,preco_inicial,num_alteracoes_preco,thumbnail_url,thumbnail_storage_url,tem_elevador,tem_parking',{count:'exact'})
       .eq('fonte', f._fonteSync).eq('ativo', false).gte('retirado_em', f._retiradosDesde)
       .order('retirado_em',{ascending:false}).range((f.pagina-1)*porPagina, f.pagina*porPagina-1) }
+    if (f._precoAlteradoDesde) {
+      var { data: hPreco } = await sb.from('idealista_historico_preco').select('property_code').gte('registado_em', f._precoAlteradoDesde)
+      var codesPreco = (hPreco || []).map(function(h) { return h.property_code }).filter(function(v,i,a){return a.indexOf(v)===i})
+      if (codesPreco.length > 0) query = query.in('property_code', codesPreco)
+      else { _mercadoTotal = 0; if (listEl) listEl.innerHTML = '<div style="padding:20px;color:#666">Sem alterações de preço neste período.</div>'; return }
+    }
     var { data, count, error } = await query
     if (error) throw error
     _mercadoTotal = count || 0
@@ -8733,6 +8817,9 @@ async function mercadoLoadImoveisPagina() {
     } else if (f._retiradosDesde) {
       var dSync2 = new Date(f._retiradosDesde).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       labelExtra = ' · <span style="color:#dc2626">🔴 Retirados desde sync '+dSync2+' ('+f._fonteSync+')</span> <span onclick="mercadoLimparFiltros()" style="cursor:pointer;color:#6b7280;font-size:.75rem">✕ limpar</span>'
+    } else if (f._precoAlteradoDesde) {
+      var dPreco = new Date(f._precoAlteradoDesde).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      labelExtra = ' · <span style="color:#7c3aed">💰 Alterações de preço desde '+dPreco+'</span> <span onclick="mercadoLimparFiltros()" style="cursor:pointer;color:#6b7280;font-size:.75rem">✕ limpar</span>'
     }
     if (countEl) countEl.innerHTML = _mercadoTotal + ' imóveis' + labelExtra
 
@@ -9828,6 +9915,141 @@ function metaRenderDrilldown(data, campaign) {
   } else {
     t5el.innerHTML = '<p style="font-size:.8rem;color:#9ca3af;font-style:italic;margin:16px 0 0">Não há outras campanhas com leads suficientes para comparação (mín. 3 leads).</p>'
   }
+}
+
+// ===== CERTIFICADOS ENERGÉTICOS =====
+var CE_PAGE_SIZE = 50
+var CE_PAGE = 1
+var CE_TOTAL = 0
+var CE_LAST_QUERY = null
+
+function ceClearEnter() {}
+
+function ceClear() {
+  ['ce-f-morada','ce-f-freguesia','ce-f-zona','ce-f-artigo'].forEach(function(id){
+    document.getElementById(id).value = ''
+  })
+  document.getElementById('ce-f-classe').value = ''
+  document.getElementById('ce-f-desde').value = ''
+  document.getElementById('ce-f-ate').value = ''
+  document.getElementById('ce-results').innerHTML = ''
+  document.getElementById('ce-pag').innerHTML = ''
+  document.getElementById('ce-count').textContent = ''
+  document.getElementById('ce-error').style.display = 'none'
+}
+
+async function ceSearch(page) {
+  page = page || 1
+  CE_PAGE = page
+
+  var morada   = (document.getElementById('ce-f-morada').value   || '').trim()
+  var freguesia= (document.getElementById('ce-f-freguesia').value|| '').trim()
+  var zona     = (document.getElementById('ce-f-zona').value     || '').trim()
+  var classe   = (document.getElementById('ce-f-classe').value   || '').trim()
+  var artigo   = (document.getElementById('ce-f-artigo').value   || '').trim()
+  var desde    = (document.getElementById('ce-f-desde').value    || '').trim()
+  var ate      = (document.getElementById('ce-f-ate').value      || '').trim()
+
+  document.getElementById('ce-loading').style.display = 'block'
+  document.getElementById('ce-results').innerHTML = ''
+  document.getElementById('ce-pag').innerHTML = ''
+  document.getElementById('ce-error').style.display = 'none'
+  document.getElementById('ce-count').textContent = ''
+
+  try {
+    var from = (page - 1) * CE_PAGE_SIZE
+    var to   = from + CE_PAGE_SIZE - 1
+
+    var q = sbEgo.from('certificados_energeticos')
+      .select('*', { count: 'exact' })
+      .order('data_emissao', { ascending: false })
+      .range(from, to)
+
+    if (morada)    q = q.or('morada_detalhe.ilike.%' + morada + '%,morada_tabela.ilike.%' + morada + '%')
+    if (freguesia) q = q.ilike('freguesia_detalhe', '%' + freguesia + '%')
+    if (zona)      q = q.ilike('zona', '%' + zona + '%')
+    if (classe)    q = q.ilike('classe_energetica', '%' + classe + '%')
+    if (artigo)    q = q.ilike('artigo_matricial', '%' + artigo + '%')
+    if (desde)     q = q.gte('data_emissao', desde)
+    if (ate)       q = q.lte('data_emissao', ate)
+
+    var res = await q
+    if (res.error) throw new Error(res.error.message)
+
+    CE_TOTAL = res.count || 0
+    document.getElementById('ce-loading').style.display = 'none'
+    document.getElementById('ce-count').textContent = CE_TOTAL + ' resultado' + (CE_TOTAL !== 1 ? 's' : '')
+
+    if (!res.data || res.data.length === 0) {
+      document.getElementById('ce-results').innerHTML = '<p style="color:#9ca3af;font-size:.88rem;text-align:center;padding:30px 0">Nenhum certificado encontrado.</p>'
+      return
+    }
+
+    document.getElementById('ce-results').innerHTML = res.data.map(ceCard).join('')
+    ceRenderPag()
+
+  } catch(e) {
+    document.getElementById('ce-loading').style.display = 'none'
+    var el = document.getElementById('ce-error')
+    el.textContent = '❌ Erro: ' + e.message
+    el.style.display = 'block'
+  }
+}
+
+function ceCard(r) {
+  var classeColor = {
+    'A+':'#15803d','A':'#16a34a','B':'#65a30d','B-':'#84cc16',
+    'C':'#ca8a04','D':'#d97706','E':'#ea580c','F':'#dc2626','G':'#b91c1c'
+  }
+  var cls = (r.classe_energetica || '').toUpperCase().trim()
+  var clsBg = classeColor[cls] || '#6b7280'
+
+  var morada = r.morada_detalhe || r.morada_tabela || '—'
+  var localidade = [r.localidade_detalhe || r.localidade_tabela, r.freguesia_detalhe, r.zona].filter(Boolean).join(' · ')
+
+  var dataEmissao = r.data_emissao ? r.data_emissao.split('T')[0].split('-').reverse().join('/') : '—'
+
+  var campos = []
+  if (r.tipo_documento)  campos.push('<span style="font-size:.72rem;color:#4b5563"><b>Tipo:</b> ' + r.tipo_documento + '</span>')
+  if (r.artigo_matricial)campos.push('<span style="font-size:.72rem;color:#4b5563"><b>Artigo:</b> ' + r.artigo_matricial + (r.fracao_autonoma ? ' / ' + r.fracao_autonoma : '') + '</span>')
+  if (r.num_ficha)       campos.push('<span style="font-size:.72rem;color:#4b5563"><b>Nº Ficha:</b> ' + r.num_ficha + '</span>')
+  if (r.conservatoria)   campos.push('<span style="font-size:.72rem;color:#4b5563"><b>Conservatória:</b> ' + r.conservatoria + '</span>')
+  if (r.num_perito)      campos.push('<span style="font-size:.72rem;color:#4b5563"><b>Perito:</b> ' + r.num_perito + '</span>')
+  if (r.data_validade)   campos.push('<span style="font-size:.72rem;color:#4b5563"><b>Validade:</b> ' + r.data_validade.split('T')[0].split('-').reverse().join('/') + '</span>')
+  if (r.estado && r.estado !== 'Válido') campos.push('<span style="font-size:.72rem;color:#ef4444"><b>Estado:</b> ' + r.estado + '</span>')
+
+  return '<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid ' + clsBg + ';border-radius:8px;padding:12px 16px">'
+    + '<div style="display:flex;align-items:flex-start;gap:12px">'
+    + (cls ? '<div style="background:' + clsBg + ';color:#fff;font-weight:800;font-size:.85rem;min-width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + cls + '</div>' : '')
+    + '<div style="flex:1;min-width:0">'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    + '<span style="font-weight:700;color:#1a3c5e;font-size:.92rem">' + (r.num_documento || '') + '</span>'
+    + (r.zona ? '<span style="background:#e8eef6;color:#1a3c5e;font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600">' + r.zona + '</span>' : '')
+    + '<span style="font-size:.74rem;color:#9ca3af;margin-left:auto">📅 ' + dataEmissao + '</span>'
+    + '</div>'
+    + '<div style="font-size:.83rem;color:#374151;margin-top:3px;font-weight:600">' + ceEsc(morada) + '</div>'
+    + (localidade ? '<div style="font-size:.74rem;color:#6b7280;margin-top:1px">' + ceEsc(localidade) + '</div>' : '')
+    + (campos.length ? '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;padding-top:7px;border-top:1px solid #f3f4f6">' + campos.join('') + '</div>' : '')
+    + '</div></div></div>'
+}
+
+function ceEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+function ceRenderPag() {
+  var pages = Math.ceil(CE_TOTAL / CE_PAGE_SIZE)
+  if (pages <= 1) { document.getElementById('ce-pag').innerHTML = ''; return }
+  var html = ''
+  var start = Math.max(1, CE_PAGE - 3)
+  var end   = Math.min(pages, CE_PAGE + 3)
+  if (CE_PAGE > 1)  html += '<button onclick="ceSearch(' + (CE_PAGE-1) + ')" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem">‹</button>'
+  for (var p = start; p <= end; p++) {
+    var active = p === CE_PAGE ? 'background:#1a3c5e;color:#fff;border-color:#1a3c5e' : 'background:#fff;color:#374151;border-color:#d1d5db'
+    html += '<button onclick="ceSearch(' + p + ')" style="padding:6px 12px;border:1px solid;border-radius:6px;cursor:pointer;font-size:.82rem;' + active + '">' + p + '</button>'
+  }
+  if (CE_PAGE < pages) html += '<button onclick="ceSearch(' + (CE_PAGE+1) + ')" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem">›</button>'
+  document.getElementById('ce-pag').innerHTML = html
 }
 </script>
 
