@@ -1847,31 +1847,34 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Rua / Morada</label>
             <input id="ce-f-morada" type="text" placeholder="ex: Av. Saraiva de Carvalho" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none" oninput="ceClearEnter()" onkeydown="if(event.key==='Enter')ceSearch()">
           </div>
-          <div>
+          <div style="position:relative">
             <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Freguesia</label>
-            <select id="ce-f-freguesia" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none;background:#fff;color:#374151">
-              <option value="">Todas</option>
-              <option value="ALHADAS">Alhadas</option>
-              <option value="ALQUEIDÃO">Alqueidão</option>
-              <option value="BOM SUCESSO">Bom Sucesso</option>
-              <option value="BRENHA">Brenha</option>
-              <option value="BUARCOS">Buarcos</option>
-              <option value="BUARCOS E SÃO JULIÃO">Buarcos e São Julião</option>
-              <option value="FERREIRA-A-NOVA">Ferreira-a-Nova</option>
-              <option value="LAVOS">Lavos</option>
-              <option value="MAIORCA">Maiorca</option>
-              <option value="MARINHA DAS ONDAS">Marinha das Ondas</option>
-              <option value="MOINHOS DE GANDARA">Moinhos de Gândara</option>
-              <option value="PAIÃO">Paião</option>
-              <option value="QUIAIOS">Quiaios</option>
-              <option value="SANTANA">Santana</option>
-              <option value="SÃO JULIÃO DA FIGUEIRA DA FOZ">São Julião da Figueira da Foz</option>
-              <option value="S. PEDRO">São Pedro</option>
-              <option value="TAVAREDE">Tavarede</option>
-              <option value="TAVEIRO">Taveiro</option>
-              <option value="TOCHA">Tocha</option>
-              <option value="VILA VERDE">Vila Verde</option>
-            </select>
+            <div id="ce-freg-btn" onclick="ceFreqToggle()" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;background:#fff;color:#374151;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+              <span id="ce-freg-label">Todas</span><span style="color:#9ca3af;font-size:.7rem">▼</span>
+            </div>
+            <div id="ce-freg-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #d1d5db;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:200;max-height:260px;overflow-y:auto;margin-top:2px">
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:.83rem;border-bottom:1px solid #f3f4f6;color:#6b7280" onclick="ceFreqClear()"><input type="checkbox" id="ce-freg-all" checked style="accent-color:#2d6a9f"> Todas</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="ALHADAS" style="accent-color:#2d6a9f"> Alhadas</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="ALQUEIDÃO" style="accent-color:#2d6a9f"> Alqueidão</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="BOM SUCESSO" style="accent-color:#2d6a9f"> Bom Sucesso</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="BRENHA" style="accent-color:#2d6a9f"> Brenha</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="BUARCOS" style="accent-color:#2d6a9f"> Buarcos</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="BUARCOS E SÃO JULIÃO" style="accent-color:#2d6a9f"> Buarcos e São Julião</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="FERREIRA-A-NOVA" style="accent-color:#2d6a9f"> Ferreira-a-Nova</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="LAVOS" style="accent-color:#2d6a9f"> Lavos</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="MAIORCA" style="accent-color:#2d6a9f"> Maiorca</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="MARINHA DAS ONDAS" style="accent-color:#2d6a9f"> Marinha das Ondas</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="MOINHOS DE GANDARA" style="accent-color:#2d6a9f"> Moinhos de Gândara</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="PAIÃO" style="accent-color:#2d6a9f"> Paião</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="QUIAIOS" style="accent-color:#2d6a9f"> Quiaios</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="SANTANA" style="accent-color:#2d6a9f"> Santana</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="SÃO JULIÃO DA FIGUEIRA DA FOZ" style="accent-color:#2d6a9f"> São Julião da Figueira da Foz</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="S. PEDRO" style="accent-color:#2d6a9f"> São Pedro</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="TAVAREDE" style="accent-color:#2d6a9f"> Tavarede</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="TAVEIRO" style="accent-color:#2d6a9f"> Taveiro</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="TOCHA" style="accent-color:#2d6a9f"> Tocha</label>
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:.83rem" onchange="ceFreqChange()"><input type="checkbox" class="ce-freg-cb" value="VILA VERDE" style="accent-color:#2d6a9f"> Vila Verde</label>
+            </div>
           </div>
           <div>
             <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Zona</label>
@@ -9947,10 +9950,49 @@ var CE_LAST_QUERY = null
 
 function ceClearEnter() {}
 
+function ceFreqToggle() {
+  var dd = document.getElementById('ce-freg-dd')
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none'
+}
+
+function ceFreqChange() {
+  var selected = Array.from(document.querySelectorAll('.ce-freg-cb:checked')).map(function(cb){ return cb.closest('label').querySelector('span') ? cb.closest('label').querySelector('span').textContent : cb.value })
+  var labels = Array.from(document.querySelectorAll('.ce-freg-cb:checked')).map(function(cb){
+    return cb.parentElement.textContent.trim()
+  })
+  var allCb = document.getElementById('ce-freg-all')
+  if (labels.length === 0) {
+    allCb.checked = true
+    document.getElementById('ce-freg-label').textContent = 'Todas'
+  } else {
+    allCb.checked = false
+    document.getElementById('ce-freg-label').textContent = labels.length === 1 ? labels[0] : labels.length + ' freguesias'
+  }
+}
+
+function ceFreqClear() {
+  document.querySelectorAll('.ce-freg-cb').forEach(function(cb){ cb.checked = false })
+  document.getElementById('ce-freg-all').checked = true
+  document.getElementById('ce-freg-label').textContent = 'Todas'
+}
+
+function ceFreqSelected() {
+  return Array.from(document.querySelectorAll('.ce-freg-cb:checked')).map(function(cb){ return cb.value })
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#ce-freg-btn') && !e.target.closest('#ce-freg-dd')) {
+    var dd = document.getElementById('ce-freg-dd')
+    if (dd) dd.style.display = 'none'
+  }
+})
+
 function ceClear() {
-  ['ce-f-morada','ce-f-freguesia','ce-f-zona','ce-f-artigo'].forEach(function(id){
+  ['ce-f-morada','ce-f-zona','ce-f-artigo'].forEach(function(id){
     document.getElementById(id).value = ''
   })
+  ceFreqClear()
   document.getElementById('ce-f-classe').value = ''
   document.getElementById('ce-f-desde').value = ''
   document.getElementById('ce-f-ate').value = ''
@@ -9965,7 +10007,7 @@ async function ceSearch(page) {
   CE_PAGE = page
 
   var morada   = (document.getElementById('ce-f-morada').value   || '').trim()
-  var freguesia= (document.getElementById('ce-f-freguesia').value|| '').trim()
+  var freguesias = ceFreqSelected()
   var zona     = (document.getElementById('ce-f-zona').value     || '').trim()
   var classe   = (document.getElementById('ce-f-classe').value   || '').trim()
   var artigo   = (document.getElementById('ce-f-artigo').value   || '').trim()
@@ -9988,7 +10030,8 @@ async function ceSearch(page) {
       .range(from, to)
 
     if (morada)    q = q.or('morada_detalhe.ilike.%' + morada + '%,morada_tabela.ilike.%' + morada + '%')
-    if (freguesia) q = q.eq('freguesia_detalhe', freguesia)
+    if (freguesias.length === 1) q = q.eq('freguesia_detalhe', freguesias[0])
+    else if (freguesias.length > 1) q = q.in('freguesia_detalhe', freguesias)
     if (zona)      q = q.ilike('zona', '%' + zona + '%')
     if (classe)    q = q.ilike('classe_energetica', '%' + classe + '%')
     if (artigo)    q = q.ilike('artigo_matricial', '%' + artigo + '%')
