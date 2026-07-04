@@ -1660,12 +1660,14 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <button class="pnav-btn" id="mtab-agencias" onclick="mercadoShowTab('agencias')">🏢 Agências</button>
         <button class="pnav-btn" id="mtab-duplicados" style="display:none" onclick="mercadoShowTab('duplicados')">⚠️ Duplicados</button>
         <button class="pnav-btn" id="mtab-alteracoes" onclick="mercadoShowTab('alteracoes')">🔔 Alterações</button>
+        <button class="pnav-btn" id="mtab-tendencias" onclick="mercadoShowTab('tendencias')">📈 Tendências</button>
       </div>
       <div id="mercado-dashboard"></div>
       <div id="mercado-imoveis" style="display:none"></div>
       <div id="mercado-agencias" style="display:none"></div>
       <div id="mercado-duplicados" style="display:none"></div>
       <div id="mercado-alteracoes" style="display:none"></div>
+      <div id="mercado-tendencias" style="display:none"></div>
     </main>
   </div>
 
@@ -8617,7 +8619,7 @@ function mercadoInit() {
 
 function mercadoShowTab(tab) {
   _mercadoTabAtual = tab
-  ;['dashboard','imoveis','agencias','duplicados','alteracoes'].forEach(function(t) {
+  ;['dashboard','imoveis','agencias','duplicados','alteracoes','tendencias'].forEach(function(t) {
     var el = document.getElementById('mercado-'+t)
     var btn = document.getElementById('mtab-'+t)
     if (el) el.style.display = t === tab ? '' : 'none'
@@ -8628,6 +8630,203 @@ function mercadoShowTab(tab) {
   if (tab === 'agencias') mercadoLoadAgencias()
   if (tab === 'duplicados') mercadoLoadDuplicados()
   if (tab === 'alteracoes') mercadoLoadAlteracoes()
+  if (tab === 'tendencias') mercadoLoadTendencias()
+}
+
+// ── Tendências de Mercado ─────────────────────────────────────────────────────
+var _tendChart1 = null, _tendChart2 = null
+
+async function mercadoLoadTendencias() {
+  var el = document.getElementById('mercado-tendencias')
+  el.innerHTML = '<div class="loading">A carregar tendências...</div>'
+
+  // Carregar zonas e dados disponíveis
+  var { data: zonas } = await sb.from('idealista_mercado_stats')
+    .select('zona').neq('zona','__total__').order('zona')
+  var zonasUnicas = [...new Set((zonas||[]).map(function(z){return z.zona}))].sort()
+
+  el.innerHTML = `
+  <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;padding:16px;background:#f8faff;border-radius:12px;border:1px solid #e0e6f0">
+    <div>
+      <label style="font-size:.75rem;color:#555;display:block;margin-bottom:4px">Zona / Freguesia</label>
+      <select id="tend-zona" onchange="mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
+        <option value="__total__">Todas as zonas</option>
+        ${zonasUnicas.map(function(z){return '<option value="'+z+'">'+z+'</option>'}).join('')}
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#555;display:block;margin-bottom:4px">Operação</label>
+      <select id="tend-op" onchange="mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
+        <option value="sale">Venda</option>
+        <option value="rent">Arrendamento</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#555;display:block;margin-bottom:4px">Tipologia</label>
+      <select id="tend-tipo" onchange="mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
+        <option value="">Todos</option>
+        <option value="flat">Apartamento</option>
+        <option value="house">Moradia</option>
+        <option value="land">Terreno</option>
+        <option value="garage">Garagem</option>
+        <option value="office">Escritório</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#555;display:block;margin-bottom:4px">Quartos</label>
+      <select id="tend-quartos" onchange="mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
+        <option value="">Todos</option>
+        <option value="0">T0</option>
+        <option value="1">T1</option>
+        <option value="2">T2</option>
+        <option value="3">T3</option>
+        <option value="4">T4</option>
+        <option value="5">T5+</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:.75rem;color:#555;display:block;margin-bottom:4px">Período</label>
+      <select id="tend-periodo" onchange="mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
+        <option value="90">3 meses</option>
+        <option value="180">6 meses</option>
+        <option value="365" selected>1 ano</option>
+        <option value="730">2 anos</option>
+        <option value="9999">Tudo</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div style="background:#fff;border:1px solid #e0e6f0;border-radius:12px;padding:20px">
+      <div style="font-weight:600;color:#1a3c5e;margin-bottom:4px;font-size:.95rem">Preço médio €/m²</div>
+      <div id="tend-stat-m2" style="font-size:1.5rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">—</div>
+      <canvas id="tend-chart-m2" height="160"></canvas>
+    </div>
+    <div style="background:#fff;border:1px solid #e0e6f0;border-radius:12px;padding:20px">
+      <div style="font-weight:600;color:#1a3c5e;margin-bottom:4px;font-size:.95rem">Preço mediano</div>
+      <div id="tend-stat-preco" style="font-size:1.5rem;font-weight:700;color:#1a3c5e;margin-bottom:12px">—</div>
+      <canvas id="tend-chart-preco" height="160"></canvas>
+    </div>
+  </div>
+  <div style="margin-top:20px;background:#fff;border:1px solid #e0e6f0;border-radius:12px;padding:20px">
+    <div style="font-weight:600;color:#1a3c5e;margin-bottom:12px;font-size:.95rem">Nº de anúncios activos</div>
+    <canvas id="tend-chart-n" height="100"></canvas>
+  </div>
+  <div id="tend-tabela" style="margin-top:20px"></div>`
+
+  mercadoRenderTend()
+}
+
+async function mercadoRenderTend() {
+  var zona    = document.getElementById('tend-zona')?.value || '__total__'
+  var op      = document.getElementById('tend-op')?.value || 'sale'
+  var tipo    = document.getElementById('tend-tipo')?.value || ''
+  var quartos = document.getElementById('tend-quartos')?.value
+  var dias    = parseInt(document.getElementById('tend-periodo')?.value || '365')
+
+  var desde = new Date()
+  if (dias < 9999) desde.setDate(desde.getDate() - dias)
+  var desdeISO = dias < 9999 ? desde.toISOString().split('T')[0] : '2000-01-01'
+
+  var query = sb.from('idealista_mercado_stats')
+    .select('data,zona,operacao,property_type,quartos,n_anuncios,preco_m2_medio,preco_m2_mediano,preco_medio,preco_mediano')
+    .eq('zona', zona)
+    .eq('operacao', op)
+    .gte('data', desdeISO)
+    .order('data', {ascending: true})
+
+  if (tipo) query = query.eq('property_type', tipo)
+  else       query = query.is('property_type', null)
+
+  if (quartos !== '' && quartos !== null && quartos !== undefined) {
+    query = query.eq('quartos', parseInt(quartos))
+  } else {
+    query = query.is('quartos', null)
+  }
+
+  var { data } = await query
+  data = data || []
+
+  // Actualizar stats do último snapshot
+  var ultimo = data[data.length - 1]
+  if (ultimo) {
+    document.getElementById('tend-stat-m2').textContent =
+      ultimo.preco_m2_mediano ? Math.round(ultimo.preco_m2_mediano).toLocaleString('pt-PT') + ' €/m²' : '—'
+    document.getElementById('tend-stat-preco').textContent =
+      ultimo.preco_mediano ? Math.round(ultimo.preco_mediano).toLocaleString('pt-PT') + ' €' : '—'
+  }
+
+  var labels = data.map(function(d){ return d.data.slice(5) }) // MM-DD
+  var m2s    = data.map(function(d){ return d.preco_m2_mediano })
+  var precos = data.map(function(d){ return d.preco_mediano })
+  var ns     = data.map(function(d){ return d.n_anuncios })
+
+  function _makeChart(id, datasets, yLabel) {
+    var ctx = document.getElementById(id)
+    if (!ctx) return
+    var existing = Chart.getChart(ctx)
+    if (existing) existing.destroy()
+    return new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: datasets.length > 1 } },
+        scales: {
+          x: { ticks: { maxTicksLimit: 12, font: { size: 11 } } },
+          y: { ticks: { font: { size: 11 }, callback: function(v){ return v ? v.toLocaleString('pt-PT') : v } }, title: { display: !!yLabel, text: yLabel, font: { size: 11 } } }
+        }
+      }
+    })
+  }
+
+  _makeChart('tend-chart-m2', [{
+    label: '€/m² mediano', data: m2s,
+    borderColor: '#1a3c5e', backgroundColor: 'rgba(26,60,94,.08)',
+    tension: 0.35, fill: true, pointRadius: data.length > 60 ? 0 : 3
+  }], '€/m²')
+
+  _makeChart('tend-chart-preco', [{
+    label: 'Preço mediano', data: precos,
+    borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.08)',
+    tension: 0.35, fill: true, pointRadius: data.length > 60 ? 0 : 3
+  }], '€')
+
+  _makeChart('tend-chart-n', [{
+    label: 'Anúncios activos', data: ns,
+    borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,.08)',
+    tension: 0.35, fill: true, pointRadius: data.length > 60 ? 0 : 3
+  }])
+
+  // Tabela resumo por zona (snapshot mais recente)
+  if (zona === '__total__') {
+    var { data: tbl } = await sb.from('idealista_mercado_stats')
+      .select('zona,n_anuncios,preco_m2_mediano,preco_mediano')
+      .eq('operacao', op)
+      .is('property_type', null)
+      .is('quartos', null)
+      .neq('zona', '__total__')
+      .order('data', {ascending: false})
+      .limit(200)
+    if (tbl && tbl.length) {
+      var seen = {}, rows = []
+      tbl.forEach(function(r){ if (!seen[r.zona]) { seen[r.zona]=1; rows.push(r) } })
+      rows.sort(function(a,b){ return (b.preco_m2_mediano||0)-(a.preco_m2_mediano||0) })
+      document.getElementById('tend-tabela').innerHTML =
+        '<div style="font-weight:600;color:#1a3c5e;margin-bottom:10px">Última snapshot por zona</div>' +
+        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">' +
+        '<tr style="background:#f0f4fa"><th style="padding:8px 12px;text-align:left">Zona</th><th style="padding:8px 12px;text-align:right">Anúncios</th><th style="padding:8px 12px;text-align:right">€/m² mediano</th><th style="padding:8px 12px;text-align:right">Preço mediano</th></tr>' +
+        rows.map(function(r,i){
+          return '<tr style="background:'+(i%2?'#f8faff':'#fff')+';border-bottom:1px solid #e0e6f0">' +
+            '<td style="padding:8px 12px;font-weight:500">' + (r.zona||'—') + '</td>' +
+            '<td style="padding:8px 12px;text-align:right">' + (r.n_anuncios||0) + '</td>' +
+            '<td style="padding:8px 12px;text-align:right;font-weight:600;color:#1a3c5e">' + (r.preco_m2_mediano ? Math.round(r.preco_m2_mediano).toLocaleString('pt-PT')+' €' : '—') + '</td>' +
+            '<td style="padding:8px 12px;text-align:right">' + (r.preco_mediano ? Math.round(r.preco_mediano).toLocaleString('pt-PT')+' €' : '—') + '</td>' +
+          '</tr>'
+        }).join('') + '</table></div>'
+    }
+  } else {
+    document.getElementById('tend-tabela').innerHTML = ''
+  }
 }
 
 async function mercadoLoadDashboard() {
