@@ -1849,7 +1849,29 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           </div>
           <div>
             <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Freguesia</label>
-            <input id="ce-f-freguesia" type="text" placeholder="ex: Buarcos" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none" oninput="ceClearEnter()" onkeydown="if(event.key==='Enter')ceSearch()">
+            <select id="ce-f-freguesia" style="width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.85rem;outline:none;background:#fff;color:#374151">
+              <option value="">Todas</option>
+              <option value="ALHADAS">Alhadas</option>
+              <option value="ALQUEIDÃO">Alqueidão</option>
+              <option value="BOM SUCESSO">Bom Sucesso</option>
+              <option value="BRENHA">Brenha</option>
+              <option value="BUARCOS">Buarcos</option>
+              <option value="BUARCOS E SÃO JULIÃO">Buarcos e São Julião</option>
+              <option value="FERREIRA-A-NOVA">Ferreira-a-Nova</option>
+              <option value="LAVOS">Lavos</option>
+              <option value="MAIORCA">Maiorca</option>
+              <option value="MARINHA DAS ONDAS">Marinha das Ondas</option>
+              <option value="MOINHOS DE GANDARA">Moinhos de Gândara</option>
+              <option value="PAIÃO">Paião</option>
+              <option value="QUIAIOS">Quiaios</option>
+              <option value="SANTANA">Santana</option>
+              <option value="SÃO JULIÃO DA FIGUEIRA DA FOZ">São Julião da Figueira da Foz</option>
+              <option value="S. PEDRO">São Pedro</option>
+              <option value="TAVAREDE">Tavarede</option>
+              <option value="TAVEIRO">Taveiro</option>
+              <option value="TOCHA">Tocha</option>
+              <option value="VILA VERDE">Vila Verde</option>
+            </select>
           </div>
           <div>
             <label style="font-size:.73rem;font-weight:600;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Zona</label>
@@ -9962,11 +9984,11 @@ async function ceSearch(page) {
 
     var q = sbEgo.from('certificados_energeticos')
       .select('*', { count: 'exact' })
-      .order('data_emissao', { ascending: false })
+      .order('data_emissao', { ascending: false, nullsFirst: false })
       .range(from, to)
 
     if (morada)    q = q.or('morada_detalhe.ilike.%' + morada + '%,morada_tabela.ilike.%' + morada + '%')
-    if (freguesia) q = q.ilike('freguesia_detalhe', '%' + freguesia + '%')
+    if (freguesia) q = q.eq('freguesia_detalhe', freguesia)
     if (zona)      q = q.ilike('zona', '%' + zona + '%')
     if (classe)    q = q.ilike('classe_energetica', '%' + classe + '%')
     if (artigo)    q = q.ilike('artigo_matricial', '%' + artigo + '%')
@@ -10025,7 +10047,7 @@ function ceCard(r) {
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
     + '<span style="font-weight:700;color:#1a3c5e;font-size:.92rem">' + (r.num_documento || '') + '</span>'
     + (r.zona ? '<span style="background:#e8eef6;color:#1a3c5e;font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600">' + r.zona + '</span>' : '')
-    + '<span style="font-size:.74rem;color:#9ca3af;margin-left:auto">📅 ' + dataEmissao + '</span>'
+    + (r.data_emissao ? '<span style="font-size:.76rem;font-weight:600;color:#2d6a9f;background:#e8f0fb;padding:2px 8px;border-radius:10px;margin-left:auto;white-space:nowrap">📅 ' + dataEmissao + '</span>' : '')
     + '</div>'
     + '<div style="font-size:.83rem;color:#374151;margin-top:3px;font-weight:600">' + ceEsc(morada) + '</div>'
     + (localidade ? '<div style="font-size:.74rem;color:#6b7280;margin-top:1px">' + ceEsc(localidade) + '</div>' : '')
