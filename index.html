@@ -9104,10 +9104,15 @@ var _avZonas = []
 async function mercadoLoadAvaliacao() {
   var el = document.getElementById('mercado-avaliacao')
   el.innerHTML = '<div class="loading">A carregar...</div>'
-  if (!_avZonas.length) {
-    var { data } = await sb.from('idealista_imoveis')
-      .select('municipio').eq('ativo', true).eq('fonte', 'idealista').not_.is_('municipio', null)
-    _avZonas = [...new Set((data||[]).map(function(r){return r.municipio}))].sort()
+  try {
+    if (!_avZonas.length) {
+      var { data } = await sb.from('idealista_imoveis')
+        .select('municipio').eq('ativo', true).eq('fonte', 'idealista').limit(2000)
+      _avZonas = [...new Set((data||[]).map(function(r){return r.municipio}).filter(Boolean))].sort()
+    }
+  } catch(e) {
+    el.innerHTML = '<div style="color:#dc2626;padding:20px">Erro ao carregar zonas: '+e.message+'</div>'
+    return
   }
   el.innerHTML =
     '<div style="max-width:780px">'
