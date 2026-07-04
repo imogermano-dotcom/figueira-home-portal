@@ -9241,7 +9241,8 @@ async function mercadoRunAvaliacao() {
   if (rua) {
     resEl.innerHTML = '<div class="loading">A geocodificar morada...</div>'
     try {
-      var geoResp = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(rua)+'&countrycodes=pt',
+      var geoQuery = zona ? rua + ', ' + zona + ', Portugal' : rua + ', Portugal'
+      var geoResp = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(geoQuery)+'&countrycodes=pt',
         {headers:{'Accept-Language':'pt','User-Agent':'FigueiraHomePortal/1.0'}})
       var geoData = await geoResp.json()
       if (geoData && geoData.length) {
