@@ -9101,6 +9101,17 @@ async function mercadoLoadImoveisPagina() {
             : '<span>'+esc(im.agencia_nome_atual||'—')+'</span>')
           + '<span>'+mercadoDiasLabel(im)+'</span>'
           + '</div>'
+          + '<button onclick="event.stopPropagation();mercadoVerComparaveis(this)" '
+          + 'data-code="'+esc(im.property_code)+'" '
+          + 'data-zona="'+esc(im.municipio||'')+'" '
+          + 'data-op="'+esc(im.operacao||'sale')+'" '
+          + 'data-tipo="'+esc(im.property_type||'')+'" '
+          + 'data-quartos="'+(im.quartos!=null?im.quartos:'')+'" '
+          + 'data-area="'+(im.area_m2||'')+'" '
+          + 'data-preco="'+(im.preco_atual||'')+'" '
+          + 'style="margin-top:8px;width:100%;padding:6px;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:8px;font-size:.75rem;font-weight:600;color:#3730a3;cursor:pointer;transition:background .15s" '
+          + 'onmouseenter="this.style.background=\'#e0e7ff\'" onmouseleave="this.style.background=\'#f0f4ff\'">'
+          + '📊 Ver comparáveis vendidos</button>'
           + '</div></div>'
       }).join('')
       + '</div>'
@@ -9492,6 +9503,172 @@ function _mktDetalhe(label, valor) {
     + '<div style="font-size:.69rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">'+label+'</div>'
     + '<div style="font-size:.88rem;font-weight:700;color:#1a3c5e">'+valor+'</div>'
     + '</div>'
+}
+
+// ── Comparáveis Vendidos ──────────────────────────────────────────────────────
+function _cmpModal() {
+  var m = document.getElementById('cmp-modal')
+  if (!m) {
+    m = document.createElement('div')
+    m.id = 'cmp-modal'
+    m.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);overflow-y:auto;padding:24px 12px'
+    m.innerHTML = '<div id="cmp-modal-box" style="max-width:780px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #e0e6f0">'
+      + '<div id="cmp-modal-title" style="font-weight:700;font-size:1rem;color:#1a3c5e"></div>'
+      + '<button onclick="document.getElementById(\'cmp-modal\').style.display=\'none\'" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;padding:0 4px">×</button>'
+      + '</div>'
+      + '<div id="cmp-modal-body" style="padding:24px"></div>'
+      + '</div>'
+    m.addEventListener('click', function(e){ if(e.target===m) m.style.display='none' })
+    document.body.appendChild(m)
+  }
+  return m
+}
+
+async function mercadoVerComparaveis(btn) {
+  var zona    = btn.dataset.zona
+  var op      = btn.dataset.op    || 'sale'
+  var tipo    = btn.dataset.tipo  || ''
+  var quartos = btn.dataset.quartos !== '' ? parseInt(btn.dataset.quartos) : null
+  var area    = parseFloat(btn.dataset.area) || 0
+  var preco   = parseFloat(btn.dataset.preco) || 0
+
+  var modal = _cmpModal()
+  modal.style.display = 'block'
+  document.getElementById('cmp-modal-title').textContent = '📊 Comparáveis — ' + zona
+  var body = document.getElementById('cmp-modal-body')
+  body.innerHTML = '<div class="loading">A carregar comparáveis...</div>'
+
+  var areaMin = area > 0 ? Math.round(area * 0.75) : null
+  var areaMax = area > 0 ? Math.round(area * 1.25) : null
+
+  try {
+    // Vendidos similares (zona + tipo + quartos ±1 + área ±25%)
+    var qVend = sb.from('idealista_imoveis')
+      .select('property_code,titulo,preco_venda,area_m2,quartos,property_type,municipio,primeiro_visto_em,retirado_em,thumbnail_storage_url,thumbnail_url,url')
+      .eq('assumido_vendido', true)
+      .eq('operacao', op)
+      .eq('municipio', zona)
+      .gt('preco_venda', 0)
+      .order('data_venda', {ascending: false})
+      .limit(50)
+    if (tipo) qVend = qVend.eq('property_type', tipo)
+    if (quartos !== null) qVend = qVend.gte('quartos', Math.max(0, quartos-1)).lte('quartos', quartos+1)
+    if (areaMin) qVend = qVend.gte('area_m2', areaMin)
+    if (areaMax) qVend = qVend.lte('area_m2', areaMax)
+
+    // Activos similares
+    var qAct = sb.from('idealista_imoveis_agrupados')
+      .select('property_code,titulo,preco_atual,preco_m2_atual,area_m2,quartos,property_type,municipio,primeiro_visto_em,thumbnail_storage_url,thumbnail_url,url')
+      .eq('ativo', true)
+      .eq('is_secundario', false)
+      .eq('operacao', op)
+      .eq('municipio', zona)
+      .gt('preco_atual', 0)
+      .order('preco_atual', {ascending: true})
+      .limit(30)
+    if (tipo) qAct = qAct.eq('property_type', tipo)
+    if (quartos !== null) qAct = qAct.gte('quartos', Math.max(0, quartos-1)).lte('quartos', quartos+1)
+    if (areaMin) qAct = qAct.gte('area_m2', areaMin)
+    if (areaMax) qAct = qAct.lte('area_m2', areaMax)
+
+    var [rVend, rAct] = await Promise.all([qVend, qAct])
+    var vendidos = rVend.data || []
+    var activos  = rAct.data || []
+
+    // Métricas vendidos
+    var vPrecos = vendidos.map(function(v){ return v.preco_venda }).filter(Boolean)
+    var vM2s    = vendidos.map(function(v){ return v.area_m2 > 0 ? Math.round(v.preco_venda/v.area_m2) : null }).filter(Boolean)
+    var vDias   = vendidos.map(function(v){
+      if (!v.primeiro_visto_em || !v.retirado_em) return null
+      return Math.round((new Date(v.retirado_em)-new Date(v.primeiro_visto_em))/(86400000))
+    }).filter(function(d){ return d !== null && d >= 0 })
+
+    var vMin = vPrecos.length ? Math.min.apply(null,vPrecos) : null
+    var vMax = vPrecos.length ? Math.max.apply(null,vPrecos) : null
+    var vMed = vPrecos.length ? Math.round(vPrecos.reduce(function(a,b){return a+b},0)/vPrecos.length) : null
+    var vM2Med = vM2s.length ? Math.round(vM2s.reduce(function(a,b){return a+b},0)/vM2s.length) : null
+    var vDiasMed = vDias.length ? Math.round(vDias.reduce(function(a,b){return a+b},0)/vDias.length) : null
+
+    // Métricas activos
+    var aPrecos = activos.map(function(a){ return a.preco_atual }).filter(Boolean)
+    var aMin = aPrecos.length ? Math.min.apply(null,aPrecos) : null
+    var aMax = aPrecos.length ? Math.max.apply(null,aPrecos) : null
+    var aMed = aPrecos.length ? Math.round(aPrecos.reduce(function(a,b){return a+b},0)/aPrecos.length) : null
+
+    function _fmtE(n){ return n ? Math.round(n).toLocaleString('pt-PT')+'€' : '—' }
+    function _badge(label, val, color){
+      return '<div style="text-align:center;padding:12px 8px;background:#f8faff;border-radius:10px;border:1px solid #e0e6f0">'
+        +'<div style="font-size:.7rem;color:#6b7280;font-weight:600;margin-bottom:4px">'+label+'</div>'
+        +'<div style="font-size:1.05rem;font-weight:800;color:'+color+'">'+val+'</div>'
+        +'</div>'
+    }
+
+    // Barra visual de comparação (preço actual vs vendidos)
+    var barHtml = ''
+    if (vMin && vMax && preco) {
+      var span = vMax - vMin || 1
+      var pctPreco = Math.max(0, Math.min(100, (preco - vMin) / span * 100))
+      barHtml = '<div style="margin:16px 0">'
+        +'<div style="display:flex;justify-content:space-between;font-size:.72rem;color:#6b7280;margin-bottom:4px">'
+        +'<span>Mín vendidos: '+_fmtE(vMin)+'</span>'
+        +'<span style="font-weight:700;color:#1a3c5e">Este imóvel: '+_fmtE(preco)+'</span>'
+        +'<span>Máx vendidos: '+_fmtE(vMax)+'</span>'
+        +'</div>'
+        +'<div style="position:relative;height:10px;background:#e0e6f0;border-radius:8px">'
+        +'<div style="position:absolute;left:0;top:0;height:100%;width:'+Math.round(pctPreco)+'%;background:linear-gradient(90deg,#16a34a,#dc2626);border-radius:8px;min-width:4px"></div>'
+        +'<div style="position:absolute;top:-3px;left:calc('+Math.round(pctPreco)+'% - 7px);width:16px;height:16px;background:#1a3c5e;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)" title="Preço actual: '+_fmtE(preco)+'"></div>'
+        +'</div>'
+        +'<div style="font-size:.7rem;color:#9ca3af;margin-top:6px;text-align:center">'
+        +(pctPreco < 33 ? '🟢 Abaixo da mediana dos vendidos — potencial de valorização'
+          : pctPreco < 67 ? '🟡 Na zona mediana dos vendidos — preço de mercado'
+          : '🔴 Acima da maioria dos vendidos — preço premium ou sobrevalorizado')
+        +'</div>'
+        +'</div>'
+    }
+
+    function _miniCard(im, isSold) {
+      var imgUrl = im.thumbnail_storage_url || im.thumbnail_url || ''
+      var pLabel = isSold ? _fmtE(im.preco_venda) : _fmtE(im.preco_atual)
+      var m2 = im.area_m2 > 0 ? (isSold ? Math.round((im.preco_venda||0)/im.area_m2) : Math.round((im.preco_atual||0)/im.area_m2)) : null
+      var dias = isSold && im.primeiro_visto_em && im.retirado_em
+        ? Math.round((new Date(im.retirado_em)-new Date(im.primeiro_visto_em))/86400000) : null
+      return '<a href="'+(im.url||'https://www.idealista.pt/imovel/'+im.property_code+'/')+'" target="_blank" '
+        +'style="display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;border:1px solid #e0e6f0;text-decoration:none;color:inherit;transition:background .1s" '
+        +'onmouseenter="this.style.background=\'#f8faff\'" onmouseleave="this.style.background=\'\'">'
+        +(imgUrl ? '<img src="'+esc(imgUrl)+'" style="width:60px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0">' : '<div style="width:60px;height:48px;background:#e0e6f0;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem">'+mercadoTipoEmoji(im.property_type)+'</div>')
+        +'<div style="min-width:0;flex:1">'
+        +'<div style="font-size:.78rem;font-weight:700;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(im.titulo||'—')+'</div>'
+        +'<div style="font-size:.72rem;color:#6b7280">'+(im.area_m2||'—')+'m² · T'+(im.quartos!=null?im.quartos:'?')+(m2?' · '+m2.toLocaleString('pt-PT')+'€/m²':'')+'</div>'
+        +'<div style="font-size:.78rem;font-weight:800;color:'+(isSold?'#16a34a':'#1e40af')+'">'+(isSold?'✅ ':'🏷️ ')+pLabel+(dias?' · '+dias+'d no mercado':'')+'</div>'
+        +'</div>'
+        +'</a>'
+    }
+
+    body.innerHTML =
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px">'
+      +_badge('Vendidos similares', vendidos.length, '#16a34a')
+      +_badge('Preço médio vendidos', _fmtE(vMed), '#16a34a')
+      +_badge('€/m² médio vendidos', vM2Med ? vM2Med.toLocaleString('pt-PT')+'€' : '—', '#16a34a')
+      +_badge('Dias médios no mercado', vDiasMed !== null ? vDiasMed+'d' : '—', '#7c3aed')
+      +_badge('Activos similares', activos.length, '#1e40af')
+      +_badge('Preço médio activos', _fmtE(aMed), '#1e40af')
+      +'</div>'
+      + barHtml
+      + (vendidos.length ? '<div style="font-weight:600;color:#16a34a;margin:14px 0 8px;font-size:.85rem">✅ '+vendidos.length+' vendidos similares</div>'
+        +'<div style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto">'
+        +vendidos.map(function(v){ return _miniCard(v, true) }).join('')
+        +'</div>' : '<div style="color:#9ca3af;font-size:.83rem;padding:12px 0">Nenhum vendido similar encontrado nesta zona.</div>')
+      + (activos.length ? '<div style="font-weight:600;color:#1e40af;margin:18px 0 8px;font-size:.85rem">🏷️ '+activos.length+' activos similares</div>'
+        +'<div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto">'
+        +activos.map(function(a){ return _miniCard(a, false) }).join('')
+        +'</div>' : '')
+      +'<div style="font-size:.7rem;color:#9ca3af;margin-top:16px;padding-top:12px;border-top:1px solid #f0f0f0">'
+      +'Comparáveis: mesma zona, mesmo tipo, quartos ±1, área ±25%. Vendidos = imóveis retirados do Idealista (assumidos como vendidos).</div>'
+
+  } catch(e) {
+    body.innerHTML = '<div class="err-box">Erro: '+esc(e.message)+'</div>'
+  }
 }
 
 async function mercadoLoadAgencias() {
