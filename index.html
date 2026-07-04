@@ -9114,41 +9114,62 @@ async function mercadoLoadAvaliacao() {
     el.innerHTML = '<div style="color:#dc2626;padding:20px">Erro ao carregar zonas: '+e.message+'</div>'
     return
   }
+  var INPUT_S = 'width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem;box-sizing:border-box'
   el.innerHTML =
-    '<div style="max-width:780px">'
+    '<div style="max-width:860px">'
     + '<div style="background:#f8faff;border:1px solid #e0e6f0;border-radius:14px;padding:24px 28px;margin-bottom:24px">'
     + '<div style="font-size:1.05rem;font-weight:700;color:#1a3c5e;margin-bottom:18px">🔍 Avaliação de Imóvel</div>'
+
+    // Linha 0: Rua
+    + '<label style="font-size:.78rem;color:#555;display:block;margin-bottom:14px">Rua / Morada do imóvel a avaliar'
+    + '<input id="av-rua" type="text" placeholder="ex: Rua Cidade da Praia, 12, Figueira da Foz" '
+    + 'style="'+INPUT_S+'"></label>'
+
+    // Linha 1: Operação + Tipologia + Quartos
     + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">'
     + '<label style="font-size:.78rem;color:#555">Operação<br>'
-    + '<select id="av-op" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
-    + '<option value="sale">Venda</option><option value="rent">Arrendamento</option>'
-    + '</select></label>'
+    + '<select id="av-op" style="'+INPUT_S+'"><option value="sale">Venda</option><option value="rent">Arrendamento</option></select></label>'
     + '<label style="font-size:.78rem;color:#555">Tipologia<br>'
-    + '<select id="av-tipo" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
-    + '<option value="flat">Apartamento</option><option value="house">Moradia</option>'
-    + '<option value="land">Terreno</option><option value="">Qualquer</option>'
-    + '</select></label>'
+    + '<select id="av-tipo" style="'+INPUT_S+'"><option value="flat">Apartamento</option><option value="house">Moradia</option><option value="land">Terreno</option><option value="">Qualquer</option></select></label>'
     + '<label style="font-size:.78rem;color:#555">Quartos<br>'
-    + '<select id="av-quartos" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
-    + '<option value="">Qualquer</option><option value="0">T0</option><option value="1">T1</option>'
-    + '<option value="2" selected>T2</option><option value="3">T3</option><option value="4">T4</option><option value="5">T5+</option>'
-    + '</select></label>'
+    + '<select id="av-quartos" style="'+INPUT_S+'"><option value="">Qualquer</option><option value="0">T0</option><option value="1">T1</option><option value="2" selected>T2</option><option value="3">T3</option><option value="4">T4</option><option value="5">T5+</option></select></label>'
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:2fr 1fr 3fr;gap:14px;margin-bottom:20px">'
+
+    // Linha 2: Área + Tolerância + Zona
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;margin-bottom:14px">'
     + '<label style="font-size:.78rem;color:#555">Área (m²)<br>'
-    + '<input id="av-area" type="number" min="10" max="2000" value="100" '
-    + 'style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem;box-sizing:border-box">'
-    + '</label>'
-    + '<label style="font-size:.78rem;color:#555">Tolerância<br>'
-    + '<select id="av-tol" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
-    + '<option value="20">± 20%</option><option value="30" selected>± 30%</option><option value="40">± 40%</option>'
-    + '</select></label>'
-    + '<label style="font-size:.78rem;color:#555">Zona / Freguesia<br>'
-    + '<select id="av-zona" style="width:100%;margin-top:4px;padding:8px 10px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">'
-    + '<option value="">— Selecciona zona —</option>'
+    + '<input id="av-area" type="number" min="10" max="2000" value="100" style="'+INPUT_S+'"></label>'
+    + '<label style="font-size:.78rem;color:#555">Tolerância área<br>'
+    + '<select id="av-tol" style="'+INPUT_S+'"><option value="20">± 20%</option><option value="30" selected>± 30%</option><option value="40">± 40%</option></select></label>'
+    + '<label style="font-size:.78rem;color:#555">Zona / Freguesia (fallback sem GPS)<br>'
+    + '<select id="av-zona" style="'+INPUT_S+'"><option value="">— Selecciona zona —</option>'
     + _avZonas.map(function(z){return '<option value="'+z+'">'+z+'</option>'}).join('')
     + '</select></label>'
     + '</div>'
+
+    // Linha 3: Raio
+    + '<div style="margin-bottom:14px">'
+    + '<div style="font-size:.78rem;color:#555;margin-bottom:6px">Raio de pesquisa de comparáveis <span style="color:#9ca3af">(quando GPS disponível — caso contrário usa a zona)</span></div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + [['100','100 m'],['250','250 m'],['500','500 m'],['1000','1 km'],['2000','2 km']].map(function(r,i){
+        var sel = i===2  // 500m por defeito
+        return '<label style="cursor:pointer"><input type="radio" name="av-raio" value="'+r[0]+'"'+(sel?' checked':'')+' style="margin-right:4px">'
+          +'<span style="font-size:.82rem;font-weight:600;color:#374151">'+r[1]+'</span></label>'
+      }).join('')
+    + '</div>'
+    + '</div>'
+
+    // Linha 4: Extras do imóvel (ajuste manual)
+    + '<div style="margin-bottom:20px">'
+    + '<div style="font-size:.78rem;color:#555;margin-bottom:6px">Características do imóvel <span style="color:#9ca3af">(usadas para contexto — não filtramos na BD por falta de dados estruturados)</span></div>'
+    + '<div style="display:flex;gap:16px;flex-wrap:wrap">'
+    + [['av-x-garagem','🚗 Garagem'],['av-x-varanda','🌅 Varanda'],['av-x-terraco','🏔️ Terraço'],['av-x-piscina','🏊 Piscina'],['av-x-elevador','🛗 Elevador']].map(function(x){
+        return '<label style="cursor:pointer;font-size:.82rem;display:flex;align-items:center;gap:5px">'
+          +'<input type="checkbox" id="'+x[0]+'" style="width:14px;height:14px"> '+x[1]+'</label>'
+      }).join('')
+    + '</div>'
+    + '</div>'
+
     + '<button onclick="mercadoRunAvaliacao()" '
     + 'style="background:#1a3c5e;color:#fff;border:none;padding:11px 28px;border-radius:9px;font-size:.9rem;font-weight:700;cursor:pointer">Analisar →</button>'
     + '</div>'
@@ -9182,6 +9203,14 @@ function _avMargem(im) {
   return { margem: base, diasMercado: dias ? Math.round(dias) : null }
 }
 
+function _avHaversine(lat1, lon1, lat2, lon2) {
+  var R = 6371000
+  var p1 = lat1 * Math.PI/180, p2 = lat2 * Math.PI/180
+  var dp = (lat2-lat1) * Math.PI/180, dl = (lon2-lon1) * Math.PI/180
+  var a = Math.sin(dp/2)*Math.sin(dp/2) + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
 async function mercadoRunAvaliacao() {
   var op      = document.getElementById('av-op').value
   var tipo    = document.getElementById('av-tipo').value
@@ -9189,11 +9218,37 @@ async function mercadoRunAvaliacao() {
   var area    = parseFloat(document.getElementById('av-area').value)
   var tol     = parseFloat(document.getElementById('av-tol').value) / 100
   var zona    = document.getElementById('av-zona').value
+  var rua     = (document.getElementById('av-rua').value || '').trim()
+  var raioEl  = document.querySelector('input[name="av-raio"]:checked')
+  var raio    = raioEl ? parseInt(raioEl.value) : 500
+
+  var extras = ['av-x-garagem','av-x-varanda','av-x-terraco','av-x-piscina','av-x-elevador']
+    .filter(function(id){ return document.getElementById(id) && document.getElementById(id).checked })
+    .map(function(id){ return {'av-x-garagem':'Garagem','av-x-varanda':'Varanda','av-x-terraco':'Terraço','av-x-piscina':'Piscina','av-x-elevador':'Elevador'}[id] })
 
   var resEl = document.getElementById('av-resultado')
-  if (!area || !zona) {
-    resEl.innerHTML = '<div style="color:#dc2626;font-size:.85rem;padding:12px">Preenche a área e a zona para analisar.</div>'
+  if (!area) {
+    resEl.innerHTML = '<div style="color:#dc2626;font-size:.85rem;padding:12px">Preenche a área para analisar.</div>'
     return
+  }
+  if (!rua && !zona) {
+    resEl.innerHTML = '<div style="color:#dc2626;font-size:.85rem;padding:12px">Indica a rua/morada ou selecciona uma zona.</div>'
+    return
+  }
+
+  // Geocode via Nominatim if rua provided
+  var geoCoords = null, geoLabel = null
+  if (rua) {
+    resEl.innerHTML = '<div class="loading">A geocodificar morada...</div>'
+    try {
+      var geoResp = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(rua)+'&countrycodes=pt',
+        {headers:{'Accept-Language':'pt','User-Agent':'FigueiraHomePortal/1.0'}})
+      var geoData = await geoResp.json()
+      if (geoData && geoData.length) {
+        geoCoords = {lat: parseFloat(geoData[0].lat), lon: parseFloat(geoData[0].lon)}
+        geoLabel  = geoData[0].display_name.split(',').slice(0,3).join(', ')
+      }
+    } catch(e) { /* geocode failed — fall back to zona */ }
   }
   resEl.innerHTML = '<div class="loading">A pesquisar comparáveis...</div>'
 
@@ -9202,29 +9257,53 @@ async function mercadoRunAvaliacao() {
   var ha2anos = new Date(); ha2anos.setFullYear(ha2anos.getFullYear() - 2)
   var ha2ISO  = ha2anos.toISOString().split('T')[0]
 
-  var SEL_ACT = 'property_code,titulo,quartos,area_m2,preco_atual,preco_m2_atual,municipio,url,thumbnail_url,thumbnail_storage_url,vendedor_tipo,agencia_nome_atual'
-  var SEL_VND = 'property_code,titulo,quartos,area_m2,preco_venda,preco_m2_atual,variacao_preco_pct,municipio,url,thumbnail_url,thumbnail_storage_url,primeiro_visto_em,retirado_em,data_venda'
+  var SEL_ACT = 'property_code,titulo,quartos,area_m2,preco_atual,preco_m2_atual,municipio,url,thumbnail_url,thumbnail_storage_url,vendedor_tipo,agencia_nome_atual,latitude,longitude'
+  var SEL_VND = 'property_code,titulo,quartos,area_m2,preco_venda,preco_m2_atual,variacao_preco_pct,municipio,url,thumbnail_url,thumbnail_storage_url,primeiro_visto_em,retirado_em,data_venda,latitude,longitude'
 
   var qAct = sb.from('idealista_imoveis').select(SEL_ACT)
     .eq('ativo',true).eq('fonte','idealista').eq('operacao',op)
-    .gte('area_m2',areaMin).lte('area_m2',areaMax).eq('municipio',zona)
+    .gte('area_m2',areaMin).lte('area_m2',areaMax)
   var qVnd = sb.from('idealista_imoveis').select(SEL_VND)
     .eq('assumido_vendido',true).eq('fonte','idealista').eq('operacao',op)
-    .gte('area_m2',areaMin).lte('area_m2',areaMax).eq('municipio',zona)
+    .gte('area_m2',areaMin).lte('area_m2',areaMax)
     .gte('data_venda',ha2ISO).gt('preco_venda',0)
 
+  // Apply zona filter only when no GPS coords available
+  if (!geoCoords && zona) {
+    qAct = qAct.eq('municipio',zona)
+    qVnd = qVnd.eq('municipio',zona)
+  }
   if (tipo)    { qAct = qAct.eq('property_type',tipo); qVnd = qVnd.eq('property_type',tipo) }
   if (quartos !== '') {
     qAct = qAct.eq('quartos',parseInt(quartos))
     qVnd = qVnd.eq('quartos',parseInt(quartos))
   }
 
+  var fetchLim = geoCoords ? 500 : 50
   var [rAct, rVnd] = await Promise.all([
-    qAct.order('preco_atual',{ascending:true}).limit(50),
-    qVnd.order('data_venda',{ascending:false}).limit(50)
+    qAct.order('preco_atual',{ascending:true}).limit(fetchLim),
+    qVnd.order('data_venda',{ascending:false}).limit(fetchLim)
   ])
   var activos  = rAct.data || []
   var vendidos = rVnd.data || []
+
+  // Haversine radius filter when GPS available
+  var raioLabel = raio >= 1000 ? (raio/1000)+' km' : raio+' m'
+  var locLabel, locSubtitle
+  if (geoCoords) {
+    activos  = activos.filter(function(r){ return r.latitude && r.longitude && _avHaversine(geoCoords.lat, geoCoords.lon, r.latitude, r.longitude) <= raio })
+    vendidos = vendidos.filter(function(r){ return r.latitude && r.longitude && _avHaversine(geoCoords.lat, geoCoords.lon, r.latitude, r.longitude) <= raio })
+    locLabel    = '📍 '+raioLabel
+    locSubtitle = geoLabel || rua
+  } else if (rua) {
+    // geocode failed, using zona
+    if (zona) { activos = activos; vendidos = vendidos } // already filtered by zona
+    locLabel    = '🗺️ '+( zona || 'Sem zona' )+' (geocodificação falhou)'
+    locSubtitle = rua
+  } else {
+    locLabel    = '🗺️ '+( zona || 'Sem zona' )
+    locSubtitle = ''
+  }
 
   // ── Stats activos ────────────────────────────────────────────────────────
   var actPrecos = activos.map(function(r){return r.preco_atual}).filter(Boolean)
@@ -9255,7 +9334,7 @@ async function mercadoRunAvaliacao() {
   var opLabel   = op === 'sale' ? 'Venda' : 'Arrendamento'
   var tipLabel  = {'flat':'Apartamento','house':'Moradia','land':'Terreno','':'Imóvel'}[tipo] || 'Imóvel'
   var qtLabel   = quartos !== '' ? 'T'+quartos : ''
-  var titulo    = [tipLabel, qtLabel, area+'m²', zona].filter(Boolean).join(' · ')
+  var titulo    = [tipLabel, qtLabel, area+'m²'].filter(Boolean).join(' · ')
 
   // ── Confiança do resultado ───────────────────────────────────────────────
   var confiancaN = Math.min(activos.length, vendidos.length)
@@ -9270,10 +9349,14 @@ async function mercadoRunAvaliacao() {
   var html =
     '<div style="border:1px solid #e0e6f0;border-radius:14px;overflow:hidden">'
     // Header
-    + '<div style="background:#1a3c5e;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center">'
+    + '<div style="background:#1a3c5e;color:#fff;padding:16px 24px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
     + '<div><div style="font-size:.78rem;opacity:.7;margin-bottom:2px">'+opLabel+'</div>'
     + '<div style="font-weight:700;font-size:1rem">'+titulo+'</div></div>'
     + '<div style="text-align:right;font-size:.78rem;opacity:.8">Confiança: <b>'+confianca+'</b></div>'
+    + '</div>'
+    + '<div style="font-size:.75rem;opacity:.75">'+locLabel+(locSubtitle ? ' · '+locSubtitle : '')+'</div>'
+    + (extras.length ? '<div style="font-size:.72rem;opacity:.6;margin-top:3px">Imóvel com: '+extras.join(', ')+'</div>' : '')
     + '</div>'
     // Dois painéis: activos + vendidos
     + '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e0e6f0">'
@@ -9300,9 +9383,9 @@ async function mercadoRunAvaliacao() {
     + '</div>'
     // Linha de contexto
     + '<div style="display:flex;gap:0;border-bottom:1px solid #e0e6f0">'
-    + _avKpi('📅 Dias no mercado', diasMed !== null ? diasMed+' dias' : '—', diasMed > 120 ? '#dc2626' : diasMed < 60 ? '#16a34a' : '#92400e')
+    + _avKpi('📅 Dias no mercado', diasMed !== null ? diasMed+' dias' : '—', diasMed !== null && diasMed > 120 ? '#dc2626' : diasMed !== null && diasMed < 60 ? '#16a34a' : '#92400e')
     + _avKpi('💡 Recomendação de listagem', recMin && recMax ? _avFmt(recMin)+' – '+_avFmt(recMax) : '—', '#1a3c5e')
-    + _avKpi('📐 Área pesquisada', areaMin+'–'+areaMax+' m²', '#6b7280')
+    + _avKpi('📐 Área · '+areaMin+'–'+areaMax+' m²', locLabel, '#6b7280')
     + '</div>'
 
   // Nota sobre margem
@@ -9311,6 +9394,7 @@ async function mercadoRunAvaliacao() {
       + '⚠️ Margem de negociação estimada com base em médias do mercado secundário português (~7%). '
       + 'Imóveis com reduções de preço activas têm margem efectiva menor; propriedades há mais de 180 dias têm margem maior. '
       + 'Os preços reais de transação não estão disponíveis — apenas os preços de anúncio.'
+      + (extras.length ? ' Características indicadas ('+extras.join(', ')+') não são filtradas na base de dados por falta de dados estruturados — servem apenas como contexto de avaliação.' : '')
       + '</div>'
   }
 
@@ -9325,11 +9409,14 @@ async function mercadoRunAvaliacao() {
         var tag = isPrivate
           ? '<span style="background:#f3e8ff;color:#7c3aed;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:4px">PARTICULAR</span>'
           : ''
+        var distStr = (geoCoords && im.latitude && im.longitude)
+          ? ' · '+Math.round(_avHaversine(geoCoords.lat,geoCoords.lon,im.latitude,im.longitude))+'m'
+          : ''
         return '<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:#f8faff;border-radius:8px;border:1px solid #e0e6f0">'
           + (img ? '<img src="'+img+'" style="width:64px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0">' : '<div style="width:64px;height:48px;background:#e0e6f0;border-radius:6px;flex-shrink:0"></div>')
           + '<div style="flex:1;min-width:0">'
           + '<div style="font-size:.82rem;font-weight:600;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+tag+' '+(im.titulo||'—')+'</div>'
-          + '<div style="font-size:.74rem;color:#6b7280">'+(im.area_m2||'?')+' m² · '+(im.quartos!=null?'T'+im.quartos:'')+'</div>'
+          + '<div style="font-size:.74rem;color:#6b7280">'+(im.area_m2||'?')+' m² · '+(im.quartos!=null?'T'+im.quartos:'')+distStr+'</div>'
           + '</div>'
           + '<div style="text-align:right;flex-shrink:0">'
           + '<div style="font-size:.95rem;font-weight:700;color:#1a3c5e">'+_avFmt(im.preco_atual)+'</div>'
@@ -9353,11 +9440,14 @@ async function mercadoRunAvaliacao() {
         var estimado = im.preco_venda * (1 - m.margem)
         var dataVenda = im.data_venda ? im.data_venda.slice(0,7) : ''
         var diasStr = m.diasMercado !== null ? m.diasMercado+' dias' : '—'
+        var distStr = (geoCoords && im.latitude && im.longitude)
+          ? ' · '+Math.round(_avHaversine(geoCoords.lat,geoCoords.lon,im.latitude,im.longitude))+'m'
+          : ''
         return '<div style="display:flex;gap:12px;align-items:center;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0">'
           + (img ? '<img src="'+img+'" style="width:64px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;opacity:.85">' : '<div style="width:64px;height:48px;background:#bbf7d0;border-radius:6px;flex-shrink:0"></div>')
           + '<div style="flex:1;min-width:0">'
           + '<div style="font-size:.82rem;font-weight:600;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(im.titulo||'—')+'</div>'
-          + '<div style="font-size:.74rem;color:#6b7280">'+(im.area_m2||'?')+' m² · '+(im.quartos!=null?'T'+im.quartos:'')+' · '+diasStr+' mercado</div>'
+          + '<div style="font-size:.74rem;color:#6b7280">'+(im.area_m2||'?')+' m² · '+(im.quartos!=null?'T'+im.quartos:'')+' · '+diasStr+' mercado'+distStr+'</div>'
           + '</div>'
           + '<div style="text-align:right;flex-shrink:0">'
           + '<div style="font-size:.78rem;color:#9ca3af;text-decoration:line-through">'+_avFmt(im.preco_venda)+'</div>'
@@ -9371,7 +9461,8 @@ async function mercadoRunAvaliacao() {
 
   if (!activos.length && !vendidos.length) {
     html += '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:.88rem">'
-      + 'Sem comparáveis encontrados para estes critérios.<br>Tenta alargar a tolerância de área ou alterar a zona.'
+      + 'Sem comparáveis encontrados para estes critérios.<br>'
+      + (geoCoords ? 'Tenta aumentar o raio de pesquisa.' : 'Tenta alargar a tolerância de área ou alterar a zona.')
       + '</div>'
   }
 
