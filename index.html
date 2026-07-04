@@ -8892,7 +8892,9 @@ async function mercadoRenderTend() {
 
 // ── Mapa de Imóveis ───────────────────────────────────────────────────────────
 var _mapaInst = null, _mapaLayerGroup = null, _mapaDados = null
-var _mapaToggle = { venda: true, arrendamento: true, particular: true, vendido: false }
+// particular: false por defeito — activa o "modo privados" que oculta agências
+var _mapaToggle = { venda: true, arrendamento: true, particular: false, vendido: false }
+var _mapaTipos  = { flat: false, house: false, land: false }
 var _mercadoPeriodoDias = 365
 
 var _ZONE_CENTROIDS = {
@@ -8928,24 +8930,27 @@ function _mapaCategoria(im) {
   return 'venda'
 }
 
-// Lógica de visibilidade: Venda/Arrendamento controlam a operação, Particular é filtro ortogonal
+// Particular é um "modo" exclusivo:
+//   OFF → só agências visíveis  |  ON → só particulares visíveis
+// Venda/Arrendamento filtram operação dentro do modo activo.
+// Tipos (flat/house/land) são OR; nenhum activo = todos os tipos.
 function _mapaVisivel(im) {
   if (im._isVendido) return _mapaToggle.vendido
-  var isSale    = im.operacao === 'sale'
-  var isRent    = im.operacao === 'rent'
+
   var isPrivate = im.vendedor_tipo === 'private'
-  var vendaOn   = _mapaToggle.venda
-  var arrOn     = _mapaToggle.arrendamento
-  var partOn    = _mapaToggle.particular
-  if (!vendaOn && !arrOn && !partOn) return false
-  // Quais operações estão activas?
-  var opOk = (isSale && vendaOn) || (isRent && arrOn)
-  if (isPrivate) {
-    if (!partOn) return false          // Particular OFF → ocultar todos os privados
-    if (vendaOn || arrOn) return opOk  // Particular ON + operação filtrada → interseção
-    return true                        // Particular ON sozinho → mostrar todos os privados
-  }
-  return opOk  // Agência: segue a operação
+  // XOR: toggle ≠ propriedade → modo errado → ocultar
+  if (_mapaToggle.particular !== isPrivate) return false
+
+  // Operação (OR entre Venda e Arrendamento)
+  var opOk = (im.operacao === 'sale' && _mapaToggle.venda) ||
+             (im.operacao === 'rent' && _mapaToggle.arrendamento)
+  if (!opOk) return false
+
+  // Tipo de propriedade (OR; nenhum activo = todos os tipos)
+  var anyTipo = _mapaTipos.flat || _mapaTipos.house || _mapaTipos.land
+  if (anyTipo && !_mapaTipos[im.property_type]) return false
+
+  return true
 }
 
 function _mapaGetCoords(im) {
@@ -8985,14 +8990,31 @@ function _mapaPopup(im, exact) {
 
 function _mapaRenderToggles() {
   var filtrosEl = document.getElementById('mapa-filtros')
-  filtrosEl.innerHTML = Object.keys(_MAPA_CAT).map(function(cat) {
+
+  // Linha 1 — modo Particular / Operação / Vendidos
+  var row1 = Object.keys(_MAPA_CAT).map(function(cat) {
     var on = _mapaToggle[cat]
-    var c = _MAPA_CAT[cat]
-    return '<button id="mapa-tog-'+cat+'" onclick="_mapaToggle.'+cat+'=!_mapaToggle.'+cat+';_mapaRenderToggles();_mapaAplicar()" '
+    var c  = _MAPA_CAT[cat]
+    return '<button onclick="_mapaToggle.'+cat+'=!_mapaToggle.'+cat+';_mapaRenderToggles();_mapaAplicar()" '
       +'style="padding:7px 14px;border-radius:20px;font-size:.82rem;font-weight:700;cursor:pointer;border:2px solid '
       +(on?c.cor:'#d1d5db')+';background:'+(on?c.cor:'#f9fafb')+';color:'+(on?'#fff':'#9ca3af')
       +';transition:all .15s">'+c.label+'</button>'
   }).join('')
+
+  // Linha 2 — tipo de propriedade
+  var tipos = [['flat','🏠 Apartamento'],['house','🏡 Moradia'],['land','🌿 Terreno']]
+  var row2 = '<span style="font-size:.72rem;color:#9ca3af;white-space:nowrap;align-self:center">Tipo:</span>'
+    + tipos.map(function(t) {
+        var on = _mapaTipos[t[0]]
+        return '<button onclick="_mapaTipos.'+t[0]+'=!_mapaTipos.'+t[0]+';_mapaRenderToggles();_mapaAplicar()" '
+          +'style="padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid '
+          +(on?'#374151':'#d1d5db')+';background:'+(on?'#374151':'#f9fafb')+';color:'+(on?'#fff':'#9ca3af')
+          +';transition:all .15s">'+t[1]+'</button>'
+      }).join('')
+
+  filtrosEl.innerHTML =
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+row1+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">'+row2+'</div>'
 }
 
 async function mercadoLoadMapa() {
