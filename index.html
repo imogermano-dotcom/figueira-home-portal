@@ -9100,24 +9100,19 @@ function _mapaAplicar() {
 
 // ── Avaliação de Imóvel ───────────────────────────────────────────────────────
 var _avZonas = []
-var _avEnderecos = []
-
-function _avExtractEndereco(morada) {
-  var m = morada.match(/ (?:na |no |em )(.+)$/i)
-  return m ? m[1] : null
-}
+var _avRuas   = []  // [{nome, latitude, longitude}] — tabela ruas (fonte única)
 
 async function mercadoLoadAvaliacao() {
   var el = document.getElementById('mercado-avaliacao')
   el.innerHTML = '<div class="loading">A carregar...</div>'
   try {
     if (!_avZonas.length) {
-      var { data } = await sb.from('idealista_imoveis')
-        .select('municipio,morada').eq('ativo', true).eq('fonte', 'idealista').limit(2000)
-      _avZonas = [...new Set((data||[]).map(function(r){return r.municipio}).filter(Boolean))].sort()
-      _avEnderecos = [...new Set(
-        (data||[]).map(function(r){ return r.morada ? _avExtractEndereco(r.morada) : null }).filter(Boolean)
-      )].sort()
+      var [r1, r2] = await Promise.all([
+        sb.from('idealista_imoveis').select('municipio').eq('ativo', true).eq('fonte', 'idealista').limit(2000),
+        sb.from('ruas').select('nome,latitude,longitude').order('nome').limit(2000)
+      ])
+      _avZonas = [...new Set((r1.data||[]).map(function(r){return r.municipio}).filter(Boolean))].sort()
+      _avRuas  = (r2.data||[]).filter(function(r){return r.nome && r.nome.trim()})
     }
   } catch(e) {
     el.innerHTML = '<div style="color:#dc2626;padding:20px">Erro ao carregar: '+e.message+'</div>'
@@ -9129,15 +9124,15 @@ async function mercadoLoadAvaliacao() {
     + '<div style="background:#f8faff;border:1px solid #e0e6f0;border-radius:14px;padding:24px 28px;margin-bottom:24px">'
     + '<div style="font-size:1.05rem;font-weight:700;color:#1a3c5e;margin-bottom:18px">🔍 Avaliação de Imóvel</div>'
 
-    // Datalist com endereços reais da BD
+    // Datalist com ruas padronizadas da tabela `ruas`
     + '<datalist id="av-rua-list">'
-    + _avEnderecos.map(function(e){return '<option value="'+e.replace(/"/g,'&quot;')+'">'}).join('')
+    + _avRuas.map(function(r){return '<option value="'+r.nome.replace(/"/g,'&quot;')+'">'}).join('')
     + '</datalist>'
 
-    // Linha 0: Rua — autocomplete das moradas reais
+    // Linha 0: Rua — autocomplete da tabela ruas
     + '<label style="font-size:.78rem;color:#555;display:block;margin-bottom:14px">Rua / Morada do imóvel a avaliar'
     + '<input id="av-rua" type="text" list="av-rua-list" autocomplete="off" '
-    + 'placeholder="Escreve \'praia\', \'centro\', \'brasil\'... para filtrar moradas reais" '
+    + 'placeholder="Escreve \'praia\', \'brasil\', \'centro\'... para filtrar ruas" '
     + 'style="'+INPUT_S+'"></label>'
 
     // Linha 1: Operação + Tipologia + Quartos
@@ -9255,14 +9250,18 @@ async function mercadoRunAvaliacao() {
     .gte('data_venda',ha2ISO).gt('preco_venda',0)
 
   // Filtro de localização: rua (morada ILIKE) tem prioridade sobre zona
-  var locLabel, locSubtitle
+  var locLabel, locSubtitle, ruaGPS = null
   if (rua) {
-    // Extrair nome da rua (primeiro segmento antes de vírgula)
-    var streetKey = rua.split(',')[0].trim()
+    // Encontrar rua na tabela padronizada (match exacto primeiro, depois parcial)
+    var ruaObj = _avRuas.find(function(r){ return r.nome === rua })
+              || _avRuas.find(function(r){ return r.nome.toLowerCase().indexOf(rua.toLowerCase()) >= 0 })
+    var streetKey = ruaObj ? ruaObj.nome : rua.split(',')[0].trim()
+    if (ruaObj && ruaObj.latitude && ruaObj.longitude)
+      ruaGPS = {lat: ruaObj.latitude, lon: ruaObj.longitude}
     qAct = qAct.ilike('morada', '%' + streetKey + '%')
     qVnd = qVnd.ilike('morada', '%' + streetKey + '%')
     locLabel    = '🏘️ ' + streetKey
-    locSubtitle = rua !== streetKey ? rua : ''
+    locSubtitle = ruaGPS ? ('GPS: '+ruaGPS.lat.toFixed(5)+', '+ruaGPS.lon.toFixed(5)) : 'sem GPS na tabela de ruas'
   } else {
     qAct = qAct.eq('municipio', zona)
     qVnd = qVnd.eq('municipio', zona)
