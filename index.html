@@ -8919,10 +8919,30 @@ var _MAPA_CAT = {
 }
 
 function _mapaCategoria(im) {
-  if (im._isVendido)              return 'vendido'
-  if (im.vendedor_tipo==='private') return 'particular'
-  if (im.operacao==='rent')       return 'arrendamento'
+  if (im._isVendido)                return 'vendido'
+  if (im.vendedor_tipo === 'private') return 'particular'
+  if (im.operacao === 'rent')       return 'arrendamento'
   return 'venda'
+}
+
+// Lógica de visibilidade: Venda/Arrendamento controlam a operação, Particular é filtro ortogonal
+function _mapaVisivel(im) {
+  if (im._isVendido) return _mapaToggle.vendido
+  var isSale    = im.operacao === 'sale'
+  var isRent    = im.operacao === 'rent'
+  var isPrivate = im.vendedor_tipo === 'private'
+  var vendaOn   = _mapaToggle.venda
+  var arrOn     = _mapaToggle.arrendamento
+  var partOn    = _mapaToggle.particular
+  if (!vendaOn && !arrOn && !partOn) return false
+  // Quais operações estão activas?
+  var opOk = (isSale && vendaOn) || (isRent && arrOn)
+  if (isPrivate) {
+    if (!partOn) return false          // Particular OFF → ocultar todos os privados
+    if (vendaOn || arrOn) return opOk  // Particular ON + operação filtrada → interseção
+    return true                        // Particular ON sozinho → mostrar todos os privados
+  }
+  return opOk  // Agência: segue a operação
 }
 
 function _mapaGetCoords(im) {
@@ -9026,7 +9046,7 @@ function _mapaAplicar() {
 
   _mapaDados.forEach(function(im) {
     var cat = _mapaCategoria(im)
-    if (!_mapaToggle[cat]) return
+    if (!_mapaVisivel(im)) return
     var loc = _mapaGetCoords(im)
     if (!loc) return
     if (loc.exact) comGPS++; else semGPS++
