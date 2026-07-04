@@ -8698,7 +8698,7 @@ async function mercadoLoadTendencias() {
     </div>
     <div>
       <label style="font-size:.75rem;color:#555;display:block;margin-bottom:4px">Período</label>
-      <select id="tend-periodo" onchange="mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
+      <select id="tend-periodo" onchange="_mercadoPeriodoDias=parseInt(this.value||365);_mapaDados=null;mercadoRenderTend()" style="padding:7px 12px;border:1.5px solid #e0e6f0;border-radius:8px;font-size:.85rem">
         <option value="90">3 meses</option>
         <option value="180">6 meses</option>
         <option value="365" selected>1 ano</option>
@@ -8723,6 +8723,20 @@ async function mercadoLoadTendencias() {
     <div style="font-weight:600;color:#1a3c5e;margin-bottom:12px;font-size:.95rem">Nº de anúncios activos</div>
     <canvas id="tend-chart-n" height="100"></canvas>
   </div>
+  <div style="margin-top:20px;background:#fff;border:1px solid #e0e6f0;border-radius:12px;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+      <div style="font-weight:600;color:#1a3c5e;font-size:.95rem">Subidas e descidas de preço</div>
+      <div style="display:flex;gap:14px;font-size:.75rem">
+        <span><span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;margin-right:4px"></span>Subidas</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-right:4px"></span>Descidas</span>
+      </div>
+    </div>
+    <div style="font-size:.78rem;color:#9ca3af;margin-bottom:12px">Nº de anúncios com alteração de preço nesse dia</div>
+    <canvas id="tend-chart-pd" height="110"></canvas>
+    <div id="tend-pd-empty" style="display:none;color:#9ca3af;font-size:.82rem;padding:16px 0;text-align:center">
+      Dados disponíveis a partir do próximo sync diário
+    </div>
+  </div>
   <div id="tend-tabela" style="margin-top:20px"></div>`
 
   mercadoRenderTend()
@@ -8740,7 +8754,7 @@ async function mercadoRenderTend() {
   var desdeISO = dias < 9999 ? desde.toISOString().split('T')[0] : '2000-01-01'
 
   var query = sb.from('idealista_mercado_stats')
-    .select('data,zona,operacao,property_type,quartos,n_anuncios,preco_m2_medio,preco_m2_mediano,preco_medio,preco_mediano')
+    .select('data,zona,operacao,property_type,quartos,n_anuncios,preco_m2_medio,preco_m2_mediano,preco_medio,preco_mediano,n_subidas,n_descidas')
     .eq('zona', zona)
     .eq('operacao', op)
     .gte('data', desdeISO)
@@ -8767,10 +8781,12 @@ async function mercadoRenderTend() {
       ultimo.preco_mediano ? Math.round(ultimo.preco_mediano).toLocaleString('pt-PT') + ' €' : '—'
   }
 
-  var labels = data.map(function(d){ return d.data.slice(5) }) // MM-DD
-  var m2s    = data.map(function(d){ return d.preco_m2_mediano })
-  var precos = data.map(function(d){ return d.preco_mediano })
-  var ns     = data.map(function(d){ return d.n_anuncios })
+  var labels   = data.map(function(d){ return d.data.slice(5) }) // MM-DD
+  var m2s      = data.map(function(d){ return d.preco_m2_mediano })
+  var precos   = data.map(function(d){ return d.preco_mediano })
+  var ns       = data.map(function(d){ return d.n_anuncios })
+  var subidas  = data.map(function(d){ return d.n_subidas  || null })
+  var descidas = data.map(function(d){ return d.n_descidas ? -d.n_descidas : null })
 
   function _makeChart(id, datasets, yLabel) {
     var ctx = document.getElementById(id)
@@ -8809,6 +8825,36 @@ async function mercadoRenderTend() {
     tension: 0.35, fill: true, pointRadius: data.length > 60 ? 0 : 3
   }])
 
+  // Gráfico subidas/descidas de preço
+  var pdCanvas = document.getElementById('tend-chart-pd')
+  var pdEmpty  = document.getElementById('tend-pd-empty')
+  var hasChanges = subidas.some(function(v){return v}) || descidas.some(function(v){return v})
+  if (pdCanvas && pdEmpty) {
+    if (hasChanges) {
+      pdCanvas.style.display = ''; pdEmpty.style.display = 'none'
+      var pdExist = Chart.getChart(pdCanvas)
+      if (pdExist) pdExist.destroy()
+      new Chart(pdCanvas, {
+        type: 'bar',
+        data: { labels: labels, datasets: [
+          { label: 'Subidas',  data: subidas,  backgroundColor: 'rgba(22,163,74,.75)',  borderColor: '#16a34a', borderWidth: 1 },
+          { label: 'Descidas', data: descidas, backgroundColor: 'rgba(220,38,38,.75)', borderColor: '#dc2626', borderWidth: 1 },
+        ]},
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { stacked: true, ticks: { maxTicksLimit: 12, font: { size: 11 } } },
+            y: { stacked: true, ticks: { font: { size: 11 }, callback: function(v){ return Math.abs(v) } },
+                 title: { display: true, text: 'nº anúncios', font: { size: 11 } } }
+          }
+        }
+      })
+    } else {
+      pdCanvas.style.display = 'none'; pdEmpty.style.display = ''
+    }
+  }
+
   // Tabela resumo por zona (snapshot mais recente)
   if (zona === '__total__') {
     var { data: tbl } = await sb.from('idealista_mercado_stats')
@@ -8844,6 +8890,7 @@ async function mercadoRenderTend() {
 // ── Mapa de Imóveis ───────────────────────────────────────────────────────────
 var _mapaInst = null, _mapaLayerGroup = null, _mapaDados = null
 var _mapaToggle = { venda: true, arrendamento: true, particular: true, vendido: false }
+var _mercadoPeriodoDias = 365
 
 var _ZONE_CENTROIDS = {
   'São Julião da Figueira da Foz': [40.1503, -8.8598],
@@ -8936,14 +8983,33 @@ async function mercadoLoadMapa() {
     }).addTo(_mapaInst)
   }
 
+  // Calcular janela temporal para vendidos (sincronizada com tend-periodo)
+  var _pd = _mercadoPeriodoDias || 365
+  var _pdDesde = new Date()
+  if (_pd < 9999) _pdDesde.setDate(_pdDesde.getDate() - _pd)
+  var _pdISO = _pd < 9999 ? _pdDesde.toISOString().split('T')[0] : '2000-01-01'
+  var _pdLabel = _pd === 9999 ? 'todos os registos' : 'últimos ' + (_pd >= 365 ? Math.round(_pd/365) + ' ano' + (_pd >= 730?'s':'') : _pd + ' dias')
+
   // Carregar todos os dados uma única vez
   var SEL_ACT = 'property_code,titulo,operacao,property_type,quartos,area_m2,preco_atual,preco_m2_atual,municipio,latitude,longitude,thumbnail_storage_url,thumbnail_url,url,agencia_nome_atual,vendedor_nome,vendedor_tipo'
   var SEL_VND = 'property_code,titulo,operacao,property_type,quartos,area_m2,preco_venda,preco_m2_atual,municipio,latitude,longitude,thumbnail_storage_url,thumbnail_url,url,agencia_nome_atual,vendedor_nome,data_venda'
 
   var [rAct, rVnd] = await Promise.all([
     sb.from('idealista_imoveis').select(SEL_ACT).eq('ativo',true).eq('fonte','idealista').limit(1500),
-    sb.from('idealista_imoveis').select(SEL_VND).eq('assumido_vendido',true).eq('fonte','idealista').gt('preco_venda',0).order('data_venda',{ascending:false}).limit(500)
+    sb.from('idealista_imoveis').select(SEL_VND).eq('assumido_vendido',true).eq('fonte','idealista').gt('preco_venda',0).gte('data_venda',_pdISO).order('data_venda',{ascending:false}).limit(500)
   ])
+
+  // Badge de período activo
+  var periodoBadge = document.getElementById('mapa-periodo-badge')
+  if (!periodoBadge) {
+    var badge = document.createElement('div')
+    badge.id = 'mapa-periodo-badge'
+    badge.style.cssText = 'font-size:.76rem;color:#6b7280;padding:6px 0 2px;display:flex;align-items:center;gap:6px'
+    document.getElementById('mapa-filtros').after(badge)
+  }
+  document.getElementById('mapa-periodo-badge').innerHTML =
+    '🗓️ Vendidos: <b style="color:#16a34a">' + _pdLabel + '</b>'
+    + ' · <span style="color:#9ca3af;font-size:.72rem">Período sincronizado com Tendências</span>'
   var activos  = rAct.data || []
   var vendidos = (rVnd.data||[]).map(function(v){ return Object.assign({},v,{_isVendido:true}) })
   _mapaDados = activos.concat(vendidos)
