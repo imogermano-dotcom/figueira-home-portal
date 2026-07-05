@@ -326,10 +326,12 @@ function showTab(p,t,btn){
     const pgSec=document.getElementById('fin-pg-section');
     const refsSec=document.getElementById('fin-refs-section');
     const tvSec=document.getElementById('fin-tv-section');
+    const dbgSec=document.getElementById('fin-debug-section');
     const finTbl=document.getElementById('fin-tables');
     if(pgSec) pgSec.style.display='none';
     if(refsSec) refsSec.style.display='none';
     if(tvSec) tvSec.style.display='none';
+    if(dbgSec) dbgSec.style.display= t==='cascata' ? 'block' : 'none';
     if(finTbl) finTbl.style.display='block';
     if(t==='pg'){ if(pgSec)pgSec.style.display='block'; if(finTbl)finTbl.style.display='none'; }
   }
@@ -881,6 +883,7 @@ function tvInit(){
   document.getElementById('fin-pg-section').style.display='none';
   document.getElementById('fin-refs-section').style.display='none';
   document.getElementById('fin-tv-section').style.display='block';
+  const _dbg=document.getElementById('fin-debug-section'); if(_dbg) _dbg.style.display='none';
   // Desmarcar tabs normais, marcar este botão
   document.querySelectorAll('#tabs-fin .tab').forEach(b=>b.classList.remove('active'));
   event.currentTarget.classList.add('active');
