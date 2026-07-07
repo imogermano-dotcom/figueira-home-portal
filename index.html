@@ -737,6 +737,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
     <button class="pnav-btn" id="tab-meta" onclick="showTab('meta')">📱 META Ads</button>
     <button class="pnav-btn" id="tab-ce" onclick="showTab('ce')">🏡 Certificados CE</button>
+    <button class="pnav-btn" id="tab-qualidade" onclick="showTab('qualidade')">🎯 Qualidade Leads</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
@@ -1935,6 +1936,47 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     </main>
   </div>
 
+  <!-- Qualidade de Leads por Campanha -->
+  <div class="portal-page" id="page-qualidade">
+    <main>
+      <h2 style="margin-bottom:16px">🎯 Qualidade de Leads por Campanha</h2>
+
+      <!-- Tiles de resumo -->
+      <div id="qual-tiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
+
+      <!-- Filtro -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+        <input id="qual-filter" type="text" placeholder="Filtrar campanha…" oninput="qualidadeFilter()"
+          style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--text);font-size:13px;flex:1;min-width:180px">
+        <label style="font-size:13px;color:var(--text-muted)">
+          <input type="checkbox" id="qual-only-alert" onchange="qualidadeFilter()" style="margin-right:4px">
+          Só campanhas com alerta
+        </label>
+        <button onclick="qualidadeLoad()" style="padding:6px 14px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:13px">↻ Actualizar</button>
+      </div>
+
+      <!-- Tabela -->
+      <div style="overflow-x:auto">
+        <table id="qual-table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg-card);text-align:left">
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer" onclick="qualSort('campanha')">Campanha ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('total_leads')">Leads ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_nao_atende')">Não Atende ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_sem_interesse')">Sem Interesse ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_invalido')">Inválido ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('visitas')">Visitas ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('ratio_leads_visita')">Leads/Visita ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);text-align:center">Alertas</th>
+            </tr>
+          </thead>
+          <tbody id="qual-tbody"></tbody>
+        </table>
+      </div>
+      <div id="qual-msg" style="text-align:center;padding:40px;color:var(--text-muted);display:none">A carregar…</div>
+    </main>
+  </div>
+
   <!-- Configuração (admin only) -->
   <div class="portal-page" id="page-config">
     <main>
@@ -2079,7 +2121,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -2094,6 +2136,7 @@ function showTab(name) {
   if (name === 'old-leads') olInit()
   if (name === 'mercado') mercadoInit()
   if (name === 'meta' && !_metaLoaded) metaInit()
+  if (name === 'qualidade' && !_qualLoaded) qualidadeLoad()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -11110,6 +11153,104 @@ function ceRenderPag() {
   }
   if (CE_PAGE < pages) html += '<button onclick="ceSearch(' + (CE_PAGE+1) + ')" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:.82rem">›</button>'
   document.getElementById('ce-pag').innerHTML = html
+}
+
+// ── Qualidade de Leads por Campanha ───────────────────────────────────────────
+var _qualLoaded = false
+var _qualData = []
+var _qualSortKey = 'total_leads'
+var _qualSortAsc = false
+var _qualSummary = null
+
+async function qualidadeLoad() {
+  _qualLoaded = true
+  document.getElementById('qual-msg').style.display = 'block'
+  document.getElementById('qual-msg').textContent = 'A carregar…'
+  document.getElementById('qual-tbody').innerHTML = ''
+  document.getElementById('qual-tiles').innerHTML = ''
+  try {
+    var resp = await fetch(EGO_EDGE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + EGO_ANON },
+      body: JSON.stringify({ mode: 'campaign_quality' })
+    })
+    var json = await resp.json()
+    if (json.error) throw new Error(json.error)
+    _qualData = json.campanhas || []
+    _qualSummary = json.summary || {}
+    document.getElementById('qual-msg').style.display = 'none'
+    qualidadeRenderTiles()
+    qualidadeFilter()
+  } catch(e) {
+    document.getElementById('qual-msg').textContent = 'Erro: ' + e.message
+  }
+}
+
+function qualidadeRenderTiles() {
+  var s = _qualSummary
+  var tiles = [
+    { label: 'Campanhas', value: s.total_campanhas, color: '#3b82f6' },
+    { label: 'Total Leads', value: s.total_leads, color: '#6366f1' },
+    { label: 'Visitas', value: s.total_visitas, color: '#10b981' },
+    { label: 'Leads / Visita', value: s.media_leads_visita != null ? s.media_leads_visita.toFixed(1) : '—', color: '#f59e0b' },
+    { label: 'Alertas Não Atende', value: s.campanhas_alerta_nao_atende, color: s.campanhas_alerta_nao_atende > 0 ? '#ef4444' : '#10b981' },
+    { label: 'Alertas Sem Interesse', value: s.campanhas_alerta_sem_interesse, color: s.campanhas_alerta_sem_interesse > 0 ? '#f97316' : '#10b981' },
+  ]
+  document.getElementById('qual-tiles').innerHTML = tiles.map(function(t) {
+    return '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center">' +
+      '<div style="font-size:22px;font-weight:700;color:' + t.color + '">' + t.value + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">' + t.label + '</div>' +
+      '</div>'
+  }).join('')
+}
+
+function qualSort(key) {
+  if (_qualSortKey === key) { _qualSortAsc = !_qualSortAsc } else { _qualSortKey = key; _qualSortAsc = key === 'campanha' }
+  qualidadeFilter()
+}
+
+function qualidadeFilter() {
+  var term = (document.getElementById('qual-filter').value || '').toLowerCase()
+  var onlyAlert = document.getElementById('qual-only-alert').checked
+  var rows = _qualData.filter(function(r) {
+    if (term && !(r.campanha || '').toLowerCase().includes(term)) return false
+    if (onlyAlert && !r.alerta_nao_atende && !r.alerta_sem_interesse) return false
+    return true
+  })
+  var k = _qualSortKey, asc = _qualSortAsc
+  rows.sort(function(a, b) {
+    var av = a[k], bv = b[k]
+    if (av == null) av = asc ? Infinity : -Infinity
+    if (bv == null) bv = asc ? Infinity : -Infinity
+    if (typeof av === 'string') return asc ? av.localeCompare(bv) : bv.localeCompare(av)
+    return asc ? av - bv : bv - av
+  })
+  var tbody = document.getElementById('qual-tbody')
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text-muted)">Sem dados</td></tr>'; return }
+  var mediaNA = _qualSummary ? _qualSummary.media_global_pct_nao_atende : null
+  var mediaSI = _qualSummary ? _qualSummary.media_global_pct_sem_interesse : null
+  tbody.innerHTML = rows.map(function(r) {
+    var pNA = r.pct_nao_atende != null ? r.pct_nao_atende.toFixed(1) + '%' : '—'
+    var pSI = r.pct_sem_interesse != null ? r.pct_sem_interesse.toFixed(1) + '%' : '—'
+    var pINV = r.pct_invalido != null ? r.pct_invalido.toFixed(1) + '%' : '—'
+    var colorNA = r.alerta_nao_atende ? '#ef4444' : (r.pct_nao_atende != null && mediaNA != null && r.pct_nao_atende < mediaNA ? '#10b981' : 'var(--text)')
+    var colorSI = r.alerta_sem_interesse ? '#f97316' : 'var(--text)'
+    var alertas = ''
+    if (r.alerta_nao_atende) alertas += '<span title="Não Atende acima da média" style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:2px 6px;font-size:11px;margin-right:4px">🔴 Não Atende</span>'
+    if (r.alerta_sem_interesse) alertas += '<span title="Sem Interesse acima da média" style="background:#ffedd5;color:#c2410c;border-radius:4px;padding:2px 6px;font-size:11px">🟡 Sem Interesse</span>'
+    if (!alertas) alertas = '<span style="color:#10b981;font-size:12px">🟢</span>'
+    var lv = r.ratio_leads_visita != null ? r.ratio_leads_visita.toFixed(1) : '—'
+    return '<tr style="border-bottom:1px solid var(--border)">' +
+      '<td style="padding:8px 10px;font-weight:500">' + (r.campanha || '—') + '</td>' +
+      '<td style="padding:8px 10px;text-align:right">' + (r.total_leads || 0) + '</td>' +
+      '<td style="padding:8px 10px;text-align:right;color:' + colorNA + ';font-weight:' + (r.alerta_nao_atende ? '700' : '400') + '">' + pNA + '</td>' +
+      '<td style="padding:8px 10px;text-align:right;color:' + colorSI + ';font-weight:' + (r.alerta_sem_interesse ? '700' : '400') + '">' + pSI + '</td>' +
+      '<td style="padding:8px 10px;text-align:right">' + pINV + '</td>' +
+      '<td style="padding:8px 10px;text-align:right">' + (r.visitas || 0) + '</td>' +
+      '<td style="padding:8px 10px;text-align:right">' + lv + '</td>' +
+      '<td style="padding:8px 10px;text-align:center">' + alertas + '</td>' +
+      '</tr>'
+  }).join('')
 }
 </script>
 
