@@ -1953,6 +1953,10 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           Com leads em aberto
         </label>
         <label style="font-size:13px;color:var(--text-muted);white-space:nowrap">
+          <input type="checkbox" id="qual-only-meta-ativa" onchange="qualidadeFilter()" style="margin-right:4px">
+          Ativas na Meta
+        </label>
+        <label style="font-size:13px;color:var(--text-muted);white-space:nowrap">
           <input type="checkbox" id="qual-only-alert" onchange="qualidadeFilter()" style="margin-right:4px">
           Só com alerta
         </label>
@@ -11345,14 +11349,19 @@ function qualRowHtml(r, isGroup, isChild) {
 }
 
 function qualidadeFilter() {
-  var term       = (document.getElementById('qual-filter').value || '').toLowerCase()
-  var onlyAtivas = document.getElementById('qual-only-ativas').checked
-  var onlyAlert  = document.getElementById('qual-only-alert').checked
+  var term          = (document.getElementById('qual-filter').value || '').toLowerCase()
+  var onlyAtivas    = document.getElementById('qual-only-ativas').checked
+  var onlyMetaAtiva = document.getElementById('qual-only-meta-ativa').checked
+  var onlyAlert     = document.getElementById('qual-only-alert').checked
 
   var rows = _qualData.filter(function(r) {
     if (term && !(r.campanha || '').toLowerCase().includes(term)) return false
     if (onlyAtivas && !(r.leads_ativas > 0)) return false
     if (onlyAlert  && !r.alerta_nao_atende && !r.alerta_sem_interesse) return false
+    if (onlyMetaAtiva) {
+      var p = qualPrefix(r.campanha)
+      if (!p || !_qualMetaAtivas.has(p)) return false
+    }
     return true
   })
 
