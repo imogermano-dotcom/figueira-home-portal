@@ -1944,13 +1944,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <!-- Tiles de resumo -->
       <div id="qual-tiles" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px"></div>
 
-      <!-- Filtro -->
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <!-- Filtros -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
         <input id="qual-filter" type="text" placeholder="Filtrar campanha…" oninput="qualidadeFilter()"
           style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--text);font-size:13px;flex:1;min-width:180px">
-        <label style="font-size:13px;color:var(--text-muted)">
+        <label style="font-size:13px;color:var(--text-muted);white-space:nowrap">
+          <input type="checkbox" id="qual-only-ativas" onchange="qualidadeFilter()" style="margin-right:4px">
+          Só campanhas ativas
+        </label>
+        <label style="font-size:13px;color:var(--text-muted);white-space:nowrap">
           <input type="checkbox" id="qual-only-alert" onchange="qualidadeFilter()" style="margin-right:4px">
-          Só campanhas com alerta
+          Só com alerta
         </label>
         <button onclick="qualidadeLoad()" style="padding:6px 14px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:13px">↻ Actualizar</button>
       </div>
@@ -1960,8 +1964,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <table id="qual-table" style="width:100%;border-collapse:collapse;font-size:13px">
           <thead>
             <tr style="background:var(--bg-card);text-align:left">
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);width:28px"></th>
               <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer" onclick="qualSort('campanha')">Campanha ↕</th>
               <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('total_leads')">Leads ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('leads_ativas')">Ativas ↕</th>
+              <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_nao_contactado')">Não Contact. ↕</th>
               <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_nao_atende')">Não Atende ↕</th>
               <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_sem_interesse')">Sem Interesse ↕</th>
               <th style="padding:8px 10px;border-bottom:2px solid var(--border);cursor:pointer;text-align:right" onclick="qualSort('pct_invalido')">Inválido ↕</th>
@@ -11161,9 +11168,11 @@ var _qualData = []
 var _qualSortKey = 'total_leads'
 var _qualSortAsc = false
 var _qualSummary = null
+var _qualExpanded = new Set()  // prefixos expandidos (ex: "FH2525")
 
 async function qualidadeLoad() {
   _qualLoaded = true
+  _qualExpanded.clear()
   document.getElementById('qual-msg').style.display = 'block'
   document.getElementById('qual-msg').textContent = 'A carregar…'
   document.getElementById('qual-tbody').innerHTML = ''
@@ -11182,6 +11191,7 @@ async function qualidadeLoad() {
     qualidadeRenderTiles()
     qualidadeFilter()
   } catch(e) {
+    document.getElementById('qual-msg').style.display = 'block'
     document.getElementById('qual-msg').textContent = 'Erro: ' + e.message
   }
 }
@@ -11209,14 +11219,112 @@ function qualSort(key) {
   qualidadeFilter()
 }
 
+function qualPrefix(campanha) {
+  var m = (campanha || '').match(/^(FH\d+)/i)
+  return m ? m[1].toUpperCase() : null
+}
+
+function qualToggleGroup(prefix) {
+  if (_qualExpanded.has(prefix)) _qualExpanded.delete(prefix)
+  else _qualExpanded.add(prefix)
+  qualidadeFilter()
+}
+
+function qualMergeRows(rows) {
+  // Agrega várias campanhas do mesmo prefixo numa linha de grupo
+  var result = {}
+  rows.forEach(function(r) {
+    var p = qualPrefix(r.campanha) || '__nogroup__'
+    if (!result[p]) result[p] = { _prefix: p, _children: [], campanha: p + '***',
+      total_leads: 0, leads_ativas: 0, nao_contactado: 0, nao_atende: 0,
+      sem_interesse: 0, invalido: 0, visitas: 0, vendas: 0,
+      alerta_nao_atende: false, alerta_sem_interesse: false }
+    var g = result[p]
+    g._children.push(r)
+    g.total_leads    += r.total_leads    || 0
+    g.leads_ativas   += r.leads_ativas   || 0
+    g.nao_contactado += r.nao_contactado || 0
+    g.nao_atende     += r.nao_atende     || 0
+    g.sem_interesse  += r.sem_interesse  || 0
+    g.invalido       += r.invalido       || 0
+    g.visitas        += r.visitas        || 0
+    g.vendas         += r.vendas         || 0
+    if (r.alerta_nao_atende)   g.alerta_nao_atende   = true
+    if (r.alerta_sem_interesse) g.alerta_sem_interesse = true
+  })
+  // Calcula percentagens agregadas
+  Object.values(result).forEach(function(g) {
+    var t = g.total_leads || 1
+    g.pct_nao_contactado = Math.round(g.nao_contactado / t * 1000) / 10
+    g.pct_nao_atende     = Math.round(g.nao_atende     / t * 1000) / 10
+    g.pct_sem_interesse  = Math.round(g.sem_interesse  / t * 1000) / 10
+    g.pct_invalido       = Math.round(g.invalido       / t * 1000) / 10
+    g.ratio_leads_visita = g.visitas > 0 ? Math.round(g.total_leads / g.visitas * 10) / 10 : null
+    g.ratio_leads_venda  = g.vendas  > 0 ? Math.round(g.total_leads / g.vendas  * 10) / 10 : null
+  })
+  return result
+}
+
+function qualRowHtml(r, isGroup, isChild) {
+  var pNC  = r.pct_nao_contactado != null ? r.pct_nao_contactado.toFixed(1) + '%' : '—'
+  var pNA  = r.pct_nao_atende     != null ? r.pct_nao_atende.toFixed(1)     + '%' : '—'
+  var pSI  = r.pct_sem_interesse  != null ? r.pct_sem_interesse.toFixed(1)  + '%' : '—'
+  var pINV = r.pct_invalido       != null ? r.pct_invalido.toFixed(1)       + '%' : '—'
+  var lv   = r.ratio_leads_visita != null ? r.ratio_leads_visita.toFixed(1) : '—'
+  var mediaNA = _qualSummary ? _qualSummary.media_global_pct_nao_atende : null
+  var colorNA = r.alerta_nao_atende ? '#ef4444' : (r.pct_nao_atende != null && mediaNA != null && r.pct_nao_atende < mediaNA ? '#10b981' : 'var(--text)')
+  var colorSI = r.alerta_sem_interesse ? '#f97316' : 'var(--text)'
+  var alertas = ''
+  if (r.alerta_nao_atende)    alertas += '<span style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:2px 5px;font-size:11px;margin-right:3px">🔴 N.Atende</span>'
+  if (r.alerta_sem_interesse) alertas += '<span style="background:#ffedd5;color:#c2410c;border-radius:4px;padding:2px 5px;font-size:11px">🟡 S.Interesse</span>'
+  if (!alertas) alertas = '<span style="color:#10b981;font-size:12px">🟢</span>'
+
+  var bgStyle = isChild
+    ? 'background:var(--bg-card);opacity:.9;'
+    : isGroup ? 'background:var(--bg-card);font-weight:600;' : ''
+  var expandCell = ''
+  if (isGroup && r._children && r._children.length > 1) {
+    var exp = _qualExpanded.has(r._prefix)
+    expandCell = '<td style="padding:6px 4px 6px 10px;text-align:center">' +
+      '<button onclick="qualToggleGroup(\'' + r._prefix + '\')" style="background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text);padding:1px 5px;font-size:12px">' +
+      (exp ? '−' : '+') + '</button></td>'
+  } else if (isChild) {
+    expandCell = '<td style="padding:6px 4px 6px 22px;color:var(--text-muted)">↳</td>'
+  } else {
+    expandCell = '<td></td>'
+  }
+
+  var nameCell = isGroup && r._children && r._children.length > 1
+    ? '<td style="padding:8px 10px">' + r.campanha + ' <span style="color:var(--text-muted);font-size:11px;font-weight:400">(' + r._children.length + ' variantes)</span></td>'
+    : '<td style="padding:8px 10px">' + (r.campanha || '—') + '</td>'
+
+  return '<tr style="border-bottom:1px solid var(--border);' + bgStyle + '">' +
+    expandCell +
+    nameCell +
+    '<td style="padding:8px 10px;text-align:right">' + (r.total_leads || 0) + '</td>' +
+    '<td style="padding:8px 10px;text-align:right;color:' + (r.leads_ativas > 0 ? '#10b981' : 'var(--text-muted)') + '">' + (r.leads_ativas || 0) + '</td>' +
+    '<td style="padding:8px 10px;text-align:right;color:' + (r.nao_contactado > 0 ? '#f59e0b' : 'var(--text-muted)') + '">' + pNC + '</td>' +
+    '<td style="padding:8px 10px;text-align:right;color:' + colorNA + ';font-weight:' + (r.alerta_nao_atende ? '700' : '400') + '">' + pNA + '</td>' +
+    '<td style="padding:8px 10px;text-align:right;color:' + colorSI + ';font-weight:' + (r.alerta_sem_interesse ? '700' : '400') + '">' + pSI + '</td>' +
+    '<td style="padding:8px 10px;text-align:right">' + pINV + '</td>' +
+    '<td style="padding:8px 10px;text-align:right">' + (r.visitas || 0) + '</td>' +
+    '<td style="padding:8px 10px;text-align:right">' + lv + '</td>' +
+    '<td style="padding:8px 10px;text-align:center">' + alertas + '</td>' +
+    '</tr>'
+}
+
 function qualidadeFilter() {
-  var term = (document.getElementById('qual-filter').value || '').toLowerCase()
-  var onlyAlert = document.getElementById('qual-only-alert').checked
+  var term       = (document.getElementById('qual-filter').value || '').toLowerCase()
+  var onlyAtivas = document.getElementById('qual-only-ativas').checked
+  var onlyAlert  = document.getElementById('qual-only-alert').checked
+
   var rows = _qualData.filter(function(r) {
     if (term && !(r.campanha || '').toLowerCase().includes(term)) return false
-    if (onlyAlert && !r.alerta_nao_atende && !r.alerta_sem_interesse) return false
+    if (onlyAtivas && !(r.leads_ativas > 0)) return false
+    if (onlyAlert  && !r.alerta_nao_atende && !r.alerta_sem_interesse) return false
     return true
   })
+
   var k = _qualSortKey, asc = _qualSortAsc
   rows.sort(function(a, b) {
     var av = a[k], bv = b[k]
@@ -11225,32 +11333,50 @@ function qualidadeFilter() {
     if (typeof av === 'string') return asc ? av.localeCompare(bv) : bv.localeCompare(av)
     return asc ? av - bv : bv - av
   })
+
   var tbody = document.getElementById('qual-tbody')
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text-muted)">Sem dados</td></tr>'; return }
-  var mediaNA = _qualSummary ? _qualSummary.media_global_pct_nao_atende : null
-  var mediaSI = _qualSummary ? _qualSummary.media_global_pct_sem_interesse : null
-  tbody.innerHTML = rows.map(function(r) {
-    var pNA = r.pct_nao_atende != null ? r.pct_nao_atende.toFixed(1) + '%' : '—'
-    var pSI = r.pct_sem_interesse != null ? r.pct_sem_interesse.toFixed(1) + '%' : '—'
-    var pINV = r.pct_invalido != null ? r.pct_invalido.toFixed(1) + '%' : '—'
-    var colorNA = r.alerta_nao_atende ? '#ef4444' : (r.pct_nao_atende != null && mediaNA != null && r.pct_nao_atende < mediaNA ? '#10b981' : 'var(--text)')
-    var colorSI = r.alerta_sem_interesse ? '#f97316' : 'var(--text)'
-    var alertas = ''
-    if (r.alerta_nao_atende) alertas += '<span title="Não Atende acima da média" style="background:#fee2e2;color:#b91c1c;border-radius:4px;padding:2px 6px;font-size:11px;margin-right:4px">🔴 Não Atende</span>'
-    if (r.alerta_sem_interesse) alertas += '<span title="Sem Interesse acima da média" style="background:#ffedd5;color:#c2410c;border-radius:4px;padding:2px 6px;font-size:11px">🟡 Sem Interesse</span>'
-    if (!alertas) alertas = '<span style="color:#10b981;font-size:12px">🟢</span>'
-    var lv = r.ratio_leads_visita != null ? r.ratio_leads_visita.toFixed(1) : '—'
-    return '<tr style="border-bottom:1px solid var(--border)">' +
-      '<td style="padding:8px 10px;font-weight:500">' + (r.campanha || '—') + '</td>' +
-      '<td style="padding:8px 10px;text-align:right">' + (r.total_leads || 0) + '</td>' +
-      '<td style="padding:8px 10px;text-align:right;color:' + colorNA + ';font-weight:' + (r.alerta_nao_atende ? '700' : '400') + '">' + pNA + '</td>' +
-      '<td style="padding:8px 10px;text-align:right;color:' + colorSI + ';font-weight:' + (r.alerta_sem_interesse ? '700' : '400') + '">' + pSI + '</td>' +
-      '<td style="padding:8px 10px;text-align:right">' + pINV + '</td>' +
-      '<td style="padding:8px 10px;text-align:right">' + (r.visitas || 0) + '</td>' +
-      '<td style="padding:8px 10px;text-align:right">' + lv + '</td>' +
-      '<td style="padding:8px 10px;text-align:center">' + alertas + '</td>' +
-      '</tr>'
-  }).join('')
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:24px;text-align:center;color:var(--text-muted)">Sem dados</td></tr>'
+    return
+  }
+
+  // Agrupar por prefixo FH
+  var grupos = qualMergeRows(rows)
+  var prefixes = Object.keys(grupos)
+
+  // Ordenar grupos pelo mesmo critério (usando valor do grupo agregado)
+  prefixes.sort(function(pa, pb) {
+    var a = grupos[pa], b = grupos[pb]
+    var av = a[k], bv = b[k]
+    if (av == null) av = asc ? Infinity : -Infinity
+    if (bv == null) bv = asc ? Infinity : -Infinity
+    if (typeof av === 'string') return asc ? av.localeCompare(bv) : bv.localeCompare(av)
+    return asc ? av - bv : bv - av
+  })
+
+  var html = ''
+  prefixes.forEach(function(p) {
+    var g = grupos[p]
+    if (g._children.length === 1) {
+      // Só uma campanha neste prefixo: linha simples, sem botão de expand
+      html += qualRowHtml(g._children[0], false, false)
+    } else {
+      // Grupo com várias variantes
+      html += qualRowHtml(g, true, false)
+      if (_qualExpanded.has(p)) {
+        // Ordenar filhos pelo mesmo critério
+        var children = g._children.slice().sort(function(a, b) {
+          var av = a[k], bv = b[k]
+          if (av == null) av = asc ? Infinity : -Infinity
+          if (bv == null) bv = asc ? Infinity : -Infinity
+          if (typeof av === 'string') return asc ? av.localeCompare(bv) : bv.localeCompare(av)
+          return asc ? av - bv : bv - av
+        })
+        children.forEach(function(c) { html += qualRowHtml(c, false, true) })
+      }
+    }
+  })
+  tbody.innerHTML = html
 }
 </script>
 
