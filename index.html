@@ -1950,7 +1950,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);color:var(--text);font-size:13px;flex:1;min-width:180px">
         <label style="font-size:13px;color:var(--text-muted);white-space:nowrap">
           <input type="checkbox" id="qual-only-ativas" onchange="qualidadeFilter()" style="margin-right:4px">
-          Só campanhas ativas
+          Com leads em aberto
         </label>
         <label style="font-size:13px;color:var(--text-muted);white-space:nowrap">
           <input type="checkbox" id="qual-only-alert" onchange="qualidadeFilter()" style="margin-right:4px">
@@ -11220,7 +11220,7 @@ function qualSort(key) {
 }
 
 function qualPrefix(campanha) {
-  var m = (campanha || '').match(/^(FH\d+)/i)
+  var m = (campanha || '').match(/(FH\d+)/i)
   return m ? m[1].toUpperCase() : null
 }
 
