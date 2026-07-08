@@ -11168,25 +11168,46 @@ var _qualData = []
 var _qualSortKey = 'total_leads'
 var _qualSortAsc = false
 var _qualSummary = null
-var _qualExpanded = new Set()  // prefixos expandidos (ex: "FH2525")
+var _qualExpanded = new Set()       // prefixos expandidos (ex: "FH2525")
+var _qualMetaAtivas = new Set()     // prefixos FH com campanha ACTIVE na Meta
+var _qualMetaPausadas = new Set()   // prefixos FH com campanha PAUSED na Meta
 
 async function qualidadeLoad() {
   _qualLoaded = true
   _qualExpanded.clear()
+  _qualMetaAtivas.clear()
+  _qualMetaPausadas.clear()
   document.getElementById('qual-msg').style.display = 'block'
   document.getElementById('qual-msg').textContent = 'A carregar…'
   document.getElementById('qual-tbody').innerHTML = ''
   document.getElementById('qual-tiles').innerHTML = ''
   try {
-    var resp = await fetch(EGO_EDGE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + EGO_ANON },
-      body: JSON.stringify({ mode: 'campaign_quality' })
+    var [respQual, respMeta] = await Promise.all([
+      fetch(EGO_EDGE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + EGO_ANON },
+        body: JSON.stringify({ mode: 'campaign_quality' })
+      }),
+      fetch(META_FN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'active_campaigns' })
+      })
+    ])
+    var [jsonQual, jsonMeta] = await Promise.all([respQual.json(), respMeta.json()])
+    if (jsonQual.error) throw new Error(jsonQual.error)
+
+    // Indexar campanhas Meta por prefixo FH
+    ;(jsonMeta.campaigns || []).forEach(function(c) {
+      var m = (c.name || '').match(/(FH\d+)/i)
+      if (!m) return
+      var p = m[1].toUpperCase()
+      if (c.effective_status === 'ACTIVE') _qualMetaAtivas.add(p)
+      else _qualMetaPausadas.add(p)
     })
-    var json = await resp.json()
-    if (json.error) throw new Error(json.error)
-    _qualData = json.campanhas || []
-    _qualSummary = json.summary || {}
+
+    _qualData = jsonQual.campanhas || []
+    _qualSummary = jsonQual.summary || {}
     document.getElementById('qual-msg').style.display = 'none'
     qualidadeRenderTiles()
     qualidadeFilter()
@@ -11294,9 +11315,19 @@ function qualRowHtml(r, isGroup, isChild) {
     expandCell = '<td></td>'
   }
 
+  // Badge Meta: usa prefixo para grupos, qualPrefix para linhas simples
+  var fhKey = isGroup ? r._prefix : qualPrefix(r.campanha)
+  var metaBadge = ''
+  if (fhKey) {
+    if (_qualMetaAtivas.has(fhKey))
+      metaBadge = ' <span title="Campanha activa na Meta" style="background:#dcfce7;color:#166534;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600">META ▶</span>'
+    else if (_qualMetaPausadas.has(fhKey))
+      metaBadge = ' <span title="Campanha pausada na Meta" style="background:#f3f4f6;color:#6b7280;border-radius:4px;padding:1px 5px;font-size:10px">META ⏸</span>'
+  }
+
   var nameCell = isGroup && r._children && r._children.length > 1
-    ? '<td style="padding:8px 10px">' + r.campanha + ' <span style="color:var(--text-muted);font-size:11px;font-weight:400">(' + r._children.length + ' variantes)</span></td>'
-    : '<td style="padding:8px 10px">' + (r.campanha || '—') + '</td>'
+    ? '<td style="padding:8px 10px">' + r.campanha + metaBadge + ' <span style="color:var(--text-muted);font-size:11px;font-weight:400">(' + r._children.length + ' variantes)</span></td>'
+    : '<td style="padding:8px 10px">' + (r.campanha || '—') + metaBadge + '</td>'
 
   return '<tr style="border-bottom:1px solid var(--border);' + bgStyle + '">' +
     expandCell +
