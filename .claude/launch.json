@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portal",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "7890", "--directory", "C:/Users/MiguelGermano/OneDrive - MGGroup/Documents/claude/Projetos/eGO Scraping/portal"],
+      "port": 7890
+    }
+  ]
+}
