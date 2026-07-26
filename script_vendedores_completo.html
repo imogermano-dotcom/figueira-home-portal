@@ -385,15 +385,15 @@ const STEPS = {
         <div class="form-block-title">📋 Registar</div>
         <div class="field"><label class="field-label">Motivo(s) de venda</label>
           <div class="checkbox-group" id="motivos">
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Habitação própria permanente</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Férias / uso sazonal</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Arrendamento / investimento</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Herança</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Divórcio / separação</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Mudança de cidade</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Compra de outro imóvel dependente desta venda</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Dificuldades financeiras</label>
-            <label class="cb-item" onclick="toggleCb(this,'motivos_venda')"><input type="checkbox"><div class="cb-box"></div>Outro</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Habitação própria permanente</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Férias / uso sazonal</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Arrendamento / investimento</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Herança</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Divórcio / separação</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Mudança de cidade</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Compra de outro imóvel dependente desta venda</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Dificuldades financeiras</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Outro</label>
           </div>
         </div>
         <div class="field" style="margin-top:10px"><label class="field-label">Urgência</label>
@@ -677,7 +677,8 @@ function choose(stepId, choiceId, nextId) {
 // ── FORM HELPERS ──
 function save(key, val) { F[key] = val; autoSave(); }
 
-function toggleCb(el, key) {
+function toggleCb(el, key, ev) {
+  if (ev) ev.preventDefault();
   el.classList.toggle('checked');
   el.querySelector('input').checked = el.classList.contains('checked');
   const vals = [];
