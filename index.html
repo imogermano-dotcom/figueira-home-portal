@@ -2073,12 +2073,17 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </div>
       </div>
 
+      <!-- Estatísticas -->
+      <div id="ang-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+
       <!-- Filtros -->
       <div class="ang-filters" id="ang-filters">
         <select id="ang-f-estado" onchange="angFilter()">
           <option value="">Todos os estados</option>
+          <option value="_nao_contactadas" selected>Não contactadas</option>
           <option value="nova">Nova</option>
           <option value="atribuida">Atribuída</option>
+          <option value="nao_atende">Não atende</option>
           <option value="contactada">Contactada</option>
           <option value="retorno_agendado">Retorno agendado</option>
           <option value="avaliacao_marcada">Avaliação marcada</option>
@@ -2092,6 +2097,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <option value="">Todos os responsáveis</option>
         </select>
         <input type="text" id="ang-f-nome" placeholder="Pesquisar nome/telefone…" oninput="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none;min-width:180px">
+        <input type="date" id="ang-f-desde" onchange="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem" title="Desde">
+        <input type="date" id="ang-f-ate" onchange="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem" title="Até">
       </div>
 
       <!-- Bulk bar (admin) -->
@@ -11670,14 +11677,23 @@ function angFilter() {
   var estado = document.getElementById('ang-f-estado').value
   var resp = document.getElementById('ang-f-resp').value
   var busca = document.getElementById('ang-f-nome').value.toLowerCase().trim()
+  var desde = document.getElementById('ang-f-desde').value
+  var ate = document.getElementById('ang-f-ate').value
 
   _angFiltered = _angLeads.filter(function(l) {
-    if (estado && l.estado !== estado) return false
+    if (estado === '_nao_contactadas') {
+      if (['nova','atribuida','nao_atende'].indexOf(l.estado) < 0) return false
+    } else if (estado && l.estado !== estado) return false
     if (resp && l.responsavel !== resp) return false
     if (busca) {
       var c = l.contactos || {}
       var haystack = ((c.nome || l.contacto_nome) + ' ' + (c.telefone || '') + ' ' + (c.telemovel || '') + ' ' + (c.email || '')).toLowerCase()
       if (haystack.indexOf(busca) < 0) return false
+    }
+    if (desde || ate) {
+      var dt = (l.created_at || '').slice(0, 10)
+      if (desde && dt < desde) return false
+      if (ate && dt > ate) return false
     }
     return true
   })
@@ -11685,7 +11701,29 @@ function angFilter() {
   _angSelected = new Set()
   document.getElementById('ang-select-all').checked = false
   angUpdateSelCount()
+  angRenderStats()
   angRender()
+}
+
+function angRenderStats() {
+  var el = document.getElementById('ang-stats')
+  if (!el) return
+  var counts = {}
+  _angLeads.forEach(function(l) { counts[l.estado] = (counts[l.estado] || 0) + 1 })
+  var items = [
+    {k:'_total', label:'Total', color:'#6b7280', count:_angLeads.length},
+    {k:'nova', label:'Novas', color:'#8b5cf6'},
+    {k:'atribuida', label:'Atribuídas', color:'#2563eb'},
+    {k:'nao_atende', label:'Não atende', color:'#dc2626'},
+    {k:'contactada', label:'Contactadas', color:'#0891b2'},
+    {k:'avaliacao_marcada', label:'Avaliação', color:'#d97706'},
+    {k:'reuniao_marcada', label:'Reunião', color:'#059669'},
+    {k:'angariada', label:'Angariadas', color:'#16a34a'}
+  ]
+  el.innerHTML = items.map(function(i) {
+    var n = i.count !== undefined ? i.count : (counts[i.k] || 0)
+    return '<span style="background:' + i.color + '1a;color:' + i.color + ';border:1px solid ' + i.color + '40;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600">' + i.label + ' ' + n + '</span>'
+  }).join('')
 }
 
 function angRender() {
