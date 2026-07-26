@@ -2073,13 +2073,18 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </div>
       </div>
 
+      <!-- Estatísticas -->
+      <div id="ang-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+
       <!-- Filtros -->
       <div class="ang-filters" id="ang-filters">
         <select id="ang-f-estado" onchange="angFilter()">
           <option value="">Todos os estados</option>
+          <option value="_nao_contactadas" selected>Não contactadas</option>
           <option value="nova">Nova</option>
           <option value="atribuida">Atribuída</option>
           <option value="contactada">Contactada</option>
+          <option value="nao_atende">Não atende</option>
           <option value="retorno_agendado">Retorno agendado</option>
           <option value="avaliacao_marcada">Avaliação marcada</option>
           <option value="reuniao_marcada">Reunião marcada</option>
@@ -2092,6 +2097,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <option value="">Todos os responsáveis</option>
         </select>
         <input type="text" id="ang-f-nome" placeholder="Pesquisar nome/telefone…" oninput="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none;min-width:180px">
+        <input type="date" id="ang-f-desde" onchange="angFilter()" title="Desde" style="padding:6px 8px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem">
+        <input type="date" id="ang-f-ate" onchange="angFilter()" title="Até" style="padding:6px 8px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem">
       </div>
 
       <!-- Bulk bar (admin) -->
@@ -11670,10 +11677,23 @@ function angFilter() {
   var estado = document.getElementById('ang-f-estado').value
   var resp = document.getElementById('ang-f-resp').value
   var busca = document.getElementById('ang-f-nome').value.toLowerCase().trim()
+  var desde = document.getElementById('ang-f-desde').value
+  var ate = document.getElementById('ang-f-ate').value
+  var naoContactadas = ['nova','atribuida','nao_atende']
 
   _angFiltered = _angLeads.filter(function(l) {
-    if (estado && l.estado !== estado) return false
+    if (estado === '_nao_contactadas') {
+      if (naoContactadas.indexOf(l.estado) < 0) return false
+    } else if (estado && l.estado !== estado) return false
     if (resp && l.responsavel !== resp) return false
+    if (desde) {
+      var ld = (l.meta_created_at || l.created_at || '').substring(0,10)
+      if (ld < desde) return false
+    }
+    if (ate) {
+      var la = (l.meta_created_at || l.created_at || '').substring(0,10)
+      if (la > ate) return false
+    }
     if (busca) {
       var c = l.contactos || {}
       var haystack = ((c.nome || l.contacto_nome) + ' ' + (c.telefone || '') + ' ' + (c.telemovel || '') + ' ' + (c.email || '')).toLowerCase()
@@ -11685,6 +11705,7 @@ function angFilter() {
   _angSelected = new Set()
   document.getElementById('ang-select-all').checked = false
   angUpdateSelCount()
+  angRenderStats()
   angRender()
 }
 
@@ -11907,6 +11928,35 @@ async function angBulkAssign() {
   document.getElementById('ang-bulk-resp').value = ''
   angUpdateSelCount()
   angFilter()
+}
+
+function angRenderStats() {
+  var el = document.getElementById('ang-stats')
+  if (!el) return
+  var counts = {}
+  _angLeads.forEach(function(l) {
+    var e = l.estado || 'nova'
+    counts[e] = (counts[e] || 0) + 1
+  })
+  var total = _angLeads.length
+  var stats = [
+    {key:'_total',label:'Total',count:total,bg:'#f1f5f9',color:'#1e293b',border:'#cbd5e1'},
+    {key:'nova',label:'Novas',bg:'#dbeafe',color:'#1e40af',border:'#93c5fd'},
+    {key:'atribuida',label:'Atribuídas',bg:'#e0e7ff',color:'#3730a3',border:'#a5b4fc'},
+    {key:'nao_atende',label:'Não atende',bg:'#fef2f2',color:'#dc2626',border:'#fca5a5'},
+    {key:'contactada',label:'Contactadas',bg:'#fef3c7',color:'#92400e',border:'#fcd34d'},
+    {key:'avaliacao_marcada',label:'Avaliação',bg:'#d1fae5',color:'#047857',border:'#6ee7b7'},
+    {key:'reuniao_marcada',label:'Reunião',bg:'#d1fae5',color:'#047857',border:'#6ee7b7'},
+    {key:'angariada',label:'Angariadas',bg:'#d1fae5',color:'#047857',border:'#6ee7b7'}
+  ]
+  var html = ''
+  stats.forEach(function(s) {
+    var c = s.key === '_total' ? total : (counts[s.key] || 0)
+    if (c === 0 && s.key !== '_total') return
+    html += '<div style="padding:6px 12px;border-radius:8px;background:' + s.bg + ';border:1px solid ' + s.border + ';font-size:.78rem;color:' + s.color + ';font-weight:600;display:flex;gap:4px;align-items:center">'
+    html += '<span style="font-size:1.1rem;font-weight:800">' + c + '</span> ' + s.label + '</div>'
+  })
+  el.innerHTML = html
 }
 
 function angReagendar(leadId) {
