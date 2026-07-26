@@ -11740,6 +11740,13 @@ function angRender() {
       if (l.retorno_hora) html += ' ' + l.retorno_hora.substring(0,5)
       html += '</div>'
     }
+    if (l.reuniao_data) {
+      var rD = new Date(l.reuniao_data)
+      html += '<div style="margin-top:4px;font-size:.8rem;color:#15803d;font-weight:600">🤝 Reunião: ' + rD.toLocaleDateString('pt-PT')
+      if (l.reuniao_hora) html += ' às ' + l.reuniao_hora.substring(0,5)
+      if (l.reuniao_local) html += ' — ' + esc(l.reuniao_local)
+      html += '</div>'
+    }
     if (l.notas) html += '<div style="margin-top:4px;font-size:.78rem;color:#6b7280;font-style:italic">' + esc(l.notas).substring(0, 120) + '</div>'
     html += '</div>'
 
@@ -11758,7 +11765,7 @@ function angRender() {
       })
       html += '</select>'
     }
-    if (l.ficha) html += '<span style="font-size:.72rem;color:#15803d;font-weight:600">✓ Ficha</span>'
+    if (l.ficha) html += '<button onclick="angViewFicha(\'' + l.id + '\')" style="padding:3px 10px;border:1.5px solid #7c3aed;border-radius:6px;background:#f5f3ff;color:#7c3aed;font-size:.74rem;font-weight:600;cursor:pointer">📋 Ver Ficha</button>'
     html += '</div></div></div>'
   })
 
@@ -11782,6 +11789,40 @@ function angEstadoLabel(e) {
 function angTagClass(e) {
   var map = {nova:'ang-tag-nova',atribuida:'ang-tag-atribuida',contactada:'ang-tag-contactada',retorno_agendado:'ang-tag-retorno',avaliacao_marcada:'ang-tag-avaliacao',reuniao_marcada:'ang-tag-reuniao',follow_up:'ang-tag-follow',sem_interesse:'ang-tag-sem-interesse',fora_area:'ang-tag-fora',angariada:'ang-tag-angariada'}
   return map[e] || 'ang-tag-nova'
+}
+
+function angViewFicha(leadId) {
+  var lead = _angLeads.find(function(l) { return l.id === leadId })
+  if (!lead || !lead.ficha) { alert('Sem ficha registada.'); return }
+  var f = lead.ficha
+  var c = lead.contactos || {}
+  var labels = {
+    tipo_imovel:'Tipo imóvel',tipologia:'Tipologia',freguesia:'Freguesia',rua:'Rua/Morada',
+    motivos_venda:'Motivos de venda',urgencia:'Urgência',hipoteca:'Hipoteca',ocupacao:'Ocupação',
+    documentacao:'Documentação',expectativa_preco:'Expectativa de preço',observacoes:'Observações',
+    outcome:'Resultado',data_reuniao:'Data reunião',hora_reuniao:'Hora reunião',local:'Local reunião',
+    data_retorno:'Data retorno',hora_retorno:'Hora retorno',consultor:'Consultor'
+  }
+  var html = '<div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">'
+  html += '<div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
+  html += '<h3 style="margin:0;font-size:1.1rem;color:#1a3c5e">📋 Ficha — ' + esc(c.nome || lead.contacto_nome || '—') + '</h3>'
+  html += '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="border:none;background:none;font-size:1.3rem;cursor:pointer;color:#6b7280">✕</button>'
+  html += '</div>'
+  html += '<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+  Object.keys(labels).forEach(function(k) {
+    if (f[k] && f[k] !== '') {
+      html += '<tr><td style="padding:6px 10px;font-weight:600;color:#4b5563;white-space:nowrap;vertical-align:top;border-bottom:1px solid #f1f5f9">' + labels[k] + '</td>'
+      html += '<td style="padding:6px 10px;color:#1e293b;border-bottom:1px solid #f1f5f9">' + esc(f[k]) + '</td></tr>'
+    }
+  })
+  var extra = Object.keys(f).filter(function(k) { return !labels[k] && f[k] && f[k] !== '' })
+  extra.forEach(function(k) {
+    html += '<tr><td style="padding:6px 10px;font-weight:600;color:#4b5563;white-space:nowrap;vertical-align:top;border-bottom:1px solid #f1f5f9">' + esc(k) + '</td>'
+    html += '<td style="padding:6px 10px;color:#1e293b;border-bottom:1px solid #f1f5f9">' + esc(String(f[k])) + '</td></tr>'
+  })
+  html += '</table></div></div>'
+  document.body.insertAdjacentHTML('beforeend', html)
 }
 
 function angToggle(id, checked) {
