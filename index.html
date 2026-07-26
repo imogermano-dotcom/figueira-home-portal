@@ -151,6 +151,42 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .meta-status-active{display:inline-block;background:#d1fae5;color:#065f46;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid #a7f3d0}
 .meta-status-paused{display:inline-block;background:#f3f4f6;color:#6b7280;font-size:.68rem;font-weight:600;padding:2px 7px;border-radius:10px;border:1px solid #e5e7eb}
 
+/* Angariação */
+.ang-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.ang-filters select,.ang-filters input{padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none;background:#fff}
+.ang-card{background:#fff;border:1.5px solid #e0e6f0;border-radius:10px;padding:14px 16px;margin-bottom:10px;transition:box-shadow .15s;position:relative}
+.ang-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.07)}
+.ang-card.selected{border-color:#3b82f6;background:#f0f7ff}
+.ang-card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.ang-nome{font-size:.95rem;font-weight:700;color:#111827}
+.ang-tel{font-size:.82rem;color:#2d6a9f;font-weight:600}
+.ang-email{font-size:.78rem;color:#6b7280}
+.ang-tags{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.ang-tag{padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:600}
+.ang-tag-nova{background:#dbeafe;color:#1e40af}
+.ang-tag-atribuida{background:#fef3c7;color:#92400e}
+.ang-tag-contactada{background:#d1fae5;color:#065f46}
+.ang-tag-retorno{background:#fce7f3;color:#9d174d}
+.ang-tag-avaliacao{background:#ede9fe;color:#5b21b6}
+.ang-tag-reuniao{background:#cffafe;color:#155e75}
+.ang-tag-follow{background:#fef9c3;color:#854d0e}
+.ang-tag-sem-interesse{background:#f3f4f6;color:#6b7280}
+.ang-tag-fora{background:#f3f4f6;color:#9ca3af}
+.ang-tag-angariada{background:#d1fae5;color:#047857;border:1px solid #6ee7b7}
+.ang-tag-resp{background:#fef3c7;color:#92400e}
+.ang-card-body{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.ang-card-info{flex:1;min-width:200px;font-size:.8rem;color:#4b5563;line-height:1.6}
+.ang-card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ang-btn{padding:5px 12px;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d5db;background:#fff;color:#374151;transition:all .15s}
+.ang-btn:hover{background:#f0f4f8}
+.ang-btn-primary{background:#1a3c5e;color:#fff;border-color:#1a3c5e}
+.ang-btn-primary:hover{background:#2d6a9f;border-color:#2d6a9f}
+.ang-btn-success{background:#15803d;color:#fff;border-color:#15803d}
+.ang-btn-success:hover{background:#166534}
+.ang-check{position:absolute;top:14px;left:14px;width:18px;height:18px;cursor:pointer}
+.ang-card.has-check{padding-left:40px}
+.ang-retorno-badge{display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:#b91c1c;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #fecaca}
+
 /* KPI iframe */
 #page-kpi{flex-direction:column}
 #kpi-frame{flex:1;border:none;width:100%;min-height:calc(100vh - 104px)}
@@ -738,6 +774,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-meta" onclick="showTab('meta')">📱 META Ads</button>
     <button class="pnav-btn" id="tab-ce" onclick="showTab('ce')">🏡 Certificados CE</button>
     <button class="pnav-btn" id="tab-qualidade" onclick="showTab('qualidade')">🎯 Qualidade Leads</button>
+    <button class="pnav-btn" id="tab-angariacao" onclick="showTab('angariacao')">🏠 Angariação</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
@@ -1921,6 +1958,34 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button onclick="ceSearch()" style="padding:9px 22px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer">🔍 Pesquisar</button>
           <button onclick="ceClear()" style="padding:9px 16px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;font-size:.85rem;cursor:pointer">Limpar</button>
           <span id="ce-count" style="font-size:.78rem;color:#9ca3af;margin-left:4px"></span>
+          <button id="ce-btn-atualizar" onclick="ceModalAtualizar()" style="display:none;margin-left:auto;padding:9px 16px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer">⬆ Atualizar CEs</button>
+        </div>
+      </div>
+
+      <!-- Modal Atualizar CEs -->
+      <div id="ce-modal-atualizar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.2);padding:28px 32px;max-width:520px;width:90%;position:relative">
+          <button onclick="document.getElementById('ce-modal-atualizar').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#9ca3af">✕</button>
+          <h3 style="font-size:1rem;font-weight:700;color:#1a3c5e;margin:0 0 6px">⬆ Atualizar Certificados Energéticos</h3>
+          <p style="font-size:.82rem;color:#6b7280;margin:0 0 20px">Corre um dos comandos abaixo no terminal (pasta do projeto).</p>
+
+          <div style="margin-bottom:14px">
+            <div style="font-size:.75rem;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Só sincronizar com o portal (rápido)</div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:.82rem;color:#1e293b;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span>python sync_ce_supabase.py</span>
+              <button onclick="ceModalCopy('python sync_ce_supabase.py',this)" style="flex-shrink:0;padding:3px 10px;background:#e8eef6;border:none;border-radius:6px;font-size:.75rem;color:#1a3c5e;cursor:pointer;font-weight:600">Copiar</button>
+            </div>
+            <div style="font-size:.73rem;color:#9ca3af;margin-top:4px">📂 cd "C:\Users\amger\OneDrive - MGGroup\Documents\importacao de CE"</div>
+          </div>
+
+          <div>
+            <div style="font-size:.75rem;font-weight:700;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Pipeline completo (scraping + classificação + sync)</div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:.82rem;color:#1e293b;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span>python executar_tudo.py</span>
+              <button onclick="ceModalCopy('python executar_tudo.py',this)" style="flex-shrink:0;padding:3px 10px;background:#e8eef6;border:none;border-radius:6px;font-size:.75rem;color:#1a3c5e;cursor:pointer;font-weight:600">Copiar</button>
+            </div>
+            <div style="font-size:.73rem;color:#9ca3af;margin-top:4px">⚠ Abre o Chrome automaticamente. Demora ~30 min para 100 páginas.</div>
+          </div>
         </div>
       </div>
 
@@ -1985,6 +2050,55 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         </table>
       </div>
       <div id="qual-msg" style="text-align:center;padding:40px;color:var(--text-muted);display:none">A carregar…</div>
+    </main>
+  </div>
+
+  <!-- Angariação Leads -->
+  <div class="portal-page" id="page-angariacao">
+    <main style="flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <h2 style="font-size:1.1rem;font-weight:700;color:#1a3c5e;margin:0">🏠 Leads Angariação (Meta)</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="ang-count" style="font-size:.8rem;color:#6b7280"></span>
+          <button onclick="angLoad()" style="padding:6px 14px;border-radius:6px;background:#1a3c5e;color:#fff;border:none;cursor:pointer;font-size:.82rem;font-weight:600">↻ Atualizar</button>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="ang-filters" id="ang-filters">
+        <select id="ang-f-estado" onchange="angFilter()">
+          <option value="">Todos os estados</option>
+          <option value="nova">Nova</option>
+          <option value="atribuida">Atribuída</option>
+          <option value="contactada">Contactada</option>
+          <option value="retorno_agendado">Retorno agendado</option>
+          <option value="avaliacao_marcada">Avaliação marcada</option>
+          <option value="reuniao_marcada">Reunião marcada</option>
+          <option value="follow_up">Follow-up</option>
+          <option value="sem_interesse">Sem interesse</option>
+          <option value="fora_area">Fora de área</option>
+          <option value="angariada">Angariada</option>
+        </select>
+        <select id="ang-f-resp" onchange="angFilter()">
+          <option value="">Todos os responsáveis</option>
+        </select>
+        <input type="text" id="ang-f-nome" placeholder="Pesquisar nome/telefone…" oninput="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none;min-width:180px">
+      </div>
+
+      <!-- Bulk bar (admin) -->
+      <div id="ang-bulk-bar" style="display:none;background:#e8f0fb;border:1.5px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:14px;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-size:.82rem;font-weight:600;color:#1a3c5e"><input type="checkbox" id="ang-select-all" onchange="angToggleAll(this.checked)" style="margin-right:6px">Selecionar todos</label>
+        <span id="ang-sel-count" style="font-size:.8rem;color:#4b5563">0 selecionadas</span>
+        <select id="ang-bulk-resp" style="padding:5px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;margin-left:auto">
+          <option value="">Atribuir a…</option>
+        </select>
+        <button onclick="angBulkAssign()" style="padding:6px 14px;border-radius:6px;background:#15803d;color:#fff;border:none;cursor:pointer;font-size:.82rem;font-weight:600">Atribuir</button>
+      </div>
+
+      <!-- Cards -->
+      <div id="ang-list"></div>
+      <div id="ang-empty" style="display:none;text-align:center;padding:40px;color:#6b7280;font-size:.88rem">Nenhuma lead encontrada.</div>
+      <div id="ang-loading" style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A carregar leads…</div>
     </main>
   </div>
 
@@ -2100,6 +2214,7 @@ async function loadApp() {
     document.getElementById('tab-config').style.display = 'block'
     document.getElementById('tab-feedback-admin').style.display = 'block'
     document.getElementById('admin-toggle').style.display = ''
+    document.getElementById('ce-btn-atualizar').style.display = 'inline-flex'
   } else {
     document.getElementById('tab-conteudos').style.display = 'none'
     document.getElementById('tab-agendamento').style.display = 'none'
@@ -2132,7 +2247,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade','angariacao'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -2148,6 +2263,7 @@ function showTab(name) {
   if (name === 'mercado') mercadoInit()
   if (name === 'meta' && !_metaLoaded) metaInit()
   if (name === 'qualidade' && !_qualLoaded) qualidadeLoad()
+  if (name === 'angariacao') angInit()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -10999,6 +11115,20 @@ var CE_LAST_QUERY = null
 
 function ceClearEnter() {}
 
+function ceModalAtualizar() {
+  document.getElementById('ce-modal-atualizar').style.display = 'flex'
+}
+
+function ceModalCopy(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent
+    btn.textContent = '✓ Copiado'
+    btn.style.background = '#dcfce7'
+    btn.style.color = '#15803d'
+    setTimeout(function(){ btn.textContent = orig; btn.style.background = ''; btn.style.color = '' }, 1800)
+  })
+}
+
 function ceFreqToggle() {
   var dd = document.getElementById('ce-freg-dd')
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none'
@@ -11417,6 +11547,265 @@ function qualidadeFilter() {
     }
   })
   tbody.innerHTML = html
+}
+
+// ── Angariação Leads ─────────────────────────────────────────────────────────
+var _angLeads = []
+var _angFiltered = []
+var _angSelected = new Set()
+var _angLoaded = false
+var _angConsultores = []
+
+async function angInit() {
+  if (!_angLoaded) await angLoad()
+}
+
+async function angLoad() {
+  var ego = _getEgoClient()
+  var listEl = document.getElementById('ang-list')
+  var loadEl = document.getElementById('ang-loading')
+  var emptyEl = document.getElementById('ang-empty')
+  loadEl.style.display = 'block'
+  listEl.innerHTML = ''
+  emptyEl.style.display = 'none'
+
+  var { data, error } = await ego.from('leads_angariacao')
+    .select('*, contactos!fk_contacto(nome, telefone, telemovel, email, whatsapp_permissao)')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    listEl.innerHTML = '<div class="err-box">Erro: ' + esc(error.message) + '</div>'
+    loadEl.style.display = 'none'
+    return
+  }
+
+  _angLeads = data || []
+  _angLoaded = true
+  loadEl.style.display = 'none'
+
+  // Populate responsavel filter
+  var resps = {}
+  _angLeads.forEach(function(l) { if (l.responsavel) resps[l.responsavel] = true })
+  var respSel = document.getElementById('ang-f-resp')
+  var bulkSel = document.getElementById('ang-bulk-resp')
+  respSel.innerHTML = '<option value="">Todos os responsáveis</option>'
+  bulkSel.innerHTML = '<option value="">Atribuir a…</option>'
+  Object.keys(resps).sort().forEach(function(r) {
+    respSel.innerHTML += '<option value="' + esc(r) + '">' + esc(r) + '</option>'
+  })
+
+  // Load consultores for bulk assign
+  var { data: profs } = await ego.from('sim_settings').select('value').eq('key','consultores_ativos').maybeSingle()
+  _angConsultores = (profs && profs.value && profs.value.lista) || []
+  if (!_angConsultores.length) {
+    // Fallback: use profilesMap
+    Object.keys(_profilesMap).forEach(function(uid) {
+      _angConsultores.push(_profilesMap[uid].nome)
+    })
+  }
+  _angConsultores.sort().forEach(function(c) {
+    bulkSel.innerHTML += '<option value="' + esc(c) + '">' + esc(c) + '</option>'
+    if (!resps[c]) respSel.innerHTML += '<option value="' + esc(c) + '">' + esc(c) + '</option>'
+  })
+
+  // Show bulk bar for admins
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+  document.getElementById('ang-bulk-bar').style.display = isAdmin ? 'flex' : 'none'
+
+  angFilter()
+}
+
+function angFilter() {
+  var estado = document.getElementById('ang-f-estado').value
+  var resp = document.getElementById('ang-f-resp').value
+  var busca = document.getElementById('ang-f-nome').value.toLowerCase().trim()
+
+  _angFiltered = _angLeads.filter(function(l) {
+    if (estado && l.estado !== estado) return false
+    if (resp && l.responsavel !== resp) return false
+    if (busca) {
+      var c = l.contactos || {}
+      var haystack = ((c.nome || l.contacto_nome) + ' ' + (c.telefone || '') + ' ' + (c.telemovel || '') + ' ' + (c.email || '')).toLowerCase()
+      if (haystack.indexOf(busca) < 0) return false
+    }
+    return true
+  })
+
+  _angSelected = new Set()
+  document.getElementById('ang-select-all').checked = false
+  angUpdateSelCount()
+  angRender()
+}
+
+function angRender() {
+  var listEl = document.getElementById('ang-list')
+  var emptyEl = document.getElementById('ang-empty')
+  var countEl = document.getElementById('ang-count')
+  var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
+
+  countEl.textContent = _angFiltered.length + ' lead' + (_angFiltered.length !== 1 ? 's' : '')
+
+  if (!_angFiltered.length) {
+    listEl.innerHTML = ''
+    emptyEl.style.display = 'block'
+    return
+  }
+  emptyEl.style.display = 'none'
+
+  var html = ''
+  _angFiltered.forEach(function(l) {
+    var c = l.contactos || {}
+    var nome = c.nome || l.contacto_nome || '—'
+    var tel = c.telefone || c.telemovel || ''
+    var email = c.email || ''
+    var whatsapp = c.whatsapp_permissao
+    var estado = l.estado || 'nova'
+    var tagClass = angTagClass(estado)
+    var estadoLabel = angEstadoLabel(estado)
+    var sel = _angSelected.has(l.id) ? ' selected' : ''
+    var hasCheck = isAdmin ? ' has-check' : ''
+
+    html += '<div class="ang-card' + sel + hasCheck + '" data-id="' + l.id + '">'
+    if (isAdmin) {
+      html += '<input type="checkbox" class="ang-check" ' + (_angSelected.has(l.id) ? 'checked' : '') + ' onchange="angToggle(\'' + l.id + '\',this.checked)">'
+    }
+    html += '<div class="ang-card-head">'
+    html += '<span class="ang-nome">' + esc(nome) + '</span>'
+    if (tel) html += '<span class="ang-tel">' + esc(tel) + (whatsapp ? ' 💬' : '') + '</span>'
+    if (email) html += '<span class="ang-email">' + esc(email) + '</span>'
+    html += '<div class="ang-tags">'
+    html += '<span class="ang-tag ' + tagClass + '">' + estadoLabel + '</span>'
+    if (l.responsavel) html += '<span class="ang-tag ang-tag-resp">' + esc(l.responsavel) + '</span>'
+    html += '</div></div>'
+
+    html += '<div class="ang-card-body">'
+    html += '<div class="ang-card-info">'
+    if (l.meta_form_name) html += '<div>📋 ' + esc(l.meta_form_name) + '</div>'
+    var created = l.meta_created_at || l.created_at
+    if (created) html += '<div>📅 ' + new Date(created).toLocaleDateString('pt-PT') + '</div>'
+    if (l.retorno_data) {
+      var rDate = new Date(l.retorno_data)
+      var isOverdue = rDate < new Date(new Date().toDateString())
+      html += '<div class="ang-retorno-badge">' + (isOverdue ? '⚠️ ' : '🔔 ') + 'Retorno: ' + rDate.toLocaleDateString('pt-PT')
+      if (l.retorno_hora) html += ' ' + l.retorno_hora.substring(0,5)
+      html += '</div>'
+    }
+    if (l.notas) html += '<div style="margin-top:4px;font-size:.78rem;color:#6b7280;font-style:italic">' + esc(l.notas).substring(0, 120) + '</div>'
+    html += '</div>'
+
+    html += '<div class="ang-card-actions">'
+    html += '<select onchange="angChangeEstado(\'' + l.id + '\',this.value)" style="padding:4px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.76rem">'
+    angEstados().forEach(function(e) {
+      html += '<option value="' + e.value + '"' + (estado === e.value ? ' selected' : '') + '>' + e.label + '</option>'
+    })
+    html += '</select>'
+    if (isAdmin && !l.responsavel) {
+      html += '<select onchange="angAssignOne(\'' + l.id + '\',this.value)" style="padding:4px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.76rem">'
+      html += '<option value="">Atribuir…</option>'
+      _angConsultores.forEach(function(cn) {
+        html += '<option value="' + esc(cn) + '">' + esc(cn) + '</option>'
+      })
+      html += '</select>'
+    }
+    html += '</div></div></div>'
+  })
+
+  listEl.innerHTML = html
+}
+
+function angEstados() {
+  return [
+    {value:'nova',label:'Nova'},{value:'atribuida',label:'Atribuída'},{value:'contactada',label:'Contactada'},
+    {value:'retorno_agendado',label:'Retorno agendado'},{value:'avaliacao_marcada',label:'Avaliação marcada'},
+    {value:'reuniao_marcada',label:'Reunião marcada'},{value:'follow_up',label:'Follow-up'},
+    {value:'sem_interesse',label:'Sem interesse'},{value:'fora_area',label:'Fora de área'},{value:'angariada',label:'Angariada'}
+  ]
+}
+
+function angEstadoLabel(e) {
+  var map = {nova:'Nova',atribuida:'Atribuída',contactada:'Contactada',retorno_agendado:'Retorno',avaliacao_marcada:'Avaliação',reuniao_marcada:'Reunião',follow_up:'Follow-up',sem_interesse:'Sem interesse',fora_area:'Fora área',angariada:'Angariada'}
+  return map[e] || e
+}
+
+function angTagClass(e) {
+  var map = {nova:'ang-tag-nova',atribuida:'ang-tag-atribuida',contactada:'ang-tag-contactada',retorno_agendado:'ang-tag-retorno',avaliacao_marcada:'ang-tag-avaliacao',reuniao_marcada:'ang-tag-reuniao',follow_up:'ang-tag-follow',sem_interesse:'ang-tag-sem-interesse',fora_area:'ang-tag-fora',angariada:'ang-tag-angariada'}
+  return map[e] || 'ang-tag-nova'
+}
+
+function angToggle(id, checked) {
+  if (checked) _angSelected.add(id); else _angSelected.delete(id)
+  var card = document.querySelector('.ang-card[data-id="' + id + '"]')
+  if (card) card.classList.toggle('selected', checked)
+  angUpdateSelCount()
+}
+
+function angToggleAll(checked) {
+  _angSelected = new Set()
+  if (checked) _angFiltered.forEach(function(l) { _angSelected.add(l.id) })
+  angUpdateSelCount()
+  document.querySelectorAll('.ang-check').forEach(function(cb) { cb.checked = checked })
+  document.querySelectorAll('.ang-card').forEach(function(card) { card.classList.toggle('selected', checked) })
+}
+
+function angUpdateSelCount() {
+  document.getElementById('ang-sel-count').textContent = _angSelected.size + ' selecionada' + (_angSelected.size !== 1 ? 's' : '')
+}
+
+async function angChangeEstado(id, novoEstado) {
+  var ego = _getEgoClient()
+  var updates = { estado: novoEstado, estado_alterado_em: new Date().toISOString() }
+  if (novoEstado === 'atribuida' || novoEstado === 'contactada' || novoEstado === 'retorno_agendado' || novoEstado === 'avaliacao_marcada' || novoEstado === 'reuniao_marcada' || novoEstado === 'follow_up') {
+    // keep
+  }
+  var { error } = await ego.from('leads_angariacao').update(updates).eq('id', id)
+  if (error) { alert('Erro ao atualizar: ' + error.message); return }
+  var lead = _angLeads.find(function(l) { return l.id === id })
+  if (lead) { lead.estado = novoEstado; lead.estado_alterado_em = updates.estado_alterado_em }
+  angRender()
+}
+
+async function angAssignOne(id, resp) {
+  if (!resp) return
+  var ego = _getEgoClient()
+  var now = new Date().toISOString()
+  var assignedBy = (_profile && _profile.nome) || 'admin'
+  var { error } = await ego.from('leads_angariacao').update({
+    responsavel: resp, atribuido_em: now, atribuido_por: assignedBy,
+    estado: 'atribuida', estado_alterado_em: now
+  }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  var lead = _angLeads.find(function(l) { return l.id === id })
+  if (lead) { lead.responsavel = resp; lead.atribuido_em = now; lead.estado = 'atribuida'; lead.estado_alterado_em = now }
+  angRender()
+}
+
+async function angBulkAssign() {
+  var resp = document.getElementById('ang-bulk-resp').value
+  if (!resp) { alert('Seleciona um responsável.'); return }
+  if (!_angSelected.size) { alert('Seleciona pelo menos uma lead.'); return }
+
+  var ids = Array.from(_angSelected)
+  var ego = _getEgoClient()
+  var now = new Date().toISOString()
+  var assignedBy = (_profile && _profile.nome) || 'admin'
+
+  var { error } = await ego.from('leads_angariacao').update({
+    responsavel: resp, atribuido_em: now, atribuido_por: assignedBy,
+    estado: 'atribuida', estado_alterado_em: now
+  }).in('id', ids)
+
+  if (error) { alert('Erro: ' + error.message); return }
+
+  ids.forEach(function(id) {
+    var lead = _angLeads.find(function(l) { return l.id === id })
+    if (lead) { lead.responsavel = resp; lead.atribuido_em = now; lead.estado = 'atribuida'; lead.estado_alterado_em = now }
+  })
+
+  _angSelected = new Set()
+  document.getElementById('ang-select-all').checked = false
+  document.getElementById('ang-bulk-resp').value = ''
+  angUpdateSelCount()
+  angFilter()
 }
 </script>
 
