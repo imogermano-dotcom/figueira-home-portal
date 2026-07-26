@@ -170,6 +170,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .ang-tag-avaliacao{background:#ede9fe;color:#5b21b6}
 .ang-tag-reuniao{background:#cffafe;color:#155e75}
 .ang-tag-follow{background:#fef9c3;color:#854d0e}
+.ang-tag-nao-atende{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
 .ang-tag-sem-interesse{background:#f3f4f6;color:#6b7280}
 .ang-tag-fora{background:#f3f4f6;color:#9ca3af}
 .ang-tag-angariada{background:#d1fae5;color:#047857;border:1px solid #6ee7b7}
@@ -11752,6 +11753,9 @@ function angRender() {
 
     html += '<div class="ang-card-actions">'
     html += '<button class="ang-btn ang-btn-primary" onclick="angOpenScript(\'' + l.id + '\')">📞 Script</button>'
+    if (estado !== 'nao_atende' && estado !== 'sem_interesse' && estado !== 'fora_area' && estado !== 'angariada') {
+      html += '<button onclick="angNaoAtende(\'' + l.id + '\')" style="padding:4px 10px;border:1.5px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.74rem;font-weight:600;cursor:pointer">📵 Não atendeu</button>'
+    }
     html += '<select onchange="angChangeEstado(\'' + l.id + '\',this.value)" style="padding:4px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.76rem">'
     angEstados().forEach(function(e) {
       html += '<option value="' + e.value + '"' + (estado === e.value ? ' selected' : '') + '>' + e.label + '</option>'
@@ -11775,19 +11779,20 @@ function angRender() {
 function angEstados() {
   return [
     {value:'nova',label:'Nova'},{value:'atribuida',label:'Atribuída'},{value:'contactada',label:'Contactada'},
-    {value:'retorno_agendado',label:'Retorno agendado'},{value:'avaliacao_marcada',label:'Avaliação marcada'},
-    {value:'reuniao_marcada',label:'Reunião marcada'},{value:'follow_up',label:'Follow-up'},
-    {value:'sem_interesse',label:'Sem interesse'},{value:'fora_area',label:'Fora de área'},{value:'angariada',label:'Angariada'}
+    {value:'nao_atende',label:'Não atende'},{value:'retorno_agendado',label:'Retorno agendado'},
+    {value:'avaliacao_marcada',label:'Avaliação marcada'},{value:'reuniao_marcada',label:'Reunião marcada'},
+    {value:'follow_up',label:'Follow-up'},{value:'sem_interesse',label:'Sem interesse'},
+    {value:'fora_area',label:'Fora de área'},{value:'angariada',label:'Angariada'}
   ]
 }
 
 function angEstadoLabel(e) {
-  var map = {nova:'Nova',atribuida:'Atribuída',contactada:'Contactada',retorno_agendado:'Retorno',avaliacao_marcada:'Avaliação',reuniao_marcada:'Reunião',follow_up:'Follow-up',sem_interesse:'Sem interesse',fora_area:'Fora área',angariada:'Angariada'}
+  var map = {nova:'Nova',atribuida:'Atribuída',contactada:'Contactada',nao_atende:'Não atende',retorno_agendado:'Retorno',avaliacao_marcada:'Avaliação',reuniao_marcada:'Reunião',follow_up:'Follow-up',sem_interesse:'Sem interesse',fora_area:'Fora área',angariada:'Angariada'}
   return map[e] || e
 }
 
 function angTagClass(e) {
-  var map = {nova:'ang-tag-nova',atribuida:'ang-tag-atribuida',contactada:'ang-tag-contactada',retorno_agendado:'ang-tag-retorno',avaliacao_marcada:'ang-tag-avaliacao',reuniao_marcada:'ang-tag-reuniao',follow_up:'ang-tag-follow',sem_interesse:'ang-tag-sem-interesse',fora_area:'ang-tag-fora',angariada:'ang-tag-angariada'}
+  var map = {nova:'ang-tag-nova',atribuida:'ang-tag-atribuida',contactada:'ang-tag-contactada',nao_atende:'ang-tag-nao-atende',retorno_agendado:'ang-tag-retorno',avaliacao_marcada:'ang-tag-avaliacao',reuniao_marcada:'ang-tag-reuniao',follow_up:'ang-tag-follow',sem_interesse:'ang-tag-sem-interesse',fora_area:'ang-tag-fora',angariada:'ang-tag-angariada'}
   return map[e] || 'ang-tag-nova'
 }
 
@@ -11899,6 +11904,28 @@ async function angBulkAssign() {
   document.getElementById('ang-bulk-resp').value = ''
   angUpdateSelCount()
   angFilter()
+}
+
+async function angNaoAtende(leadId) {
+  var ego = _getEgoClient()
+  var now = new Date().toISOString()
+  var lead = _angLeads.find(function(l) { return l.id === leadId })
+  if (!lead) return
+
+  var prev = lead.nao_atende_count || 0
+  var count = prev + 1
+
+  var { error } = await ego.from('leads_angariacao').update({
+    estado: 'nao_atende', estado_alterado_em: now,
+    notas: (lead.notas ? lead.notas + '\n' : '') + '📵 Não atendeu (' + count + 'x) — ' + new Date().toLocaleDateString('pt-PT') + ' ' + new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})
+  }).eq('id', leadId)
+
+  if (error) { alert('Erro: ' + error.message); return }
+  lead.estado = 'nao_atende'
+  lead.estado_alterado_em = now
+  lead.nao_atende_count = count
+  lead.notas = (lead.notas ? lead.notas + '\n' : '') + '📵 Não atendeu (' + count + 'x)'
+  angRender()
 }
 
 function angOpenScript(leadId) {
