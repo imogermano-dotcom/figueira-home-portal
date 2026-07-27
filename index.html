@@ -11850,6 +11850,11 @@ function angViewFicha(leadId) {
     {k:'ocupacao',label:'Ocupação',type:'select',opts:['','Ocupado pelo proprietário','Arrendado','Devoluto','Outro']},
     {k:'documentacao',label:'Documentação',type:'select',opts:['','Tudo em ordem','Falta documentação','Herança/partilhas em curso','Não sabe']},
     {k:'expectativa_preco',label:'Expectativa de preço'},
+    {k:'notas_motivacao',label:'Notas motivação',type:'textarea',wide:true},
+    {k:'notas_situacao',label:'Notas situação',type:'textarea',wide:true},
+    {k:'notas_contrato',label:'Notas contrato',type:'textarea',wide:true},
+    {k:'notas_curiosidade',label:'Notas curiosidade',type:'textarea',wide:true},
+    {k:'notas_finais',label:'Notas finais chamada',type:'textarea',wide:true},
     {k:'outcome',label:'Resultado',type:'select',opts:['','sem_resposta','retorno','avaliacao','sem_interesse','fora_area']},
     {k:'data_reuniao',label:'Data reunião',type:'date'},
     {k:'hora_reuniao',label:'Hora reunião',type:'time'},
@@ -11875,12 +11880,15 @@ function angViewFicha(leadId) {
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:.84rem">'
   fields.forEach(function(fld) {
     var val = f[fld.k] || ''
-    html += '<div' + (fld.k === 'motivos_venda' || fld.k === 'rua' ? ' style="grid-column:1/-1"' : '') + '>'
+    var wide = fld.wide || fld.k === 'motivos_venda' || fld.k === 'rua'
+    html += '<div' + (wide ? ' style="grid-column:1/-1"' : '') + '>'
     html += '<label style="display:block;font-weight:600;color:#4b5563;margin-bottom:2px;font-size:.78rem">' + fld.label + '</label>'
     if (fld.type === 'select') {
       html += '<select data-fk="' + fld.k + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
       fld.opts.forEach(function(o) { html += '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + (o || '—') + '</option>' })
       html += '</select>'
+    } else if (fld.type === 'textarea') {
+      html += '<textarea data-fk="' + fld.k + '" style="width:100%;min-height:60px;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;resize:vertical;font-family:inherit">' + esc(val) + '</textarea>'
     } else if (fld.type === 'date') {
       html += '<input type="date" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
     } else if (fld.type === 'time') {
