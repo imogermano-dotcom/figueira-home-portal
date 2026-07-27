@@ -760,7 +760,7 @@ async function guardarFicha() {
       estado: estado,
       estado_alterado_em: new Date().toISOString(),
       outcome: F.outcome || null,
-      notas: F.notas_finais || F.notas_motivacao || null
+      notas: [F.notas_motivacao, F.notas_situacao, F.notas_contrato, F.notas_curiosidade, F.notas_finais].filter(Boolean).join('\n---\n') || null
     };
     if (F.data_reuniao) {
       updates.reuniao_data = F.data_reuniao;
