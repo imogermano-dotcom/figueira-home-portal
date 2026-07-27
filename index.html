@@ -2365,6 +2365,37 @@ function setSug(el) {
   doSearch()
 }
 
+async function _searchAngariacao(q) {
+  var isEmail = q.indexOf('@') > 0
+  var digits = q.replace(/\D/g, '')
+  var isPhone = digits.length >= 9 && /^\+?\d[\d\s\-]{7,}$/.test(q.trim())
+  if (!isEmail && !isPhone) return []
+  try {
+    var ego = _getEgoClient()
+    var selectCols = 'id, created_at, contacto_nome, contacto_criado_em, meta_lead_id, meta_form_name, meta_created_at, responsavel, estado, estado_alterado_em, retorno_data, retorno_hora, notas, outcome, reuniao_data, reuniao_hora, reuniao_local, ficha, contactos!fk_contacto!inner(nome, telefone, telemovel, email, whatsapp_permissao)'
+    var angQ = ego.from('leads_angariacao').select(selectCols).order('created_at', { ascending: false }).limit(50)
+    if (isEmail) angQ = angQ.ilike('contactos.email', '%' + q.trim() + '%')
+    else if (isPhone) angQ = angQ.or('contactos.telefone.ilike.%' + digits + '%,contactos.telemovel.ilike.%' + digits + '%')
+    var { data, error } = await angQ
+    if (error) {
+      // Fallback: query contactos first, then leads by name
+      var nomes = []
+      if (isEmail) {
+        var { data: cE } = await ego.from('contactos').select('nome').ilike('email', '%' + q.trim() + '%').limit(20)
+        if (cE) nomes = cE.map(function(c) { return c.nome })
+      } else {
+        var { data: cP } = await ego.from('contactos').select('nome').or('telefone.ilike.%' + digits + '%,telemovel.ilike.%' + digits + '%').limit(20)
+        if (cP) nomes = cP.map(function(c) { return c.nome })
+      }
+      if (!nomes.length) return []
+      var selectCols2 = selectCols.replace('!inner', '')
+      var { data: fb } = await ego.from('leads_angariacao').select(selectCols2).in('contacto_nome', nomes).order('created_at', { ascending: false }).limit(50)
+      return fb || []
+    }
+    return data || []
+  } catch (e) { console.error('Ang fallback error:', e); return [] }
+}
+
 async function doSearch() {
   var q = document.getElementById('q').value.trim()
   if (!q) return
@@ -2400,6 +2431,11 @@ async function doSearch() {
     if (!r.ok) throw new Error((data && data.error) ? data.error : 'HTTP ' + r.status)
     _allResults = data.results || []
     _hasMore = data.has_more === true
+    // Fallback: if edge function returned no results and no angariacao, try direct query
+    if (!_allResults.length && !(data.results_angariacao && data.results_angariacao.length)) {
+      var angFallback = await _searchAngariacao(q)
+      if (angFallback.length) data.results_angariacao = angFallback
+    }
     renderResults(data, q)
   } catch(err) {
     var errMsg = err.message || 'Erro desconhecido'
