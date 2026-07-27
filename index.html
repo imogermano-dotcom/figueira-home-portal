@@ -11710,8 +11710,10 @@ function angRenderStats() {
   if (!el) return
   var counts = {}
   _angLeads.forEach(function(l) { counts[l.estado] = (counts[l.estado] || 0) + 1 })
+  var activeFilter = document.getElementById('ang-f-estado').value
   var items = [
-    {k:'_total', label:'Total', color:'#6b7280', count:_angLeads.length},
+    {k:'', label:'Total', color:'#6b7280', count:_angLeads.length},
+    {k:'_nao_contactadas', label:'Não contactadas', color:'#f59e0b', count:(counts['nova']||0)+(counts['atribuida']||0)+(counts['nao_atende']||0)},
     {k:'nova', label:'Novas', color:'#8b5cf6'},
     {k:'atribuida', label:'Atribuídas', color:'#2563eb'},
     {k:'nao_atende', label:'Não atende', color:'#dc2626'},
@@ -11722,8 +11724,18 @@ function angRenderStats() {
   ]
   el.innerHTML = items.map(function(i) {
     var n = i.count !== undefined ? i.count : (counts[i.k] || 0)
-    return '<span style="background:' + i.color + '1a;color:' + i.color + ';border:1px solid ' + i.color + '40;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600">' + i.label + ' ' + n + '</span>'
+    var selected = activeFilter === i.k
+    var bg = selected ? i.color : i.color + '1a'
+    var fg = selected ? '#fff' : i.color
+    var border = selected ? i.color : i.color + '40'
+    var shadow = selected ? ';box-shadow:0 2px 8px ' + i.color + '40' : ''
+    return '<span onclick="angStatFilter(\'' + i.k + '\')" style="cursor:pointer;background:' + bg + ';color:' + fg + ';border:1.5px solid ' + border + ';padding:4px 12px;border-radius:12px;font-size:.78rem;font-weight:600;transition:all .15s' + shadow + '">' + i.label + ' ' + n + '</span>'
   }).join('')
+}
+
+function angStatFilter(estado) {
+  document.getElementById('ang-f-estado').value = estado
+  angFilter()
 }
 
 function angRender() {
