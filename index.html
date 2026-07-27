@@ -12052,6 +12052,9 @@ async function angNaoAtende(leadId) {
 function angOpenScript(leadId) {
   var lead = _angLeads.find(function(l) { return l.id === leadId })
   if (!lead) return
+  if (lead.ficha && Object.keys(lead.ficha).length > 0) {
+    if (!confirm('Esta lead já tem uma ficha preenchida. Submeter um novo script irá sobrepor os dados existentes.\n\nDeseja continuar?')) return
+  }
   var c = lead.contactos || {}
   var nome = c.nome || lead.contacto_nome || ''
   var tel = c.telefone || c.telemovel || ''
