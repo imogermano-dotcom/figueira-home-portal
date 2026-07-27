@@ -2068,6 +2068,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
         <h2 style="font-size:1.1rem;font-weight:700;color:#1a3c5e;margin:0">🏠 Leads Angariação (Meta)</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="ang-filter-label" style="font-size:.85rem;font-weight:600;color:#7c3aed"></span>
           <span id="ang-count" style="font-size:.8rem;color:#6b7280"></span>
           <button onclick="angLoad()" style="padding:6px 14px;border-radius:6px;background:#1a3c5e;color:#fff;border:none;cursor:pointer;font-size:.82rem;font-weight:600">↻ Atualizar</button>
         </div>
@@ -11745,6 +11746,12 @@ function angRender() {
   var isAdmin = _profile && (_profile.role === 'admin' || _profile.is_admin)
 
   countEl.textContent = _angFiltered.length + ' lead' + (_angFiltered.length !== 1 ? 's' : '')
+  var filterLabel = document.getElementById('ang-filter-label')
+  if (filterLabel) {
+    var est = document.getElementById('ang-f-estado')
+    var sel = est.options[est.selectedIndex]
+    filterLabel.textContent = sel && sel.value ? 'A mostrar: ' + sel.text : ''
+  }
 
   if (!_angFiltered.length) {
     listEl.innerHTML = ''
