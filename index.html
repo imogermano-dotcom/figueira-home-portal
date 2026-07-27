@@ -2373,26 +2373,25 @@ async function _searchAngariacao(q) {
   try {
     var ego = _getEgoClient()
     var selectCols = 'id, created_at, contacto_nome, contacto_criado_em, meta_lead_id, meta_form_name, meta_created_at, responsavel, estado, estado_alterado_em, retorno_data, retorno_hora, notas, outcome, reuniao_data, reuniao_hora, reuniao_local, ficha, contactos!fk_contacto!inner(nome, telefone, telemovel, email, whatsapp_permissao)'
-    var angQ = ego.from('leads_angariacao').select(selectCols).order('created_at', { ascending: false }).limit(50)
-    if (isEmail) angQ = angQ.ilike('contactos.email', '%' + q.trim() + '%')
-    else if (isPhone) angQ = angQ.or('contactos.telefone.ilike.%' + digits + '%,contactos.telemovel.ilike.%' + digits + '%')
-    var { data, error } = await angQ
-    if (error) {
-      // Fallback: query contactos first, then leads by name
-      var nomes = []
-      if (isEmail) {
-        var { data: cE } = await ego.from('contactos').select('nome').ilike('email', '%' + q.trim() + '%').limit(20)
-        if (cE) nomes = cE.map(function(c) { return c.nome })
-      } else {
-        var { data: cP } = await ego.from('contactos').select('nome').or('telefone.ilike.%' + digits + '%,telemovel.ilike.%' + digits + '%').limit(20)
-        if (cP) nomes = cP.map(function(c) { return c.nome })
-      }
-      if (!nomes.length) return []
-      var selectCols2 = selectCols.replace('!inner', '')
-      var { data: fb } = await ego.from('leads_angariacao').select(selectCols2).in('contacto_nome', nomes).order('created_at', { ascending: false }).limit(50)
-      return fb || []
+    if (isEmail) {
+      var angQ = ego.from('leads_angariacao').select(selectCols).order('created_at', { ascending: false }).limit(50)
+      angQ = angQ.ilike('contactos.email', '%' + q.trim() + '%')
+      var { data, error } = await angQ
+      if (!error && data && data.length) return data
     }
-    return data || []
+    // Phone or email fallback: find contact names first, then query leads
+    var nomes = []
+    if (isPhone) {
+      var { data: cP } = await ego.from('contactos').select('nome').or('telefone.ilike.%' + digits + '%,telemovel.ilike.%' + digits + '%').limit(20)
+      if (cP) nomes = cP.map(function(c) { return c.nome })
+    } else if (isEmail) {
+      var { data: cE } = await ego.from('contactos').select('nome').ilike('email', '%' + q.trim() + '%').limit(20)
+      if (cE) nomes = cE.map(function(c) { return c.nome })
+    }
+    if (!nomes.length) return []
+    var selectCols2 = selectCols.replace('!inner', '')
+    var { data: fb } = await ego.from('leads_angariacao').select(selectCols2).in('contacto_nome', nomes).order('created_at', { ascending: false }).limit(50)
+    return fb || []
   } catch (e) { console.error('Ang fallback error:', e); return [] }
 }
 
