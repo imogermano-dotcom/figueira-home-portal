@@ -11869,45 +11869,57 @@ function angViewFicha(leadId) {
   html += '<div style="background:#fff;border-radius:12px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
   html += '<h3 style="margin:0;font-size:1.1rem;color:#1a3c5e">📋 Ficha — ' + esc(nome) + '</h3>'
+  html += '<div style="display:flex;gap:8px;align-items:center">'
+  html += '<button id="ang-ficha-edit-btn" onclick="angFichaToggleEdit()" style="padding:5px 14px;border:1.5px solid #7c3aed;border-radius:7px;background:#f5f3ff;color:#7c3aed;font-size:.78rem;font-weight:600;cursor:pointer">✏️ Editar</button>'
   html += '<button onclick="document.getElementById(\'ang-ficha-modal\').remove()" style="border:none;background:none;font-size:1.3rem;cursor:pointer;color:#6b7280">✕</button>'
-  html += '</div>'
+  html += '</div></div>'
   if (tel || email) {
     html += '<div style="margin-bottom:14px;padding:8px 12px;background:#f8fafc;border-radius:8px;font-size:.82rem;color:#475569">'
     if (tel) html += '📞 ' + esc(tel) + '  '
     if (email) html += '✉️ ' + esc(email)
     html += '</div>'
   }
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:.84rem">'
+  html += '<div id="ang-ficha-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:.84rem">'
   fields.forEach(function(fld) {
     var val = f[fld.k] || ''
     var wide = fld.wide || fld.k === 'motivos_venda' || fld.k === 'rua'
     html += '<div' + (wide ? ' style="grid-column:1/-1"' : '') + '>'
     html += '<label style="display:block;font-weight:600;color:#4b5563;margin-bottom:2px;font-size:.78rem">' + fld.label + '</label>'
     if (fld.type === 'select') {
-      html += '<select data-fk="' + fld.k + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+      html += '<select data-fk="' + fld.k + '" disabled style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;background:#f9fafb">'
       fld.opts.forEach(function(o) { html += '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + (o || '—') + '</option>' })
       html += '</select>'
     } else if (fld.type === 'textarea') {
-      html += '<textarea data-fk="' + fld.k + '" style="width:100%;min-height:60px;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;resize:vertical;font-family:inherit">' + esc(val) + '</textarea>'
+      html += '<textarea data-fk="' + fld.k + '" disabled style="width:100%;min-height:60px;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;resize:vertical;font-family:inherit;background:#f9fafb">' + esc(val) + '</textarea>'
     } else if (fld.type === 'date') {
-      html += '<input type="date" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+      html += '<input type="date" data-fk="' + fld.k + '" value="' + esc(val) + '" disabled style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;background:#f9fafb">'
     } else if (fld.type === 'time') {
-      html += '<input type="time" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+      html += '<input type="time" data-fk="' + fld.k + '" value="' + esc(val) + '" disabled style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;background:#f9fafb">'
     } else {
-      html += '<input type="text" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+      html += '<input type="text" data-fk="' + fld.k + '" value="' + esc(val) + '" disabled style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem;background:#f9fafb">'
     }
     html += '</div>'
   })
   html += '</div>'
   html += '<div style="margin-top:14px">'
   html += '<label style="display:block;font-weight:600;color:#4b5563;margin-bottom:4px;font-size:.82rem">📝 Notas / Observações da conversa</label>'
-  html += '<textarea id="ang-ficha-notas" style="width:100%;min-height:100px;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.84rem;resize:vertical;font-family:inherit">' + esc(lead.notas || '') + '</textarea>'
+  html += '<textarea id="ang-ficha-notas" disabled style="width:100%;min-height:100px;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.84rem;resize:vertical;font-family:inherit;background:#f9fafb">' + esc(lead.notas || '') + '</textarea>'
   html += '</div>'
-  html += '<div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">'
+  html += '<div id="ang-ficha-actions" style="margin-top:16px;display:none;gap:10px;justify-content:flex-end">'
   html += '<button onclick="document.getElementById(\'ang-ficha-modal\').remove()" style="padding:8px 18px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#4b5563;font-size:.85rem;cursor:pointer">Cancelar</button>'
   html += '<button onclick="angSaveFicha(\'' + lead.id + '\')" style="padding:8px 18px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-size:.85rem;font-weight:600;cursor:pointer">💾 Guardar</button>'
   html += '</div></div></div>'
   document.body.insertAdjacentHTML('beforeend', html)
+}
+
+function angFichaToggleEdit() {
+  var modal = document.getElementById('ang-ficha-modal')
+  modal.querySelectorAll('[data-fk], #ang-ficha-notas').forEach(function(el) {
+    el.disabled = false
+    el.style.background = '#fff'
+  })
+  document.getElementById('ang-ficha-actions').style.display = 'flex'
+  document.getElementById('ang-ficha-edit-btn').style.display = 'none'
 }
 
 async function angSaveFicha(leadId) {
