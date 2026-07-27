@@ -11807,7 +11807,7 @@ function angRender() {
       })
       html += '</select>'
     }
-    if (l.ficha) html += '<button onclick="angViewFicha(\'' + l.id + '\')" style="padding:3px 10px;border:1.5px solid #7c3aed;border-radius:6px;background:#f5f3ff;color:#7c3aed;font-size:.74rem;font-weight:600;cursor:pointer">📋 Ver Ficha</button>'
+    html += '<button onclick="angViewFicha(\'' + l.id + '\')" style="padding:3px 10px;border:1.5px solid #7c3aed;border-radius:6px;background:#f5f3ff;color:#7c3aed;font-size:.74rem;font-weight:600;cursor:pointer">📋 ' + (l.ficha ? 'Ver' : 'Abrir') + ' Ficha</button>'
     html += '</div></div></div>'
   })
 
@@ -11836,36 +11836,99 @@ function angTagClass(e) {
 
 function angViewFicha(leadId) {
   var lead = _angLeads.find(function(l) { return l.id === leadId })
-  if (!lead || !lead.ficha) { alert('Sem ficha registada.'); return }
-  var f = lead.ficha
+  if (!lead) return
+  var f = lead.ficha || {}
   var c = lead.contactos || {}
-  var labels = {
-    tipo_imovel:'Tipo imóvel',tipologia:'Tipologia',freguesia:'Freguesia',rua:'Rua/Morada',
-    motivos_venda:'Motivos de venda',urgencia:'Urgência',hipoteca:'Hipoteca',ocupacao:'Ocupação',
-    documentacao:'Documentação',expectativa_preco:'Expectativa de preço',observacoes:'Observações',
-    outcome:'Resultado',data_reuniao:'Data reunião',hora_reuniao:'Hora reunião',local:'Local reunião',
-    data_retorno:'Data retorno',hora_retorno:'Hora retorno',consultor:'Consultor'
-  }
-  var html = '<div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">'
-  html += '<div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+  var fields = [
+    {k:'tipo_imovel',label:'Tipo imóvel',type:'select',opts:['','Apartamento','Moradia','Terreno','Loja','Escritório','Armazém','Outro']},
+    {k:'tipologia',label:'Tipologia',type:'select',opts:['','T0','T1','T2','T3','T4','T5+']},
+    {k:'freguesia',label:'Freguesia'},
+    {k:'rua',label:'Rua/Morada'},
+    {k:'motivos_venda',label:'Motivos de venda'},
+    {k:'urgencia',label:'Urgência',type:'select',opts:['','Imediato — até 3 meses','Curto prazo — 3 a 6 meses','Médio prazo — 6 a 12 meses','Sem pressa']},
+    {k:'hipoteca',label:'Hipoteca',type:'select',opts:['','Sem hipoteca','Com hipoteca — valor em dívida conhecido','Com hipoteca — valor desconhecido']},
+    {k:'ocupacao',label:'Ocupação',type:'select',opts:['','Ocupado pelo proprietário','Arrendado','Devoluto','Outro']},
+    {k:'documentacao',label:'Documentação',type:'select',opts:['','Tudo em ordem','Falta documentação','Herança/partilhas em curso','Não sabe']},
+    {k:'expectativa_preco',label:'Expectativa de preço'},
+    {k:'outcome',label:'Resultado',type:'select',opts:['','sem_resposta','retorno','avaliacao','sem_interesse','fora_area']},
+    {k:'data_reuniao',label:'Data reunião',type:'date'},
+    {k:'hora_reuniao',label:'Hora reunião',type:'time'},
+    {k:'local',label:'Local reunião'},
+    {k:'consultor',label:'Consultor'}
+  ]
+  var nome = c.nome || lead.contacto_nome || '—'
+  var tel = c.telefone || c.telemovel || ''
+  var email = c.email || ''
+
+  var html = '<div id="ang-ficha-modal" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">'
+  html += '<div style="background:#fff;border-radius:12px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
-  html += '<h3 style="margin:0;font-size:1.1rem;color:#1a3c5e">📋 Ficha — ' + esc(c.nome || lead.contacto_nome || '—') + '</h3>'
-  html += '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="border:none;background:none;font-size:1.3rem;cursor:pointer;color:#6b7280">✕</button>'
+  html += '<h3 style="margin:0;font-size:1.1rem;color:#1a3c5e">📋 Ficha — ' + esc(nome) + '</h3>'
+  html += '<button onclick="document.getElementById(\'ang-ficha-modal\').remove()" style="border:none;background:none;font-size:1.3rem;cursor:pointer;color:#6b7280">✕</button>'
   html += '</div>'
-  html += '<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
-  Object.keys(labels).forEach(function(k) {
-    if (f[k] && f[k] !== '') {
-      html += '<tr><td style="padding:6px 10px;font-weight:600;color:#4b5563;white-space:nowrap;vertical-align:top;border-bottom:1px solid #f1f5f9">' + labels[k] + '</td>'
-      html += '<td style="padding:6px 10px;color:#1e293b;border-bottom:1px solid #f1f5f9">' + esc(f[k]) + '</td></tr>'
+  if (tel || email) {
+    html += '<div style="margin-bottom:14px;padding:8px 12px;background:#f8fafc;border-radius:8px;font-size:.82rem;color:#475569">'
+    if (tel) html += '📞 ' + esc(tel) + '  '
+    if (email) html += '✉️ ' + esc(email)
+    html += '</div>'
+  }
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:.84rem">'
+  fields.forEach(function(fld) {
+    var val = f[fld.k] || ''
+    html += '<div' + (fld.k === 'motivos_venda' || fld.k === 'rua' ? ' style="grid-column:1/-1"' : '') + '>'
+    html += '<label style="display:block;font-weight:600;color:#4b5563;margin-bottom:2px;font-size:.78rem">' + fld.label + '</label>'
+    if (fld.type === 'select') {
+      html += '<select data-fk="' + fld.k + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+      fld.opts.forEach(function(o) { html += '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + (o || '—') + '</option>' })
+      html += '</select>'
+    } else if (fld.type === 'date') {
+      html += '<input type="date" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+    } else if (fld.type === 'time') {
+      html += '<input type="time" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
+    } else {
+      html += '<input type="text" data-fk="' + fld.k + '" value="' + esc(val) + '" style="width:100%;padding:5px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.82rem">'
     }
+    html += '</div>'
   })
-  var extra = Object.keys(f).filter(function(k) { return !labels[k] && f[k] && f[k] !== '' })
-  extra.forEach(function(k) {
-    html += '<tr><td style="padding:6px 10px;font-weight:600;color:#4b5563;white-space:nowrap;vertical-align:top;border-bottom:1px solid #f1f5f9">' + esc(k) + '</td>'
-    html += '<td style="padding:6px 10px;color:#1e293b;border-bottom:1px solid #f1f5f9">' + esc(String(f[k])) + '</td></tr>'
-  })
-  html += '</table></div></div>'
+  html += '</div>'
+  html += '<div style="margin-top:14px">'
+  html += '<label style="display:block;font-weight:600;color:#4b5563;margin-bottom:4px;font-size:.82rem">📝 Notas / Observações da conversa</label>'
+  html += '<textarea id="ang-ficha-notas" style="width:100%;min-height:100px;padding:8px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.84rem;resize:vertical;font-family:inherit">' + esc(lead.notas || '') + '</textarea>'
+  html += '</div>'
+  html += '<div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">'
+  html += '<button onclick="document.getElementById(\'ang-ficha-modal\').remove()" style="padding:8px 18px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#4b5563;font-size:.85rem;cursor:pointer">Cancelar</button>'
+  html += '<button onclick="angSaveFicha(\'' + lead.id + '\')" style="padding:8px 18px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-size:.85rem;font-weight:600;cursor:pointer">💾 Guardar</button>'
+  html += '</div></div></div>'
   document.body.insertAdjacentHTML('beforeend', html)
+}
+
+async function angSaveFicha(leadId) {
+  var lead = _angLeads.find(function(l) { return l.id === leadId })
+  if (!lead) return
+  var ficha = Object.assign({}, lead.ficha || {})
+  var modal = document.getElementById('ang-ficha-modal')
+  modal.querySelectorAll('[data-fk]').forEach(function(el) {
+    var v = el.value.trim()
+    if (v) ficha[el.dataset.fk] = v
+    else delete ficha[el.dataset.fk]
+  })
+  var notas = document.getElementById('ang-ficha-notas').value.trim()
+  var updates = { ficha: ficha, notas: notas || null }
+  if (ficha.data_reuniao) {
+    updates.reuniao_data = ficha.data_reuniao
+    updates.reuniao_hora = ficha.hora_reuniao || null
+    updates.reuniao_local = ficha.local || null
+  }
+  var btn = modal.querySelector('button[onclick*=angSaveFicha]')
+  btn.disabled = true; btn.textContent = 'A guardar…'
+  var ego = _getEgoClient()
+  var { error } = await ego.from('leads_angariacao').update(updates).eq('id', leadId)
+  if (error) { alert('Erro: ' + error.message); btn.disabled = false; btn.textContent = '💾 Guardar'; return }
+  lead.ficha = ficha
+  lead.notas = notas || null
+  if (updates.reuniao_data) { lead.reuniao_data = updates.reuniao_data; lead.reuniao_hora = updates.reuniao_hora; lead.reuniao_local = updates.reuniao_local }
+  modal.remove()
+  angRender()
 }
 
 function angToggle(id, checked) {
