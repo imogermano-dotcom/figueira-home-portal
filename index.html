@@ -11966,6 +11966,7 @@ function angViewFicha(leadId) {
     {k:'ocupacao',label:'Ocupação',type:'select',opts:['','Ocupado pelo proprietário','Arrendado','Devoluto','Outro']},
     {k:'documentacao',label:'Documentação',type:'select',opts:['','Tudo em ordem','Falta documentação','Herança/partilhas em curso','Não sabe']},
     {k:'expectativa_preco',label:'Expectativa de preço'},
+    {k:'notas_imovel',label:'Notas sobre o imóvel',type:'textarea',wide:true},
     {k:'notas_motivacao',label:'Notas motivação',type:'textarea',wide:true},
     {k:'notas_situacao',label:'Notas situação',type:'textarea',wide:true},
     {k:'notas_contrato',label:'Notas contrato',type:'textarea',wide:true},
@@ -12049,7 +12050,7 @@ async function angSaveFicha(leadId) {
     else delete ficha[el.dataset.fk]
   })
   var notas = document.getElementById('ang-ficha-notas').value.trim()
-  var updates = { ficha: ficha, notas: notas || null }
+  var updates = { ficha: ficha, notas: notas || null, notas_imovel: ficha.notas_imovel || null }
   if (ficha.data_reuniao) {
     updates.reuniao_data = ficha.data_reuniao
     updates.reuniao_hora = ficha.hora_reuniao || null

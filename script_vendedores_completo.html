@@ -340,6 +340,7 @@ const STEPS = {
           </div>
           <div class="field"><label class="field-label">Valor expectativa</label><input type="text" placeholder="Ex: 180 000 €" oninput="save('valor_expectativa',this.value)"><span class="field-note">Não emitir opinião na chamada</span></div>
         </div>
+        <div class="field" style="margin-top:12px"><label class="field-label">📝 Notas sobre o imóvel</label><textarea placeholder="Detalhes adicionais: estado, características, motivos especiais..." oninput="save('notas_imovel',this.value)"></textarea></div>
       </div>`,
     choices: [
       { id: 'ok', label: 'Dados recolhidos — avançar', cls: 'yes', icon: '▶', next: 's3_motivacao' },
@@ -760,7 +761,8 @@ async function guardarFicha() {
       estado: estado,
       estado_alterado_em: new Date().toISOString(),
       outcome: F.outcome || null,
-      notas: [F.notas_motivacao, F.notas_situacao, F.notas_contrato, F.notas_curiosidade, F.notas_finais].filter(Boolean).join('\n---\n') || null
+      notas: [F.notas_imovel, F.notas_motivacao, F.notas_situacao, F.notas_contrato, F.notas_curiosidade, F.notas_finais].filter(Boolean).join('\n---\n') || null,
+      notas_imovel: F.notas_imovel || null
     };
     if (F.data_reuniao) {
       updates.reuniao_data = F.data_reuniao;
