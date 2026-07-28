@@ -12104,7 +12104,12 @@ async function angSaveFicha(leadId) {
   })
   var notas = document.getElementById('ang-ficha-notas').value.trim()
   var updates = { ficha: ficha, notas: notas || null, notas_imovel: ficha.notas_imovel || null }
-  if (['nova','atribuida','nao_atende'].indexOf(lead.estado) >= 0) {
+  if (ficha.outcome) {
+    var outcomeEstadoMap = {avaliacao:'avaliacao_marcada',sem_interesse:'sem_interesse',fora_area:'fora_area',retorno:'retorno_agendado',sem_resposta:'nao_atende'}
+    updates.estado = outcomeEstadoMap[ficha.outcome] || 'contactada'
+    updates.estado_alterado_em = new Date().toISOString()
+    updates.outcome = ficha.outcome
+  } else if (['nova','atribuida','nao_atende'].indexOf(lead.estado) >= 0) {
     updates.estado = 'contactada'
     updates.estado_alterado_em = new Date().toISOString()
   }
@@ -12112,6 +12117,10 @@ async function angSaveFicha(leadId) {
     updates.reuniao_data = ficha.data_reuniao
     updates.reuniao_hora = ficha.hora_reuniao || null
     updates.reuniao_local = ficha.local || null
+  }
+  if (ficha.retorno && !ficha.data_reuniao) {
+    updates.retorno_data = ficha.retorno_data || null
+    updates.retorno_hora = ficha.retorno_hora || null
   }
   var btn = modal.querySelector('button[onclick*=angSaveFicha]')
   btn.disabled = true; btn.textContent = 'A guardar…'
@@ -12121,9 +12130,11 @@ async function angSaveFicha(leadId) {
   lead.ficha = ficha
   lead.notas = notas || null
   if (updates.estado) { lead.estado = updates.estado; lead.estado_alterado_em = updates.estado_alterado_em }
+  if (updates.outcome) lead.outcome = updates.outcome
   if (updates.reuniao_data) { lead.reuniao_data = updates.reuniao_data; lead.reuniao_hora = updates.reuniao_hora; lead.reuniao_local = updates.reuniao_local }
+  if (updates.retorno_data) { lead.retorno_data = updates.retorno_data; lead.retorno_hora = updates.retorno_hora }
   modal.remove()
-  angRender()
+  angFilter()
 }
 
 function angToggle(id, checked) {
