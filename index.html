@@ -2639,34 +2639,7 @@ function renderResults(data, q) {
     h += '<div style="margin-top:24px;padding-top:16px;border-top:2px solid #e2e8f0">'
     h += '<div class="result-meta" style="color:#7c3aed"><strong>🏠 '+angResults.length+'</strong> lead(s) de angariação</div>'
     angResults.forEach(function(a) {
-      var c = a.contactos || {}
-      var nome = c.nome || a.contacto_nome || '—'
-      var tel = c.telemovel || c.telefone || ''
-      var email = c.email || ''
-      var estado = a.estado || 'nova'
-      var estadoLabel = angEstadoLabel(estado)
-      var tagClass = angTagClass(estado)
-      var diasDesde = ''
-      if (a.created_at) {
-        var dias = Math.floor((Date.now() - new Date(a.created_at).getTime()) / 86400000)
-        diasDesde = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há '+dias+' dias'
-      }
-      h += '<div class="card" style="border-left:4px solid #7c3aed">'
-      h += '<div class="card-header">'
-      h += '<span style="font-weight:700">'+esc(nome)+'</span>'
-      if (tel) h += '<span class="card-client">· '+esc(tel)+'</span>'
-      if (email) h += '<span class="card-client">· '+esc(email)+'</span>'
-      h += '<span class="ang-tag '+tagClass+'" style="margin-left:8px">'+estadoLabel+'</span>'
-      if (a.responsavel) h += '<span class="card-resp">'+esc(a.responsavel)+'</span>'
-      h += '</div>'
-      h += '<div class="card-meta">'
-      if (a.meta_form_name) h += '<span>📋 '+esc(a.meta_form_name)+'</span>'
-      if (diasDesde) h += '<span>📅 '+diasDesde+'</span>'
-      if (a.reuniao_data) h += '<span style="color:#15803d;font-weight:600">🤝 Reunião: '+esc(a.reuniao_data)+(a.reuniao_hora?' '+esc(a.reuniao_hora):'')+'</span>'
-      if (a.retorno_data) h += '<span style="color:#b45309">🔄 Retorno: '+esc(a.retorno_data)+(a.retorno_hora?' '+esc(a.retorno_hora):'')+'</span>'
-      h += '</div>'
-      if (a.notas) h += '<div class="card-summary">'+esc(a.notas.substring(0,200))+'</div>'
-      h += '</div>'
+      h += buildAngCardHtml(a)
     })
     h += '</div>'
   }
@@ -2674,6 +2647,61 @@ function renderResults(data, q) {
   res.innerHTML = h
   renderControls()
   var fb1 = document.getElementById('feedback-bar'); if(fb1 && window.FeedbackIA){ fb1.innerHTML=''; fb1.appendChild(FeedbackIA.mostrarBotao(q, descr, results.length)) }
+}
+
+function buildAngCardHtml(a) {
+  var c = a.contactos || {}
+  var nome = c.nome || a.contacto_nome || '—'
+  var tel = c.telemovel || c.telefone || ''
+  var email = c.email || ''
+  var estado = a.estado || 'nova'
+  var estadoLabel = angEstadoLabel(estado)
+  var tagClass = angTagClass(estado)
+  var diasDesde = ''
+  if (a.created_at) {
+    var dias = Math.floor((Date.now() - new Date(a.created_at).getTime()) / 86400000)
+    diasDesde = dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : 'há '+dias+' dias'
+  }
+  var h = '<div class="card" style="border-left:4px solid #7c3aed">'
+  h += '<div class="card-header">'
+  h += '<span style="font-weight:700">'+esc(nome)+'</span>'
+  if (tel) h += '<span class="card-client">· '+esc(tel)+'</span>'
+  if (email) h += '<span class="card-client">· '+esc(email)+'</span>'
+  h += '<span class="ang-tag '+tagClass+'" style="margin-left:8px">'+estadoLabel+'</span>'
+  if (a.responsavel) h += '<span class="card-resp">'+esc(a.responsavel)+'</span>'
+  h += '</div>'
+  h += '<div class="card-meta">'
+  if (a.meta_form_name) h += '<span>📋 '+esc(a.meta_form_name)+'</span>'
+  if (diasDesde) h += '<span>📅 '+diasDesde+'</span>'
+  if (a.reuniao_data) h += '<span style="color:#15803d;font-weight:600">🤝 Reunião: '+esc(a.reuniao_data)+(a.reuniao_hora?' '+esc(a.reuniao_hora):'')+'</span>'
+  if (a.retorno_data) h += '<span style="color:#b45309">🔄 Retorno: '+esc(a.retorno_data)+(a.retorno_hora?' '+esc(a.retorno_hora):'')+'</span>'
+  h += '</div>'
+  // Resumo estruturado
+  var f = a.ficha || {}
+  var sumParts = []
+  var imovelParts = []
+  if (f.tipo_imovel) imovelParts.push(f.tipo_imovel)
+  if (f.tipologia) imovelParts.push(f.tipologia)
+  if (f.freguesia) imovelParts.push(f.freguesia)
+  if (f.rua) imovelParts.push(f.rua)
+  if (imovelParts.length) sumParts.push('🏠 ' + imovelParts.join(' · '))
+  if (f.valor_expectativa) sumParts.push('💰 Expectativa: ' + f.valor_expectativa)
+  if (f.urgencia) sumParts.push('⏱ ' + f.urgencia)
+  if (f.motivos_venda) sumParts.push('📌 Motivos: ' + f.motivos_venda)
+  if (f.hipoteca && f.hipoteca !== 'Sem hipoteca') sumParts.push('🏦 ' + f.hipoteca)
+  if (f.ocupacao) sumParts.push('🔑 ' + f.ocupacao)
+  var outcomeMap = {sem_resposta:'Sem resposta',retorno:'Retorno agendado',avaliacao:'Avaliação marcada',sem_interesse:'Sem interesse',fora_area:'Fora de área'}
+  if (a.outcome && outcomeMap[a.outcome]) sumParts.push('📊 Resultado: ' + outcomeMap[a.outcome])
+  var notasList = [f.notas_imovel, f.notas_motivacao, f.notas_situacao, f.notas_contrato, f.notas_curiosidade, f.notas_finais].filter(Boolean)
+  if (notasList.length) sumParts.push('📝 ' + notasList.join(' | ').substring(0, 300))
+  else if (a.notas) sumParts.push('📝 ' + a.notas.substring(0, 300))
+  if (sumParts.length) {
+    h += '<div class="card-summary" style="white-space:pre-line;line-height:1.5">' + esc(sumParts.join('\n')) + '</div>'
+  } else if (!f || !Object.keys(f).length) {
+    h += '<div class="card-summary" style="color:#9ca3af;font-style:italic">Ficha ainda não preenchida</div>'
+  }
+  h += '</div>'
+  return h
 }
 
 function buildCardHtml(r) {
