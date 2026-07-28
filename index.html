@@ -2105,7 +2105,12 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
         <select id="ang-f-resp" onchange="angFilter()">
           <option value="">Todos os responsáveis</option>
         </select>
-        <input type="text" id="ang-f-nome" placeholder="Pesquisar nome/telefone…" oninput="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none;min-width:180px">
+        <input type="text" id="ang-f-nome" placeholder="Pesquisar nome/telefone/email…" oninput="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem;outline:none;min-width:180px">
+        <select id="ang-f-sort" onchange="angFilter()" title="Ordenar por">
+          <option value="recente">Mais recente</option>
+          <option value="antiga">Mais antiga</option>
+          <option value="ultimo_contacto">Último contacto</option>
+        </select>
         <input type="date" id="ang-f-desde" onchange="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem" title="Desde">
         <input type="date" id="ang-f-ate" onchange="angFilter()" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.82rem" title="Até">
       </div>
@@ -11822,6 +11827,18 @@ function angFilter() {
       if (ate && dt > ate) return false
     }
     return true
+  })
+
+  var sort = document.getElementById('ang-f-sort').value
+  _angFiltered.sort(function(a, b) {
+    if (sort === 'ultimo_contacto') {
+      var da = a.estado_alterado_em || a.created_at || ''
+      var db = b.estado_alterado_em || b.created_at || ''
+      return db.localeCompare(da)
+    }
+    var ca = a.created_at || ''
+    var cb = b.created_at || ''
+    return sort === 'antiga' ? ca.localeCompare(cb) : cb.localeCompare(ca)
   })
 
   _angSelected = new Set()
