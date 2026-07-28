@@ -11812,19 +11812,20 @@ function angFilter() {
   var ate = document.getElementById('ang-f-ate').value
 
   _angFiltered = _angLeads.filter(function(l) {
-    if (estado === '_nao_contactadas') {
-      if (['nova','atribuida','nao_atende'].indexOf(l.estado) < 0) return false
-    } else if (estado && l.estado !== estado) return false
-    if (resp && l.responsavel !== resp) return false
     if (busca) {
       var c = l.contactos || {}
       var haystack = ((c.nome || l.contacto_nome) + ' ' + (c.telefone || '') + ' ' + (c.telemovel || '') + ' ' + (c.email || '')).toLowerCase()
       if (haystack.indexOf(busca) < 0) return false
-    }
-    if (desde || ate) {
-      var dt = (l.created_at || '').slice(0, 10)
-      if (desde && dt < desde) return false
-      if (ate && dt > ate) return false
+    } else {
+      if (estado === '_nao_contactadas') {
+        if (['nova','atribuida','nao_atende'].indexOf(l.estado) < 0) return false
+      } else if (estado && l.estado !== estado) return false
+      if (resp && l.responsavel !== resp) return false
+      if (desde || ate) {
+        var dt = (l.created_at || '').slice(0, 10)
+        if (desde && dt < desde) return false
+        if (ate && dt > ate) return false
+      }
     }
     return true
   })
@@ -11861,8 +11862,12 @@ function angRenderStats() {
     {k:'atribuida', label:'Atribuídas', color:'#2563eb'},
     {k:'nao_atende', label:'Não atende', color:'#dc2626'},
     {k:'contactada', label:'Contactadas', color:'#0891b2'},
+    {k:'retorno_agendado', label:'Retorno', color:'#6366f1'},
     {k:'avaliacao_marcada', label:'Avaliação', color:'#d97706'},
     {k:'reuniao_marcada', label:'Reunião', color:'#059669'},
+    {k:'follow_up', label:'Follow-up', color:'#0d9488'},
+    {k:'sem_interesse', label:'Sem interesse', color:'#94a3b8'},
+    {k:'fora_area', label:'Fora de área', color:'#78716c'},
     {k:'angariada', label:'Angariadas', color:'#16a34a'}
   ]
   el.innerHTML = items.map(function(i) {
@@ -11952,8 +11957,10 @@ function angRender() {
 
     html += '<div class="ang-card-actions">'
     html += '<button class="ang-btn ang-btn-primary" onclick="angOpenScript(\'' + l.id + '\')">📞 Script</button>'
-    if (estado !== 'nao_atende' && estado !== 'sem_interesse' && estado !== 'fora_area' && estado !== 'angariada') {
-      html += '<button onclick="angNaoAtende(\'' + l.id + '\')" style="padding:4px 10px;border:1.5px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.74rem;font-weight:600;cursor:pointer">📵 Não atendeu</button>'
+    if (estado !== 'sem_interesse' && estado !== 'fora_area' && estado !== 'angariada') {
+      var naCount = l.nao_atende_count || 0
+      var naLabel = naCount > 0 ? '📵 Não atendeu (' + naCount + 'x)' : '📵 Não atendeu'
+      html += '<button onclick="angNaoAtende(\'' + l.id + '\')" style="padding:4px 10px;border:1.5px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.74rem;font-weight:600;cursor:pointer">' + naLabel + '</button>'
     }
     html += '<select onchange="angChangeEstado(\'' + l.id + '\',this.value)" style="padding:4px 8px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.76rem">'
     angEstados().forEach(function(e) {
@@ -12199,7 +12206,7 @@ async function angNaoAtende(leadId) {
   var count = prev + 1
 
   var { error } = await ego.from('leads_angariacao').update({
-    estado: 'nao_atende', estado_alterado_em: now,
+    estado: 'nao_atende', estado_alterado_em: now, nao_atende_count: count,
     notas: (lead.notas ? lead.notas + '\n' : '') + '📵 Não atendeu (' + count + 'x) — ' + new Date().toLocaleDateString('pt-PT') + ' ' + new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})
   }).eq('id', leadId)
 
