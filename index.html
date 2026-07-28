@@ -12193,15 +12193,8 @@ function angCloseScript() {
 
 window.addEventListener('message', function(ev) {
   if (ev.data && ev.data.type === 'angariacao-ficha-saved') {
-    var leadId = ev.data.leadId
-    var estado = ev.data.estado
-    var lead = _angLeads.find(function(l) { return l.id === leadId })
-    if (lead) {
-      lead.estado = estado
-      lead.estado_alterado_em = new Date().toISOString()
-      lead.ficha = true
-    }
-    angRender()
+    angCloseScript()
+    angLoad()
   }
 })
 </script>
