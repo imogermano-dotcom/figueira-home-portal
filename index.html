@@ -11818,7 +11818,9 @@ function angFilter() {
       if (haystack.indexOf(busca) < 0) return false
     } else {
       if (estado === '_nao_contactadas') {
-        if (['nova','atribuida','nao_atende'].indexOf(l.estado) < 0) return false
+        if (['nova','atribuida'].indexOf(l.estado) < 0) return false
+      } else if (estado === '_contactadas') {
+        if (['contactada','retorno_agendado','avaliacao_marcada','reuniao_marcada','follow_up','sem_interesse','fora_area','angariada'].indexOf(l.estado) < 0) return false
       } else if (estado && l.estado !== estado) return false
       if (resp && l.responsavel !== resp) return false
       if (desde || ate) {
@@ -11855,13 +11857,12 @@ function angRenderStats() {
   var counts = {}
   _angLeads.forEach(function(l) { counts[l.estado] = (counts[l.estado] || 0) + 1 })
   var activeFilter = document.getElementById('ang-f-estado').value
+  var contactadas = (counts['contactada']||0)+(counts['retorno_agendado']||0)+(counts['avaliacao_marcada']||0)+(counts['reuniao_marcada']||0)+(counts['follow_up']||0)+(counts['sem_interesse']||0)+(counts['fora_area']||0)+(counts['angariada']||0)
   var items = [
     {k:'', label:'Total', color:'#6b7280', count:_angLeads.length},
-    {k:'_nao_contactadas', label:'Não contactadas', color:'#f59e0b', count:(counts['nova']||0)+(counts['atribuida']||0)+(counts['nao_atende']||0)},
-    {k:'nova', label:'Novas', color:'#8b5cf6'},
-    {k:'atribuida', label:'Atribuídas', color:'#2563eb'},
+    {k:'_nao_contactadas', label:'Não contactadas', color:'#f59e0b', count:(counts['nova']||0)+(counts['atribuida']||0)},
     {k:'nao_atende', label:'Não atende', color:'#dc2626'},
-    {k:'contactada', label:'Contactadas', color:'#0891b2'},
+    {k:'_contactadas', label:'Contactadas', color:'#0891b2', count:contactadas},
     {k:'retorno_agendado', label:'Retorno', color:'#6366f1'},
     {k:'avaliacao_marcada', label:'Avaliação', color:'#d97706'},
     {k:'reuniao_marcada', label:'Reunião', color:'#059669'},
@@ -11957,7 +11958,7 @@ function angRender() {
 
     html += '<div class="ang-card-actions">'
     html += '<button class="ang-btn ang-btn-primary" onclick="angOpenScript(\'' + l.id + '\')">📞 Script</button>'
-    if (estado !== 'sem_interesse' && estado !== 'fora_area' && estado !== 'angariada') {
+    if (['nova','atribuida','nao_atende'].indexOf(estado) >= 0) {
       var naCount = l.nao_atende_count || 0
       var naLabel = naCount > 0 ? '📵 Não atendeu (' + naCount + 'x)' : '📵 Não atendeu'
       html += '<button onclick="angNaoAtende(\'' + l.id + '\')" style="padding:4px 10px;border:1.5px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.74rem;font-weight:600;cursor:pointer">' + naLabel + '</button>'
@@ -12103,6 +12104,10 @@ async function angSaveFicha(leadId) {
   })
   var notas = document.getElementById('ang-ficha-notas').value.trim()
   var updates = { ficha: ficha, notas: notas || null, notas_imovel: ficha.notas_imovel || null }
+  if (['nova','atribuida','nao_atende'].indexOf(lead.estado) >= 0) {
+    updates.estado = 'contactada'
+    updates.estado_alterado_em = new Date().toISOString()
+  }
   if (ficha.data_reuniao) {
     updates.reuniao_data = ficha.data_reuniao
     updates.reuniao_hora = ficha.hora_reuniao || null
@@ -12115,6 +12120,7 @@ async function angSaveFicha(leadId) {
   if (error) { alert('Erro: ' + error.message); btn.disabled = false; btn.textContent = '💾 Guardar'; return }
   lead.ficha = ficha
   lead.notas = notas || null
+  if (updates.estado) { lead.estado = updates.estado; lead.estado_alterado_em = updates.estado_alterado_em }
   if (updates.reuniao_data) { lead.reuniao_data = updates.reuniao_data; lead.reuniao_hora = updates.reuniao_hora; lead.reuniao_local = updates.reuniao_local }
   modal.remove()
   angRender()
