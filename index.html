@@ -1801,6 +1801,9 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <!-- Summary cards -->
       <div id="meta-summary" style="display:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px"></div>
 
+      <!-- Resumo por tipo (Angariação vs Venda — CPL nunca se compara entre os dois) -->
+      <div id="meta-summary-bytype" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
+
       <!-- Status filter + table -->
       <div id="meta-table-wrap" style="display:none;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden">
         <div style="display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap">
@@ -1815,6 +1818,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <button class="meta-ftab active" onclick="metaFilterStatus('all',this)">Todas</button>
             <button class="meta-ftab" onclick="metaFilterStatus('ACTIVE',this)">Ativas</button>
             <button class="meta-ftab" onclick="metaFilterStatus('PAUSED',this)">Pausadas</button>
+          </div>
+          <div id="meta-type-tabs" style="display:flex;gap:4px">
+            <button class="meta-ftab active" onclick="metaFilterType('all',this)">Todos os tipos</button>
+            <button class="meta-ftab" onclick="metaFilterType('angariacao',this)">🏠 Angariação</button>
+            <button class="meta-ftab" onclick="metaFilterType('venda',this)">🏡 Venda</button>
           </div>
         </div>
         <!-- Banner: campanha fora do período -->
@@ -10690,6 +10698,7 @@ var _metaData = []
 var _metaSortKey = 'spend'
 var _metaSortAsc = false
 var _metaStatusFilter = 'all'
+var _metaTypeFilter = 'all'
 var _metaSearchQuery = ''
 var _metaSearchTimer = null
 var _metaSearchBannerCampaign = null
@@ -10786,6 +10795,23 @@ function metaObjLabel(obj) {
     LINK_CLICKS: 'Tráfego', MESSAGES: 'Mensagens', CONVERSIONS: 'Conversão', VIDEO_VIEWS: 'Vídeo', POST_ENGAGEMENT: 'Publicação' }
   return map[obj] || obj
 }
+// Classifica a campanha por tipo de lead: "venda" (comprador, referência de imóvel "FH"+nº)
+// vs "angariacao" (proprietário/vendedor). CPL nunca deve ser comparado entre estes dois tipos —
+// leads de angariação são estrutural e legitimamente mais caras.
+function metaCampaignType(name) {
+  var n = name || ''
+  if (/angaria[cç][aã]o/i.test(n)) return 'angariacao'
+  if (/FH\s*\d{3,}/i.test(n)) return 'venda'
+  return 'angariacao'
+}
+function metaTypeLabel(type) {
+  return type === 'venda' ? '🏡 Venda' : '🏠 Angariação'
+}
+function metaTypeBadge(type) {
+  var bg = type === 'venda' ? '#dbeafe' : '#fef3c7'
+  var fg = type === 'venda' ? '#1e40af' : '#92400e'
+  return '<span style="font-size:.68rem;background:'+bg+';color:'+fg+';padding:1px 7px;border-radius:10px;font-weight:600">'+metaTypeLabel(type)+'</span>'
+}
 
 function metaRenderSummary(totals) {
   var el = document.getElementById('meta-summary')
@@ -10805,11 +10831,45 @@ function metaRenderSummary(totals) {
   ].map(function(k) {
     return '<div class="meta-kpi"><div class="meta-kpi-label">'+k.label+'</div><div class="meta-kpi-value">'+k.value+'</div></div>'
   }).join('')
+  metaRenderSummaryByType()
+}
+
+// CPL de Angariação e de Venda NUNCA se misturam num único "Custo/Lead" médio — são funis
+// diferentes (proprietário vs comprador) com custos estruturalmente diferentes.
+function metaRenderSummaryByType() {
+  var el = document.getElementById('meta-summary-bytype')
+  if (!el) return
+  var groups = { angariacao: { spend: 0, leads: 0, campaigns: 0 }, venda: { spend: 0, leads: 0, campaigns: 0 } }
+  ;(_metaData || []).forEach(function(c) {
+    var type = metaCampaignType(c.name)
+    var ins = c.ins || {}
+    groups[type].spend += parseFloat(ins.spend || 0)
+    groups[type].leads += metaGetLeads(ins.actions)
+    groups[type].campaigns += 1
+  })
+  el.innerHTML = ['angariacao', 'venda'].map(function(type) {
+    var g = groups[type]
+    var cpl = g.leads > 0 ? g.spend / g.leads : null
+    return '<div style="flex:1;min-width:220px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 16px">'
+      + '<div style="font-size:.78rem;font-weight:700;color:#374151;margin-bottom:8px">'+metaTypeLabel(type)+' <span style="font-weight:400;color:#9ca3af">('+g.campaigns+' campanhas)</span></div>'
+      + '<div style="display:flex;gap:18px">'
+      + '<div><div style="font-size:.66rem;color:#9ca3af;text-transform:uppercase">Gasto</div><div style="font-size:.9rem;font-weight:700;color:#1a3c5e">'+metaFmtEur(g.spend)+'</div></div>'
+      + '<div><div style="font-size:.66rem;color:#9ca3af;text-transform:uppercase">Leads</div><div style="font-size:.9rem;font-weight:700;color:#15803d">'+(g.leads||'—')+'</div></div>'
+      + '<div><div style="font-size:.66rem;color:#9ca3af;text-transform:uppercase">CPL</div><div style="font-size:.9rem;font-weight:700;color:#374151">'+(cpl?metaFmtEur(cpl):'—')+'</div></div>'
+      + '</div></div>'
+  }).join('')
 }
 
 function metaFilterStatus(status, btn) {
   _metaStatusFilter = status
-  document.querySelectorAll('.meta-ftab').forEach(function(b){ b.classList.remove('active') })
+  document.querySelectorAll('#meta-status-tabs .meta-ftab').forEach(function(b){ b.classList.remove('active') })
+  btn.classList.add('active')
+  metaRenderTable()
+}
+
+function metaFilterType(type, btn) {
+  _metaTypeFilter = type
+  document.querySelectorAll('#meta-type-tabs .meta-ftab').forEach(function(b){ b.classList.remove('active') })
   btn.classList.add('active')
   metaRenderTable()
 }
@@ -10824,8 +10884,9 @@ function metaRenderTable() {
   var q = _metaSearchQuery.toLowerCase()
   var rows = _metaData.filter(function(c) {
     var statusOk = _metaStatusFilter === 'all' || c.status === _metaStatusFilter
+    var typeOk = _metaTypeFilter === 'all' || metaCampaignType(c.name) === _metaTypeFilter
     var searchOk = q.length < 4 || c.name.toLowerCase().indexOf(q) >= 0
-    return statusOk && searchOk
+    return statusOk && typeOk && searchOk
   })
 
   var key = _metaSortKey
@@ -10850,9 +10911,10 @@ function metaRenderTable() {
       ? '<span class="meta-status-active">Ativa</span>'
       : '<span class="meta-status-paused">Pausada</span>'
     var objBadge = '<span style="font-size:.68rem;background:#e0e7ff;color:#3730a3;padding:1px 7px;border-radius:10px;font-weight:600">'+metaObjLabel(c.objective)+'</span>'
+    var typeBadge = metaTypeBadge(metaCampaignType(c.name))
     html += '<tr class="meta-tr" style="cursor:pointer" onclick="metaOpenDrilldown(\''+c.id+'\')" title="Clica para análise detalhada">'
       + '<td style="padding:9px 16px"><div style="font-weight:600;color:#111827;font-size:.83rem;margin-bottom:3px">'+esc(c.name)+' <span style="font-size:.68rem;color:#9ca3af">🔍</span></div>'
-      + '<div style="display:flex;gap:4px;flex-wrap:wrap">'+statusBadge+objBadge+'</div></td>'
+      + '<div style="display:flex;gap:4px;flex-wrap:wrap">'+statusBadge+typeBadge+objBadge+'</div></td>'
       + '<td style="text-align:right;padding:9px 12px;font-weight:700;color:#1a3c5e">'+metaFmtEur(ins.spend)+'</td>'
       + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum(ins.impressions)+'</td>'
       + '<td style="text-align:right;padding:9px 12px;color:#374151">'+metaFmtNum(ins.reach)+'</td>'
@@ -10996,7 +11058,7 @@ function metaOpenDrilldown(campaignId) {
   var dd = document.getElementById('meta-drilldown')
   dd.style.display = 'block'
   document.getElementById('meta-dd-name').textContent = c.name
-  document.getElementById('meta-dd-subtitle').textContent = metaObjLabel(c.objective) + ' · ' + c.status
+  document.getElementById('meta-dd-subtitle').textContent = metaTypeLabel(metaCampaignType(c.name)) + ' · ' + metaObjLabel(c.objective) + ' · ' + c.status
   document.getElementById('meta-dd-loading').style.display = 'block'
   document.getElementById('meta-dd-content').style.display = 'none'
   setTimeout(function(){ dd.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 50)
@@ -11181,7 +11243,7 @@ function metaRenderDrilldown(data, campaign) {
   // Top 5 tabela
   var t5el = document.getElementById('meta-dd-top5')
   if (top5.length > 0) {
-    t5el.innerHTML = '<h4 style="font-size:.85rem;font-weight:700;color:#1a3c5e;margin:16px 0 10px">🏆 Top 5 campanhas por CPL (referência)</h4>'
+    t5el.innerHTML = '<h4 style="font-size:.85rem;font-weight:700;color:#1a3c5e;margin:16px 0 10px">🏆 Top 5 campanhas do mesmo tipo ('+metaTypeLabel(metaCampaignType(campaign ? campaign.name : ''))+') por CPL (referência)</h4>'
       + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.8rem">'
       + '<thead><tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb">'
       + ['Campanha','Leads','Gasto','CPL','Dias'].map(function(h, i){
