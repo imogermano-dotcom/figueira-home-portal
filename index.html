@@ -11520,17 +11520,54 @@ async function qualidadeLoad() {
     var [jsonQual, jsonMeta] = await Promise.all([respQual.json(), respMeta.json()])
     if (jsonQual.error) throw new Error(jsonQual.error)
 
-    // Indexar campanhas Meta por prefixo FH
+    // Indexar campanhas Meta por prefixo FH e angariação
     ;(jsonMeta.campaigns || []).forEach(function(c) {
-      var m = (c.name || '').match(/(FH\d+)/i)
-      if (!m) return
-      var p = m[1].toUpperCase()
-      if (c.effective_status === 'ACTIVE') _qualMetaAtivas.add(p)
-      else _qualMetaPausadas.add(p)
+      var n = c.name || ''
+      var m = n.match(/(FH\d+)/i)
+      if (m) {
+        var p = m[1].toUpperCase()
+        if (c.effective_status === 'ACTIVE') _qualMetaAtivas.add(p)
+        else _qualMetaPausadas.add(p)
+      }
+      if (/angaria[cç][aã]o/i.test(n)) {
+        if (c.effective_status === 'ACTIVE') _qualMetaAtivas.add('__ANG__')
+        else _qualMetaPausadas.add('__ANG__')
+      }
     })
 
     _qualData = jsonQual.campanhas || []
     _qualSummary = jsonQual.summary || {}
+
+    // Carregar campanhas de angariação
+    var ego = _getEgoClient()
+    var { data: angLeads } = await ego.from('leads_angariacao').select('meta_form_name, estado').not('meta_form_name', 'is', null)
+    if (angLeads && angLeads.length) {
+      var angCamps = {}
+      angLeads.forEach(function(l) {
+        var fn = l.meta_form_name
+        if (!angCamps[fn]) angCamps[fn] = { campanha: '🏠 ' + fn, total_leads:0, leads_ativas:0, nao_contactado:0, nao_atende:0, sem_interesse:0, invalido:0, em_progresso:0, visitas:0, vendas:0, com_cache_ai:0, _is_ang:true }
+        var c = angCamps[fn]
+        c.total_leads++
+        var e = l.estado || 'nova'
+        if (e === 'nova' || e === 'atribuida') { c.nao_contactado++; c.leads_ativas++ }
+        else if (e === 'nao_atende') { c.nao_atende++; c.leads_ativas++ }
+        else if (e === 'sem_interesse') c.sem_interesse++
+        else if (e === 'fora_area') c.invalido++
+        else if (e === 'angariada') c.vendas++
+        else { c.em_progresso++; c.leads_ativas++ }
+      })
+      Object.values(angCamps).forEach(function(c) {
+        var t = c.total_leads || 1
+        c.pct_nao_contactado = Math.round(c.nao_contactado / t * 1000) / 10
+        c.pct_nao_atende = Math.round(c.nao_atende / t * 1000) / 10
+        c.pct_sem_interesse = Math.round(c.sem_interesse / t * 1000) / 10
+        c.pct_invalido = Math.round(c.invalido / t * 1000) / 10
+        c.alerta_nao_atende = t >= 10 && (c.nao_atende / t * 100) > 30
+        c.alerta_sem_interesse = t >= 10 && (c.sem_interesse / t * 100) > 20
+        _qualData.push(c)
+      })
+    }
+
     document.getElementById('qual-msg').style.display = 'none'
     qualidadeRenderTiles()
     qualidadeFilter()
@@ -11564,7 +11601,9 @@ function qualSort(key) {
 }
 
 function qualPrefix(campanha) {
-  var m = (campanha || '').match(/(FH\d+)/i)
+  var c = campanha || ''
+  if (c.indexOf('\u{1F3E0}') === 0) return c
+  var m = c.match(/(FH\d+)/i)
   return m ? m[1].toUpperCase() : null
 }
 
@@ -11678,8 +11717,12 @@ function qualidadeFilter() {
     if (onlyAtivas && !(r.leads_ativas > 0)) return false
     if (onlyAlert  && !r.alerta_nao_atende && !r.alerta_sem_interesse) return false
     if (onlyMetaAtiva) {
-      var p = qualPrefix(r.campanha)
-      if (!p || !_qualMetaAtivas.has(p)) return false
+      if (r._is_ang) {
+        if (!_qualMetaAtivas.has('__ANG__')) return false
+      } else {
+        var p = qualPrefix(r.campanha)
+        if (!p || !_qualMetaAtivas.has(p)) return false
+      }
     }
     return true
   })
