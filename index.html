@@ -12490,11 +12490,30 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   var intValues = intKeys.map(function(k) { return interesse[k] })
 
   var objecoes = {}
+  var _relObjPatterns = [
+    { re: /r[eé]s[\s-]*do[\s-]*ch[aã]o|[\b\s]r\/c[\b\s.,!]|[\b\s]rc[\b\s.,!]/i, label: 'Rés-do-Chão' },
+    { re: /[aá]reas?\s+pequen|divis[oõ]es?\s+pequen|pequen.*divis|pequen.*[aá]rea/i, label: 'Divisões Pequenas' },
+    { re: /pre[cç]o\s+(alto|elevado)|valor\s+(alto|elevado|est[aá]\s+alto)|muito\s+caro|caro\s+de\s+mais/i, label: 'Preço Elevado' },
+    { re: /obras|precisa\s+de\s+renova|renova[cç][aã]o/i, label: 'Obras' },
+    { re: /localiza[cç][aã]o|n[aã]o\s+gost.*rua|rua\s+(feia|barulh|m[aá])/i, label: 'Localização' },
+    { re: /garagem|estaciona/i, label: 'Garagem / Estacionamento' },
+    { re: /luminosidade|escur[oa]|pouca\s+luz|sem\s+luz/i, label: 'Luminosidade' },
+    { re: /exterior.*pr[eé]dio|aspecto.*pr[eé]dio|fachada|pr[eé]dio\s+(feio|velho|antigo)/i, label: 'Aspecto do Prédio' },
+  ]
   visitas.forEach(function(v) {
+    var visitPontos = {}
     if (v.visita_pontos_negativos) {
       v.visita_pontos_negativos.split(',').forEach(function(o) {
         var t = o.trim()
-        if (t) objecoes[t] = (objecoes[t] || 0) + 1
+        if (t) { objecoes[t] = (objecoes[t] || 0) + 1; visitPontos[t.toLowerCase()] = true }
+      })
+    }
+    if (v.visita_observacoes) {
+      _relObjPatterns.forEach(function(p) {
+        if (p.re.test(v.visita_observacoes) && !visitPontos[p.label.toLowerCase()]) {
+          objecoes[p.label] = (objecoes[p.label] || 0) + 1
+          visitPontos[p.label.toLowerCase()] = true
+        }
       })
     }
   })
