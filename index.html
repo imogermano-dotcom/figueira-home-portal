@@ -12523,29 +12523,45 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   function _relStripHtml(s) {
     return (s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\n{3,}/g, '\n\n').trim()
   }
-  function _relDedupKey(texto) {
-    return texto.toLowerCase().replace(/[^a-záàâãéèêíóòôõúçñ0-9]/gi, '').substring(0, 80)
-  }
-  var comentarios = []
+  var _relAutoRe = /^(lead promovida|email enviado com os imoveis|para:.*assunto:.*partilhou|o utilizador.*partilhou por email)/i
+  function _relIsAuto(txt) { return _relAutoRe.test(txt) }
+  var allNotes = []
   visitas.forEach(function(v) {
     if (v.visita_observacoes) {
       var clean = _relStripHtml(v.visita_observacoes)
-      if (clean.length > 5) comentarios.push({ cliente: v.cliente_nome || 'Cliente', texto: clean, data: v.visita_data, tipo: 'visita' })
+      if (clean.length > 5) allNotes.push({ cliente: v.cliente_nome || 'Cliente', texto: clean, data: v.visita_data, tipo: 'visita', auto: _relIsAuto(clean) })
     }
   })
   notas.forEach(function(n) {
     if (n.nota_texto) {
       var clean = _relStripHtml(n.nota_texto)
-      if (clean.length > 10) comentarios.push({ cliente: n.cliente_nome || n.nota_autor || 'Consultor', texto: clean, data: n.nota_data_iso, tipo: 'nota' })
+      if (clean.length > 10) allNotes.push({ cliente: n.cliente_nome || n.nota_autor || 'Consultor', texto: clean, data: n.nota_data_iso, tipo: 'nota', auto: _relIsAuto(clean) })
     }
   })
-  var seen = {}
-  comentarios = comentarios.filter(function(c) {
-    var k = _relDedupKey(c.texto)
-    if (seen[k]) return false
-    seen[k] = true
-    return true
-  }).slice(0, 30)
+  var clienteMap = {}
+  allNotes.forEach(function(n) {
+    var key = n.cliente.toLowerCase().trim()
+    if (!clienteMap[key]) clienteMap[key] = { nome: n.cliente, notas: [], datas: [], temVisita: false }
+    clienteMap[key].notas.push(n)
+    if (n.data) clienteMap[key].datas.push(n.data)
+    if (n.tipo === 'visita') clienteMap[key].temVisita = true
+  })
+  var comentarios = Object.keys(clienteMap).map(function(key) {
+    var g = clienteMap[key]
+    var relevantes = g.notas.filter(function(n) { return !n.auto })
+    if (relevantes.length === 0) relevantes = g.notas.slice(0, 1)
+    relevantes.sort(function(a, b) { return (b.data || '').localeCompare(a.data || '') })
+    var resumo = relevantes[0].texto
+    if (relevantes.length > 1) {
+      var extras = relevantes.slice(1).filter(function(n) { return n.texto !== resumo })
+      if (extras.length > 0) resumo += '\n' + extras.map(function(n) { return n.texto }).join('\n')
+    }
+    if (resumo.length > 400) resumo = resumo.substring(0, 397) + '...'
+    g.datas.sort()
+    var primeira = g.datas[0], ultima = g.datas[g.datas.length - 1]
+    return { cliente: g.nome, texto: resumo, dataInicio: primeira, dataFim: ultima, tipo: g.temVisita ? 'visita' : 'nota', total: g.notas.length }
+  })
+  comentarios.sort(function(a, b) { return (b.dataFim || '').localeCompare(a.dataFim || '') })
 
   var headerInfo = ''
   if (imovel) {
@@ -12618,11 +12634,14 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   if (comentarios.length > 0) {
     html += '<div class="rel-section"><h4>Comentários dos Clientes</h4><div class="rel-comments">'
     comentarios.forEach(function(c) {
-      var ds = c.data ? new Date(c.data).toLocaleDateString('pt-PT') : ''
       var badge = c.tipo === 'visita' ? '<span class="rel-tag-visita">Visita</span>' : '<span class="rel-tag-nota">Nota</span>'
+      var dInicio = c.dataInicio ? new Date(c.dataInicio).toLocaleDateString('pt-PT') : ''
+      var dFim = c.dataFim ? new Date(c.dataFim).toLocaleDateString('pt-PT') : ''
+      var periodo = dInicio === dFim ? dInicio : (dInicio && dFim ? dInicio + ' — ' + dFim : dInicio || dFim)
       html += '<div class="rel-comment"><div class="rel-comment-head">' + badge + ' <strong>' + esc(c.cliente) + '</strong>'
-      if (ds) html += ' <span class="rel-comment-date">' + esc(ds) + '</span>'
-      html += '</div><p>' + esc(c.texto) + '</p></div>'
+      if (c.total > 1) html += ' <span style="font-size:.7rem;color:#6b7280">(' + c.total + ' interações)</span>'
+      if (periodo) html += ' <span class="rel-comment-date">' + esc(periodo) + '</span>'
+      html += '</div><p>' + esc(c.texto).replace(/\n/g, '<br>') + '</p></div>'
     })
     html += '</div></div>'
   }
