@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Script + Ficha Vendedores — FigueiraHome</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap');
+
+  :root {
+    --brand: #2C3E50;
+    --brand-light: #5D6D7E;
+    --accent: #E67E22;
+    --success: #1A7A44;
+    --danger: #A93226;
+    --warning: #B7770D;
+    --purple: #7D3C98;
+    --neutral: #F4F6F8;
+    --text: #1C1C1C;
+    --muted: #6C7A89;
+    --border: #D5D8DC;
+    --white: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #EAECEE; color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+  /* HEADER */
+  .header { background: var(--brand); color: white; padding: 18px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 16px rgba(0,0,0,0.25); }
+  .header-icon { width: 42px; height: 42px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; }
+  .header-sub { font-size: 0.72rem; opacity: 0.7; margin-top: 1px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header-status { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; opacity: 0.85; white-space: nowrap; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #F39C12; flex-shrink: 0; }
+  .status-dot.saved { background: #2ECC71; }
+
+  /* PROGRESS */
+  .progress-wrap { background: var(--white); padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px; overflow-x: auto; }
+  .prog-step { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 44px; }
+  .prog-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; background: #E5E8EC; color: var(--muted); transition: all 0.3s; border: 2px solid #D5D8DC; }
+  .prog-dot.active { background: var(--brand); border-color: var(--brand); color: white; box-shadow: 0 0 0 3px rgba(44,62,80,0.2); }
+  .prog-dot.done { background: var(--success); border-color: var(--success); color: white; }
+  .prog-line { flex: 1; height: 2px; background: var(--border); min-width: 6px; margin-bottom: 14px; transition: background 0.3s; }
+  .prog-line.done { background: var(--success); }
+  .prog-label { font-size: 0.6rem; color: var(--muted); margin-top: 4px; text-align: center; white-space: nowrap; }
+
+  .main { max-width: 780px; margin: 0 auto; padding: 24px 16px 40px; }
+
+  /* STEP CARD */
+  .step-card { background: var(--white); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,0.09); margin-bottom: 16px; animation: slideIn 0.35s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .step-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #E5E8EC; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .step-num.done-num { background: var(--success); }
+  .step-num.warn-num { background: var(--warning); }
+  .step-num.qual-num { background: var(--purple); }
+  .step-num.danger-num { background: var(--danger); }
+  .step-title { font-weight: 600; font-size: 0.95rem; flex: 1; }
+  .step-tag { margin-left: auto; padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  .step-body { padding: 4px 20px 20px; }
+
+  /* SPEECH */
+  .speech { background: #EAF0F6; border-left: 3px solid var(--brand-light); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 12px 0; font-size: 0.88rem; line-height: 1.65; font-style: italic; color: #1C2833; }
+  .speech-label { font-size: 0.68rem; font-weight: 700; font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; color: var(--brand-light); margin-bottom: 6px; }
+
+  /* INSTRUCTION */
+  .instruction { font-size: 0.82rem; color: var(--muted); padding: 8px 12px; background: var(--neutral); border-radius: 8px; margin: 10px 0; line-height: 1.5; }
+  .instruction strong { color: var(--text); }
+
+  /* HIGHLIGHT */
+  .highlight { background: #FEF5E7; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 10px 14px; margin: 10px 0; font-size: 0.84rem; line-height: 1.55; color: #784212; }
+  .highlight strong { color: #6E2C00; }
+
+  /* FLOW CHOICES */
+  .choice-group { margin: 16px 0 4px; }
+  .choice-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; }
+  .choice-btn { flex: 1; min-width: 140px; padding: 13px 18px; border-radius: 10px; border: 2px solid transparent; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: left; line-height: 1.3; display: flex; align-items: flex-start; gap: 8px; }
+  .choice-btn .btn-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .choice-btn .btn-sub { font-weight: 400; font-size: 0.77rem; opacity: 0.8; display: block; margin-top: 2px; }
+  .choice-btn.yes { background: #EBF5EB; border-color: #7DCEA0; color: #1A5E38; }
+  .choice-btn.yes:hover { background: #D5F5E3; border-color: #27AE60; }
+  .choice-btn.no { background: #FDEDEC; border-color: #F1948A; color: #922B21; }
+  .choice-btn.no:hover { background: #FADBD8; border-color: #E74C3C; }
+  .choice-btn.maybe { background: #FEF9E7; border-color: #F7DC6F; color: #7D6608; }
+  .choice-btn.maybe:hover { background: #FCF3CF; border-color: #F1C40F; }
+  .choice-btn.neutral { background: var(--neutral); border-color: var(--border); color: var(--text); }
+  .done-state { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #EBF5EB; border-radius: 10px; margin-top: 10px; font-size: 0.85rem; color: var(--success); font-weight: 500; }
+  .chosen-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.06); border-radius: 20px; padding: 3px 10px; font-size: 0.78rem; font-weight: 600; margin-left: 6px; }
+
+  /* FORM FIELDS inside script */
+  .form-block { background: #F8F9FA; border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; margin: 12px 0; }
+  .form-block-title { font-size: 0.72rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .field-row { display: grid; gap: 10px; margin-bottom: 10px; }
+  .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .field-row.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .field-label .req { color: var(--accent); }
+  .field-note { font-size: 0.7rem; color: var(--muted); font-style: italic; }
+
+  input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="time"], input[type="number"], select, textarea {
+    border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 11px;
+    font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text);
+    background: white; width: 100%; transition: border-color 0.15s;
+    appearance: none; -webkit-appearance: none;
+  }
+  input[type="time"] { appearance: auto; -webkit-appearance: auto; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand-light); }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236C7A89' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  textarea { resize: vertical; min-height: 64px; }
+
+  /* CHECKBOX GROUP */
+  .checkbox-group { display: flex; flex-direction: column; gap: 5px; }
+  .checkbox-group.inline { flex-direction: row; flex-wrap: wrap; }
+  .cb-item { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-radius: 8px; border: 1.5px solid var(--border); background: white; cursor: pointer; transition: all 0.15s; user-select: none; font-size: 0.84rem; }
+  .cb-item:hover { border-color: var(--brand-light); background: #EAF4FB; }
+  .cb-item.checked { border-color: var(--brand); background: #EAF0F6; font-weight: 500; }
+  .cb-item input[type="checkbox"] { display: none; }
+  .cb-box { width: 17px; height: 17px; border-radius: 4px; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .cb-item.checked .cb-box { background: var(--brand); border-color: var(--brand); }
+  .cb-item.checked .cb-box::after { content: '✓'; color: white; font-size: 0.62rem; font-weight: 800; }
+
+  /* RADIO GROUP */
+  .radio-group { display: flex; flex-direction: column; gap: 5px; }
+  .radio-group.inline { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .rb-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); background: white; cursor: pointer; transition: all 0.15s; user-select: none; font-size: 0.84rem; }
+  .rb-item:hover { border-color: var(--brand-light); background: #EAF4FB; }
+  .rb-item.selected { border-color: var(--brand); background: #EAF0F6; font-weight: 500; }
+  .rb-item input[type="radio"] { display: none; }
+  .rb-dot { width: 17px; height: 17px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .rb-item.selected .rb-dot { border-color: var(--brand); }
+  .rb-item.selected .rb-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); display: block; }
+
+  /* ADDRESS */
+  .addr-grid { display: grid; grid-template-columns: 1fr 80px 80px 80px; gap: 8px; margin-bottom: 8px; }
+  .addr-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* CONTRACT BLOCK */
+  .contract-block { background: #FEF9E7; border: 1.5px solid #F7DC6F; border-radius: 10px; padding: 14px; display: none; flex-direction: column; gap: 12px; margin-top: 10px; }
+  .contract-block.visible { display: flex; }
+  .contract-label { font-size: 0.72rem; font-weight: 700; color: var(--warning); text-transform: uppercase; letter-spacing: 0.05em; }
+  .contract-alert { background: #FDEDEC; border-radius: 8px; padding: 10px 12px; font-size: 0.81rem; color: var(--danger); display: none; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .contract-alert.visible { display: flex; }
+
+  /* OUTCOME */
+  .rb-item.outcome-green.selected { border-color: var(--success); background: #EBF5EB; }
+  .rb-item.outcome-green.selected .rb-dot { border-color: var(--success); }
+  .rb-item.outcome-green.selected .rb-dot::after { background: var(--success); }
+  .rb-item.outcome-yellow.selected { border-color: var(--warning); background: #FEF9E7; }
+  .rb-item.outcome-yellow.selected .rb-dot { border-color: var(--warning); }
+  .rb-item.outcome-yellow.selected .rb-dot::after { background: var(--warning); }
+  .rb-item.outcome-red.selected { border-color: var(--danger); background: #FDEDEC; }
+  .rb-item.outcome-red.selected .rb-dot { border-color: var(--danger); }
+  .rb-item.outcome-red.selected .rb-dot::after { background: var(--danger); }
+
+  /* OUTCOME BLOCK */
+  .outcome-card { border-radius: 10px; padding: 14px 16px; margin: 12px 0; border: 2px solid transparent; }
+  .outcome-card.success { background: #EBF5EB; border-color: #7DCEA0; }
+  .outcome-card.danger { background: #FDEDEC; border-color: #F1948A; }
+  .outcome-card.warning { background: #FEF9E7; border-color: #F7DC6F; }
+  .outcome-title { font-weight: 700; font-size: 0.84rem; margin-bottom: 5px; }
+  .outcome-card.success .outcome-title { color: var(--success); }
+  .outcome-card.danger .outcome-title { color: var(--danger); }
+  .outcome-card.warning .outcome-title { color: var(--warning); }
+  .outcome-body { font-size: 0.83rem; line-height: 1.5; }
+
+  /* CHECKLIST */
+  .checklist { margin: 8px 0; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+  .check-item:last-child { border-bottom: none; }
+  .check-box { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .check-box.checked { background: var(--success); border-color: var(--success); }
+  .check-box.checked::after { content: '✓'; color: white; font-size: 0.65rem; font-weight: 700; }
+
+  /* QUAL QUESTION */
+  .qual-q { margin-bottom: 10px; padding: 12px 14px; background: var(--neutral); border-radius: 10px; border-left: 3px solid var(--purple); }
+  .qual-q-label { font-size: 0.7rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .qual-q-text { font-size: 0.86rem; line-height: 1.55; font-style: italic; margin-bottom: 8px; }
+
+  /* FLOW DIVIDER */
+  .flow-divider { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; }
+  .flow-divider::before, .flow-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .flow-divider span { font-size: 1rem; color: var(--muted); }
+
+  /* SUBMIT */
+  .submit-row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .btn { padding: 12px 28px; border-radius: 10px; border: none; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; }
+  .btn-primary { background: var(--brand); color: white; }
+  .btn-primary:hover { background: #1a252f; }
+  .btn-secondary { background: var(--neutral); color: var(--brand); border: 1.5px solid var(--border); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--success); color: white; padding: 12px 24px; border-radius: 10px; font-size: 0.875rem; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.2); transition: transform 0.3s ease; z-index: 999; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .field-divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .section-sep { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
+  .section-sep span { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .section-sep::before, .section-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  @media (max-width: 580px) {
+    .choices { flex-direction: column; }
+    .choice-btn { min-width: unset; }
+    .field-row.cols-2, .field-row.cols-3, .field-row.cols-4 { grid-template-columns: 1fr; }
+    .addr-grid { grid-template-columns: 1fr 1fr; }
+    .addr-grid-2 { grid-template-columns: 1fr; }
+    .radio-group.inline { flex-direction: column; }
+    .header-sub { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🏡</div>
+  <div>
+    <div class="header-title">Script + Ficha — Vendedores (Lead Meta)</div>
+    <div class="header-sub">Qualificação · Angariação · FigueiraHome</div>
+  </div>
+  <div class="header-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Por guardar</span>
+  </div>
+</div>
+
+<div class="progress-wrap" id="progressBar"></div>
+<div class="main" id="flowContainer"></div>
+
+<div class="toast" id="toast">✅ Ficha guardada com sucesso!</div>
+
+<script>
+const PROG_LABELS = ['Abertura','Imóvel','Motivação','Situação','Agência','Resultado'];
+
+// ── FORM DATA STORE ──
+const F = {};
+
+function fv(id) { return F[id] || ''; }
+
+// ── STEPS ──
+const STEPS = {
+
+  s1_abertura: {
+    id: 's1_abertura', progIdx: 0,
+    title: 'Abertura e Apresentação', tagText: 'Sempre', tagColor: '#2C3E50',
+    content: () => `
+      <div class="form-block">
+        <div class="form-block-title">📋 Dados da Chamada</div>
+        <div class="field-row cols-3">
+          <div class="field"><label class="field-label">Consultor <span class="req">*</span></label><input type="text" id="f_consultor" placeholder="Nome do consultor" oninput="save('consultor',this.value)"></div>
+          <div class="field"><label class="field-label">Data <span class="req">*</span></label><input type="date" id="f_data" oninput="save('data_chamada',this.value)"></div>
+          <div class="field"><label class="field-label">Telefone Lead</label><input type="tel" id="f_telefone" placeholder="+351 9XX XXX XXX" oninput="save('telefone',this.value)"></div>
+        </div>
+      </div>
+      <div class="speech">
+        <div class="speech-label">🗣 Consultor diz</div>
+        "Boa [manhã/tarde], estou a falar com o/a <strong>[Nome]</strong>?"<br><br>
+        [Aguardar confirmação]<br><br>
+        "Olá <strong>[Nome]</strong>! O meu nome é <strong>[Nome do Consultor]</strong>, sou consultor imobiliário da <strong>FigueiraHome</strong>. Ligo porque vi que deixou contacto através de um dos nossos anúncios — tem um minutinho para falar?"
+      </div>
+      <div class="instruction">⏳ <strong>Tom descontraído, sem pressão.</strong> Se for mau momento, perguntar quando pode ligar e registar.</div>`,
+    choices: [
+      { id: 'sim', label: 'Sim, tem um minuto', sub: 'Avançar', cls: 'yes', icon: '✅', next: 's2_confirmacao' },
+      { id: 'mau_momento', label: 'Mau momento', sub: 'Agendar retorno', cls: 'no', icon: '⏰', next: 's1b_retorno' },
+    ],
+  },
+
+  s1b_retorno: {
+    id: 's1b_retorno', progIdx: 0, title: 'Agendar Retorno', tagText: 'Mau momento', tagColor: '#E67E22', numClass: 'warn-num',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Claro, sem problema! Quando seria o melhor momento para falar — prefere de manhã ou à tarde?"</div>
+      <div class="form-block">
+        <div class="form-block-title">📅 Agendar retorno</div>
+        <div class="field-row cols-2">
+          <div class="field"><label class="field-label">Data</label><input type="date" oninput="save('retorno_data',this.value)"></div>
+          <div class="field"><label class="field-label">Hora</label><input type="time" oninput="save('retorno_hora',this.value)"></div>
+        </div>
+      </div>`,
+    choices: [{ id: 'ok', label: 'Hora marcada — encerrar', cls: 'yes', icon: '✅', next: 's_retorno_ok' }],
+  },
+
+  s_retorno_ok: {
+    id: 's_retorno_ok', progIdx: 0, isFinal: true, title: 'Retorno Agendado', tagText: 'Encerrado', tagColor: '#E67E22', numClass: 'warn-num',
+    content: () => `
+      <div class="outcome-card warning"><div class="outcome-title">⏰ Retorno Agendado</div><div class="outcome-body">Registar hora no CRM. Encerrar com simpatia.</div></div>
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Perfeito! Ligo então [dia] por volta das [hora]. Tenha um excelente dia!"</div>
+      ${fichaOutcome('followup')}`,
+    choices: [],
+  },
+
+  s2_confirmacao: {
+    id: 's2_confirmacao', progIdx: 1,
+    title: 'Confirmar Imóvel na Figueira da Foz', tagText: 'Passo crítico', tagColor: '#2C3E50',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Ligo porque viu um anúncio nosso direcionado a pessoas que têm um imóvel para vender aqui na Figueira da Foz. É o seu caso — tem um imóvel no concelho que pretende vender?"</div>
+      <div class="instruction">⏳ <strong>Aguardar resposta sem pressionar.</strong> Pode ter clicado por curiosidade.</div>`,
+    choices: [
+      { id: 'sim_figueira', label: 'Sim, tem imóvel na Figueira', cls: 'yes', icon: '✅', next: 's2b_imovel' },
+      { id: 'fora', label: 'Sim, mas fora do Concelho', cls: 'no', icon: '📍', next: 's_fora_area' },
+      { id: 'curiosidade', label: 'Não / foi curiosidade', cls: 'no', icon: '❓', next: 's1d_curiosidade' },
+    ],
+  },
+
+  s2b_imovel: {
+    id: 's2b_imovel', progIdx: 1,
+    title: 'Dados do Imóvel', tagText: 'Identificação', tagColor: '#2C3E50',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Ótimo! Para eu já ir percebendo — que tipo de imóvel é e onde fica exatamente?"</div>
+      <div class="form-block">
+        <div class="form-block-title">🏠 Imóvel</div>
+        <div class="field-row cols-2">
+          <div class="field"><label class="field-label">Tipo <span class="req">*</span></label>
+            <select onchange="save('tipo_imovel',this.value)">
+              <option value="">Selecionar...</option>
+              <option>Apartamento</option><option>Moradia</option><option>Terreno</option><option>Outro</option>
+            </select>
+          </div>
+          <div class="field"><label class="field-label">Tipologia</label>
+            <select onchange="save('tipologia',this.value)">
+              <option value="">Selecionar...</option>
+              <option>T0</option><option>T1</option><option>T2</option><option>T3</option><option>T4</option><option>T4+</option><option>N/A (não residencial)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-divider" style="margin:10px 0"></div>
+        <div class="form-block-title" style="margin-bottom:8px">📍 Morada</div>
+        <div class="addr-grid">
+          <div class="field"><label class="field-label">Rua / Avenida</label><input type="text" placeholder="Ex: Rua da Liberdade" oninput="save('rua',this.value)"></div>
+          <div class="field"><label class="field-label">Nº Porta</label><input type="text" placeholder="Ex: 12" oninput="save('numero',this.value)"></div>
+          <div class="field"><label class="field-label">Andar</label><input type="text" placeholder="Ex: 2.º" oninput="save('andar',this.value)"></div>
+          <div class="field"><label class="field-label">Fração</label><input type="text" placeholder="Ex: A, Dto" oninput="save('fracao',this.value)"></div>
+        </div>
+        <div class="addr-grid-2" style="margin-top:8px">
+          <div class="field"><label class="field-label">Freguesia</label>
+            <select onchange="save('freguesia',this.value)">
+              <option value="">Selecionar...</option>
+              <option>Figueira da Foz (São Julião)</option><option>Buarcos e São Julião</option><option>Tavarede</option><option>Vila Verde</option><option>Bom Sucesso</option><option>Ferreira-a-Nova</option><option>Lavos</option><option>Maiorca</option><option>Marinha das Ondas</option><option>Paião</option><option>Quiaios</option><option>Santana</option><option>Alhadas</option><option>Outra</option>
+            </select>
+          </div>
+          <div class="field"><label class="field-label">Valor expectativa</label><input type="text" placeholder="Ex: 180 000 €" oninput="save('valor_expectativa',this.value)"><span class="field-note">Não emitir opinião na chamada</span></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label class="field-label">📝 Notas sobre o imóvel</label><textarea placeholder="Detalhes adicionais: estado, características, motivos especiais..." oninput="save('notas_imovel',this.value)"></textarea></div>
+      </div>`,
+    choices: [
+      { id: 'ok', label: 'Dados recolhidos — avançar', cls: 'yes', icon: '▶', next: 's3_motivacao' },
+    ],
+  },
+
+  s1d_curiosidade: {
+    id: 's1d_curiosidade', progIdx: 1, title: 'Clicou por Curiosidade', tagText: 'Salvar contacto', tagColor: '#E67E22', numClass: 'warn-num',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Sem problema nenhum, acontece! Já que falamos — tem algum imóvel na Figueira da Foz, ou conhece alguém que esteja a pensar vender ou comprar por aqui?"</div>
+      <div class="field"><label class="field-label">📝 Notas</label><textarea placeholder="O que referiu o cliente..." oninput="save('notas_curiosidade',this.value)"></textarea></div>`,
+    choices: [
+      { id: 'talvez', label: 'Pode ter interesse no futuro', cls: 'maybe', icon: '🤔', next: 's_manter_base' },
+      { id: 'nada', label: 'Sem qualquer interesse', cls: 'no', icon: '❌', next: 's_sem_interesse' },
+    ],
+  },
+
+  s_sem_interesse: {
+    id: 's_sem_interesse', progIdx: 1, isFinal: true, title: 'Sem Interesse — Encerrar', tagText: 'Excluído', tagColor: '#A93226', numClass: 'danger-num',
+    content: () => `
+      <div class="outcome-card danger"><div class="outcome-title">❌ Excluir contacto</div><div class="outcome-body">Registar no CRM como "Sem interesse". Não fazer follow-up.</div></div>
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Sem problema! Peço desculpa pela interrupção. Se algum dia precisar de algo relacionado com imobiliário na Figueira, estamos aqui. Tenha um bom dia!"</div>
+      ${fichaOutcome('excl_interesse')}`,
+    choices: [],
+  },
+
+  s_fora_area: {
+    id: 's_fora_area', progIdx: 1, isFinal: true, title: 'Fora da Área de Atuação', tagText: 'Excluído', tagColor: '#A93226', numClass: 'danger-num',
+    content: () => `
+      <div class="outcome-card danger"><div class="outcome-title">❌ Fora do Concelho</div><div class="outcome-body">Encerrar com simpatia. Registar motivo no CRM.</div></div>
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Infelizmente a nossa especialização é mesmo aqui na Figueira da Foz — seria desonesto tentar ajudar fora da zona onde realmente conheço bem o mercado. Se algum dia pensar em vender algo por aqui, estamos ao dispor. Boa sorte!"</div>
+      ${fichaOutcome('excl_area')}`,
+    choices: [],
+  },
+
+  s3_motivacao: {
+    id: 's3_motivacao', progIdx: 2, title: 'Motivação para Vender', tagText: 'Ouvir activamente', tagColor: '#1A7A44',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Óptimo! E diga-me — o que é que o/a está a levar a pensar em vender agora? Há alguma razão específica?"</div>
+      <div class="instruction">🎧 <strong>Ouvir sem interromper.</strong> A motivação define urgência e flexibilidade.</div>
+      <div class="highlight"><strong>Alta urgência:</strong> divórcio, herança, dívida, mudança de cidade, compra dependente.<br><strong>Baixa urgência:</strong> "estou só a ver o mercado", "se aparecer boa oferta".</div>
+      <div class="form-block">
+        <div class="form-block-title">📋 Registar</div>
+        <div class="field"><label class="field-label">Motivo(s) de venda</label>
+          <div class="checkbox-group" id="motivos">
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Habitação própria permanente</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Férias / uso sazonal</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Arrendamento / investimento</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Herança</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Divórcio / separação</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Mudança de cidade</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Compra de outro imóvel dependente desta venda</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Dificuldades financeiras</label>
+            <label class="cb-item" onclick="toggleCb(this,'motivos_venda',event)"><input type="checkbox"><div class="cb-box"></div>Outro</label>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px"><label class="field-label">Urgência</label>
+          <div class="radio-group" id="urgencia_rb">
+            <label class="rb-item" onclick="selectRb(this,'urgencia_rb','urgencia','Imediata — menos de 3 meses')"><input type="radio"><div class="rb-dot"></div>Imediata — menos de 3 meses</label>
+            <label class="rb-item" onclick="selectRb(this,'urgencia_rb','urgencia','Curto prazo — 3 a 6 meses')"><input type="radio"><div class="rb-dot"></div>Curto prazo — 3 a 6 meses</label>
+            <label class="rb-item" onclick="selectRb(this,'urgencia_rb','urgencia','Médio prazo — 6 a 12 meses')"><input type="radio"><div class="rb-dot"></div>Médio prazo — 6 a 12 meses</label>
+            <label class="rb-item" onclick="selectRb(this,'urgencia_rb','urgencia','Sem urgência / só a explorar')"><input type="radio"><div class="rb-dot"></div>Sem urgência / só a explorar</label>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px"><label class="field-label">Notas</label><textarea placeholder="Palavras exatas do cliente, contexto..." oninput="save('notas_motivacao',this.value)"></textarea></div>
+      </div>`,
+    choices: [
+      { id: 'alta', label: 'Alta urgência / motivo concreto', cls: 'yes', icon: '🔥', next: 's5_situacao' },
+      { id: 'baixa', label: 'Baixa urgência / só a explorar', cls: 'maybe', icon: '🤔', next: 's3b_baixa' },
+    ],
+  },
+
+  s3b_baixa: {
+    id: 's3b_baixa', progIdx: 2, title: 'Gerir Baixa Urgência', tagText: 'Sem pressão', tagColor: '#B7770D', numClass: 'warn-num',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Faz todo o sentido querer perceber o mercado antes de decidir! É exatamente para isso que serve a nossa avaliação — não há qualquer compromisso. Fazemos uma análise do valor real do seu imóvel no mercado atual, totalmente gratuita, e fica com essa informação para decidir com calma."</div>`,
+    choices: [
+      { id: 'ok', label: 'Mostrou abertura — avançar', cls: 'yes', icon: '✅', next: 's5_situacao' },
+      { id: 'nao', label: 'Não quer mesmo avançar', cls: 'no', icon: '❌', next: 's_manter_base' },
+    ],
+  },
+
+  s5_situacao: {
+    id: 's5_situacao', progIdx: 3, title: 'Situação do Imóvel', tagText: 'Due diligence', tagColor: '#2C3E50',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Mais algumas perguntas rápidas para eu chegar bem preparado/a à avaliação:"</div>
+      <div class="form-block">
+        <div class="form-block-title">🔍 Situação</div>
+        <div class="qual-q">
+          <div class="qual-q-label">👥 Ocupação</div>
+          <div class="qual-q-text">"O imóvel está ocupado — é a sua residência, está arrendado, ou está devoluto?"</div>
+          <div class="radio-group inline" id="ocupacao_rb">
+            <label class="rb-item" onclick="selectRb(this,'ocupacao_rb','ocupacao','Ocupado pelo proprietário')"><input type="radio"><div class="rb-dot"></div>Proprietário</label>
+            <label class="rb-item" onclick="selectRb(this,'ocupacao_rb','ocupacao','Arrendado')"><input type="radio"><div class="rb-dot"></div>Arrendado</label>
+            <label class="rb-item" onclick="selectRb(this,'ocupacao_rb','ocupacao','Devoluto / vazio')"><input type="radio"><div class="rb-dot"></div>Devoluto</label>
+            <label class="rb-item" onclick="selectRb(this,'ocupacao_rb','ocupacao','Ocupado por terceiros')"><input type="radio"><div class="rb-dot"></div>Terceiros</label>
+          </div>
+        </div>
+        <div class="qual-q">
+          <div class="qual-q-label">📄 Documentação</div>
+          <div class="qual-q-text">"A documentação está toda em ordem — escritura, caderneta predial, licença de habitação?"</div>
+          <div class="radio-group inline" id="doc_rb">
+            <label class="rb-item" onclick="selectRb(this,'doc_rb','documentacao','Tudo em ordem')"><input type="radio"><div class="rb-dot"></div>✅ Em ordem</label>
+            <label class="rb-item" onclick="selectRb(this,'doc_rb','documentacao','Incompleta / falta docs')"><input type="radio"><div class="rb-dot"></div>⚠️ Incompleta</label>
+            <label class="rb-item" onclick="selectRb(this,'doc_rb','documentacao','Desconhece')"><input type="radio"><div class="rb-dot"></div>❓ Desconhece</label>
+            <label class="rb-item" onclick="selectRb(this,'doc_rb','documentacao','Problemas conhecidos')"><input type="radio"><div class="rb-dot"></div>🔴 Problemas</label>
+          </div>
+        </div>
+        <div class="qual-q">
+          <div class="qual-q-label">🏦 Hipoteca / Encargos</div>
+          <div class="qual-q-text">"Tem hipoteca ou algum encargo associado ao imóvel?"</div>
+          <div class="radio-group inline" id="hip_rb">
+            <label class="rb-item" onclick="selectRb(this,'hip_rb','hipoteca','Sem hipoteca')"><input type="radio"><div class="rb-dot"></div>Sem hipoteca</label>
+            <label class="rb-item" onclick="selectRb(this,'hip_rb','hipoteca','Com hipoteca — a liquidar na venda')"><input type="radio"><div class="rb-dot"></div>Hipoteca a liquidar</label>
+            <label class="rb-item" onclick="selectRb(this,'hip_rb','hipoteca','Outro encargo')"><input type="radio"><div class="rb-dot"></div>Outro encargo</label>
+          </div>
+        </div>
+        <div class="field"><label class="field-label">Notas situação</label><textarea placeholder="Banco, valor em dívida, arrendatário, pendências..." oninput="save('notas_situacao',this.value)"></textarea></div>
+      </div>`,
+    choices: [
+      { id: 'ok', label: 'Dados recolhidos — avançar', cls: 'yes', icon: '▶', next: 's6_agencia' },
+    ],
+  },
+
+  s6_agencia: {
+    id: 's6_agencia', progIdx: 4, title: 'Situação de Agência', tagText: 'Ponto sensível', tagColor: '#B7770D', numClass: 'warn-num',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Só para perceber a situação — já tem o imóvel com alguma agência, ou está a começar agora a explorar as opções?"</div>`,
+    choices: [
+      { id: 'sem_agencia', label: 'Sem agência', sub: 'Terreno livre — avançar para avaliação', cls: 'yes', icon: '✅', next: 's7_avaliacao' },
+      { id: 'aberto', label: 'Com agência em aberto', sub: 'Regime partilhado — avançar para avaliação', cls: 'yes', icon: '🤝', next: 's7_avaliacao' },
+      { id: 'com_exclus', label: 'Com exclusividade', sub: 'Marcar reunião + estudo de mercado', cls: 'maybe', icon: '⚠️', next: 's7_reuniao_exclusividade' },
+    ],
+  },
+
+  s7_avaliacao: {
+    id: 's7_avaliacao', progIdx: 5, title: 'Marcar Avaliação Presencial', tagText: '✅ Fecho', tagColor: '#1A7A44',
+    content: () => `
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Com base no que me disse, faz todo o sentido avançarmos para uma avaliação presencial — é gratuita, sem qualquer compromisso. Vou chegar com dados reais do mercado da Figueira para lhe mostrar o posicionamento ideal do imóvel. No final fica com um relatório de valor que pode usar para o que entender.<br><br>Que dias tem disponibilidade esta semana ou na próxima?"</div>
+      <div class="instruction">📅 <strong>Propor dois slots concretos.</strong> Preferência pelo imóvel — assim já faz uma leitura do espaço.</div>
+      <div class="form-block">
+        <div class="form-block-title">📅 Dados da Avaliação</div>
+        <div class="field-row cols-2">
+          <div class="field"><label class="field-label">Data <span class="req">*</span></label><input type="date" oninput="save('data_reuniao',this.value)"></div>
+          <div class="field"><label class="field-label">Hora</label><input type="time" oninput="save('hora_reuniao',this.value)"></div>
+        </div>
+        <div class="field"><label class="field-label">Local</label>
+          <div class="radio-group inline" id="local_rb">
+            <label class="rb-item" onclick="selectRb(this,'local_rb','local','No imóvel')"><input type="radio"><div class="rb-dot"></div>No imóvel</label>
+            <label class="rb-item" onclick="selectRb(this,'local_rb','local','No escritório')"><input type="radio"><div class="rb-dot"></div>No escritório</label>
+            <label class="rb-item" onclick="selectRb(this,'local_rb','local','Outro')"><input type="radio"><div class="rb-dot"></div>Outro</label>
+          </div>
+        </div>
+      </div>
+      <div class="checklist">
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Data e hora confirmada</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Confirmação enviada por SMS / WhatsApp</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>CRM atualizado — "Avaliação agendada"</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Lembrete criado 24h antes</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Pesquisa de comparáveis na zona preparada</span></div>
+      </div>
+      <div class="speech" style="margin-top:12px"><div class="speech-label">🗣 Consultor diz</div>"Ótimo, [Nome]! Fica marcado para [data/hora]. Vou confirmar por mensagem e já fico a preparar a análise do mercado na sua zona. Até [data]!"</div>`,
+    choices: [
+      { id: 'marcada', label: 'Avaliação marcada ✅', cls: 'yes', icon: '📅', next: 's_avaliacao_ok' },
+      { id: 'recusa', label: 'Não quer marcar agora', cls: 'no', icon: '❌', next: 's_manter_base' },
+    ],
+  },
+
+  s7_reuniao_exclusividade: {
+    id: 's7_reuniao_exclusividade', progIdx: 5, title: 'Marcar Reunião — Estudo de Mercado Presencial', tagText: '🤝 Fecho', tagColor: '#1A7A44',
+    content: () => `
+      <div class="instruction"><strong>Objetivo:</strong> marcar reunião presencial para entregar o estudo de mercado pessoalmente — independentemente de estar satisfeito ou não com a agência atual. A reunião cria a relação. O estudo é o pretexto.</div>
+      <div class="form-block">
+        <div class="form-block-title">⚠️ Detalhes da Exclusividade</div>
+        <div class="qual-q">
+          <div class="qual-q-label">😊 Satisfação com a agência atual</div>
+          <div class="qual-q-text">"Está satisfeito/a com o trabalho que está a ser feito? O imóvel está a ter visibilidade?"</div>
+          <div class="radio-group inline" id="sat_rb">
+            <label class="rb-item" onclick="selectRb(this,'sat_rb','satisfacao','Satisfeito/a')"><input type="radio"><div class="rb-dot"></div>😊 Satisfeito/a</label>
+            <label class="rb-item" onclick="selectRb(this,'sat_rb','satisfacao','Insatisfeito/a')"><input type="radio"><div class="rb-dot"></div>😕 Insatisfeito/a</label>
+            <label class="rb-item" onclick="selectRb(this,'sat_rb','satisfacao','Indiferente')"><input type="radio"><div class="rb-dot"></div>🤷 Indiferente</label>
+          </div>
+        </div>
+        <div class="field-row cols-2">
+          <div class="field"><label class="field-label">Data fim do contrato</label><input type="date" id="fim_contrato" oninput="save('fim_contrato',this.value);calcDataCritica()"></div>
+          <div class="field"><label class="field-label">Aviso prévio para rescisão</label>
+            <select id="aviso_previo" onchange="save('aviso_previo',this.value);calcDataCritica()">
+              <option value="">Desconhecido</option><option value="15">15 dias</option><option value="30">30 dias</option><option value="45">45 dias</option><option value="60">60 dias</option><option value="90">90 dias</option>
+            </select>
+          </div>
+        </div>
+        <div class="contract-alert" id="contractAlert"><span>⚠️</span><span id="contractAlertText"></span></div>
+        <div class="field"><label class="field-label">Notas contrato</label><textarea placeholder="Agência atual, condições, motivo de insatisfação..." oninput="save('notas_contrato',this.value)"></textarea></div>
+      </div>
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Independentemente disso, há algo que posso fazer por si agora e que não implica qualquer compromisso: preparar um <strong>estudo de mercado independente</strong> do seu imóvel, com dados reais de vendas na sua zona, para que saiba se o imóvel está posicionado ao preço certo.<br><br>Prefiro entregar-lho pessoalmente — assim também nos conhecemos e, se algum dia precisar de nós, já sabe quem somos e como trabalhamos. São 20 minutos, sem pressão nenhuma. Quando é que lhe dá jeito?"</div>
+      <div class="form-block">
+        <div class="form-block-title">📅 Dados da Reunião</div>
+        <div class="field-row cols-2">
+          <div class="field"><label class="field-label">Data <span class="req">*</span></label><input type="date" oninput="save('data_reuniao',this.value)"></div>
+          <div class="field"><label class="field-label">Hora</label><input type="time" oninput="save('hora_reuniao',this.value)"></div>
+        </div>
+        <div class="field"><label class="field-label">Local</label>
+          <div class="radio-group inline" id="local2_rb">
+            <label class="rb-item" onclick="selectRb(this,'local2_rb','local','No imóvel')"><input type="radio"><div class="rb-dot"></div>No imóvel</label>
+            <label class="rb-item" onclick="selectRb(this,'local2_rb','local','No escritório')"><input type="radio"><div class="rb-dot"></div>No escritório</label>
+            <label class="rb-item" onclick="selectRb(this,'local2_rb','local','Outro')"><input type="radio"><div class="rb-dot"></div>Outro</label>
+          </div>
+        </div>
+      </div>
+      <div class="speech" style="margin-top:4px"><div class="speech-label">🗣 Consultor diz</div>"Ótimo, [Nome]! Fica marcado para [data/hora]. Vou preparar o estudo entretanto e levo tudo impresso para si. Confirmo por mensagem. Até [data]!"</div>
+      <div class="checklist">
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Data e hora da reunião confirmada</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Local acordado</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Confirmação enviada por SMS / WhatsApp</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Data fim de exclusividade e aviso prévio no CRM</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Alerta criado para antes do prazo de rescisão</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span>Estudo de mercado a preparar antes da reunião</span></div>
+      </div>`,
+    choices: [
+      { id: 'marcada', label: 'Reunião marcada ✅', cls: 'yes', icon: '📅', next: 's_reuniao_ok' },
+      { id: 'recusa', label: 'Não quer marcar agora', cls: 'no', icon: '❌', next: 's_manter_base' },
+    ],
+  },
+
+  s_avaliacao_ok: {
+    id: 's_avaliacao_ok', progIdx: 5, isFinal: true, title: 'Avaliação Confirmada!', tagText: 'Concluído', tagColor: '#1A7A44', numClass: 'done-num',
+    content: () => `
+      <div class="outcome-card success"><div class="outcome-title">🎉 Avaliação Marcada com Sucesso</div><div class="outcome-body">Registar no CRM — estado <strong>"Avaliação agendada"</strong>. Enviar confirmação por mensagem. Preparar comparáveis.</div></div>
+      ${fichaFinal('avaliacao')}`,
+    choices: [],
+  },
+
+  s_reuniao_ok: {
+    id: 's_reuniao_ok', progIdx: 5, isFinal: true, title: 'Reunião Confirmada!', tagText: 'Concluído', tagColor: '#1A7A44', numClass: 'done-num',
+    content: () => `
+      <div class="outcome-card success"><div class="outcome-title">🤝 Reunião Marcada — Estudo de Mercado a Preparar</div><div class="outcome-body">Registar no CRM — estado <strong>"Reunião agendada"</strong> + tag <strong>"Exclusividade ativa"</strong>. Preparar estudo de mercado impresso para levar.</div></div>
+      ${fichaFinal('reuniao')}`,
+    choices: [],
+  },
+
+  s_manter_base: {
+    id: 's_manter_base', progIdx: 5, isFinal: true, title: 'Manter na Base', tagText: 'Follow-up', tagColor: '#B7770D', numClass: 'warn-num',
+    content: () => `
+      <div class="outcome-card warning"><div class="outcome-title">📋 Manter na Base — Follow-up Futuro</div><div class="outcome-body">Registar no CRM com tag <strong>"Follow-up"</strong>. Agendar contacto em 30 dias.</div></div>
+      <div class="speech"><div class="speech-label">🗣 Consultor diz</div>"Claro, compreendo perfeitamente. Se me der autorização, posso entrar em contacto daqui a umas semanas com novidades do mercado. Faz sentido?"</div>
+      ${fichaFinal('followup')}`,
+    choices: [],
+  },
+};
+
+// ── FICHA OUTCOME HELPERS ──
+function fichaOutcome(tipo) {
+  return `<div class="form-block" style="margin-top:12px">
+    <div class="form-block-title">📝 Notas finais</div>
+    <textarea placeholder="Observações gerais..." oninput="save('notas_finais',this.value)"></textarea>
+  </div>`;
+}
+
+function fichaFinal(outcome) {
+  save('outcome', outcome);
+  return `<div class="form-block" style="margin-top:12px">
+    <div class="form-block-title">📝 Notas finais da chamada</div>
+    <textarea placeholder="Próximos passos, observações relevantes..." oninput="save('notas_finais',this.value)"></textarea>
+  </div>
+  <div class="submit-row" style="margin-top:14px">
+    <button class="btn btn-primary" onclick="guardarFicha()">💾 Guardar Ficha no CRM</button>
+    <button class="btn btn-secondary" onclick="limparFicha()">🗑 Nova chamada</button>
+  </div>`;
+}
+
+// ── STATE ──
+let activeSteps = ['s1_abertura'];
+let currentStepId = 's1_abertura';
+
+// ── PROGRESS ──
+function renderProgress() {
+  const bar = document.getElementById('progressBar');
+  const step = STEPS[currentStepId];
+  const activeIdx = step ? step.progIdx : 0;
+  const doneIdxs = new Set();
+  activeSteps.forEach(id => { const s = STEPS[id]; if (s && s.progIdx < activeIdx) doneIdxs.add(s.progIdx); });
+  let html = '';
+  PROG_LABELS.forEach((label, i) => {
+    const isDone = doneIdxs.has(i), isActive = i === activeIdx;
+    html += `<div class="prog-step"><div class="prog-dot ${isDone?'done':isActive?'active':''}">${isDone?'✓':i+1}</div><div class="prog-label">${label}</div></div>`;
+    if (i < PROG_LABELS.length - 1) html += `<div class="prog-line ${isDone?'done':''}"></div>`;
+  });
+  bar.innerHTML = html;
+}
+
+// ── RENDER CARD ──
+function renderStepCard(stepId, locked = false, chosenId = null) {
+  const step = STEPS[stepId]; if (!step) return '';
+  const tagStyle = `background:${step.tagColor}22;color:${step.tagColor};border:1px solid ${step.tagColor}55;`;
+  const numClass = step.numClass || '';
+  const cardNum = activeSteps.indexOf(stepId) + 1;
+  let choicesHtml = '';
+  if (!locked && step.choices && step.choices.length > 0) {
+    choicesHtml = `<div class="choice-group"><div class="choice-label">Como respondeu o cliente?</div><div class="choices">
+      ${step.choices.map(c=>`<button class="choice-btn ${c.cls}" onclick="choose('${stepId}','${c.id}','${c.next}')"><span class="btn-icon">${c.icon||'▶'}</span><span class="btn-text">${c.label}<span class="btn-sub">${c.sub||''}</span></span></button>`).join('')}
+    </div></div>`;
+  } else if (locked && chosenId) {
+    const chosen = step.choices && step.choices.find(c => c.id === chosenId);
+    choicesHtml = `<div class="done-state">✓ Resposta registada <span class="chosen-badge">${chosen?chosen.icon+' '+chosen.label:''}</span></div>`;
+  }
+  return `<div class="step-card" id="card-${stepId}">
+    <div class="step-header"><div class="step-num ${numClass}">${cardNum}</div><div class="step-title">${step.title}</div><span class="step-tag" style="${tagStyle}">${step.tagText}</span></div>
+    <div class="step-body">${step.content()}${choicesHtml}</div>
+  </div>`;
+}
+
+// ── CHOOSE ──
+function choose(stepId, choiceId, nextId) {
+  const card = document.getElementById('card-' + stepId);
+  if (card) {
+    const step = STEPS[stepId];
+    const chosen = step.choices && step.choices.find(c => c.id === choiceId);
+    const cg = card.querySelector('.choice-group');
+    if (cg) cg.innerHTML = `<div class="done-state">✓ Resposta registada <span class="chosen-badge">${chosen?chosen.icon+' '+chosen.label:''}</span></div>`;
+    card.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
+    card.querySelectorAll('.cb-item,.rb-item').forEach(el => el.style.pointerEvents = 'none');
+  }
+  if (nextId && STEPS[nextId]) {
+    activeSteps.push(nextId);
+    currentStepId = nextId;
+    renderProgress();
+    const container = document.getElementById('flowContainer');
+    const div = document.createElement('div');
+    div.innerHTML = `<div class="flow-divider"><span>↓</span></div>` + renderStepCard(nextId);
+    container.appendChild(div);
+    setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+}
+
+// ── FORM HELPERS ──
+function save(key, val) { F[key] = val; autoSave(); }
+
+function toggleCb(el, key, ev) {
+  if (ev) ev.preventDefault();
+  el.classList.toggle('checked');
+  el.querySelector('input').checked = el.classList.contains('checked');
+  const vals = [];
+  el.closest('.checkbox-group').querySelectorAll('.cb-item.checked input').forEach(i => vals.push(i.closest('.cb-item').textContent.trim()));
+  save(key, vals.join(', '));
+}
+
+function selectRb(el, groupId, key, val) {
+  const group = document.getElementById(groupId); if (!group) return;
+  group.querySelectorAll('.rb-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input').checked = true;
+  if (key) save(key, val);
+}
+
+function showContract() { const b = document.getElementById('contractBlock'); if(b) b.classList.add('visible'); }
+function hideContract() { const b = document.getElementById('contractBlock'); if(b) b.classList.remove('visible'); }
+
+function calcDataCritica() {
+  const fim = document.getElementById('fim_contrato') ? document.getElementById('fim_contrato').value : '';
+  const aviso = document.getElementById('aviso_previo') ? document.getElementById('aviso_previo').value : '';
+  const alert = document.getElementById('contractAlert');
+  const alertText = document.getElementById('contractAlertText');
+  if (!alert) return;
+  if (fim && aviso) {
+    const fimDate = new Date(fim);
+    const criticaDate = new Date(fimDate);
+    criticaDate.setDate(criticaDate.getDate() - parseInt(aviso));
+    const today = new Date();
+    const diffDays = Math.ceil((criticaDate - today) / (1000*60*60*24));
+    const fmt = d => d.toLocaleDateString('pt-PT', {day:'2-digit',month:'long',year:'numeric'});
+    let msg = diffDays < 0 ? ' — <strong>PRAZO JÁ ULTRAPASSADO!</strong>' : diffDays <= 14 ? ` — <strong>URGENTE: faltam ${diffDays} dias!</strong>` : ` — faltam ${diffDays} dias`;
+    alertText.innerHTML = `Data crítica de rescisão: <strong>${fmt(criticaDate)}</strong>${msg}<br>Contrato termina a ${fmt(fimDate)}, requer ${aviso} dias de aviso prévio.`;
+    alert.classList.add('visible');
+    save('data_critica_rescisao', criticaDate.toISOString().split('T')[0]);
+  } else { alert.classList.remove('visible'); }
+}
+
+function toggleCheck(el) { el.classList.toggle('checked'); }
+
+// ── SUPABASE INTEGRATION ──
+const EGO_URL = 'https://zphasvfopnbzwnaidsnw.supabase.co';
+const EGO_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaGFzdmZvcG5ienduYWlkc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3ODI3NzgsImV4cCI6MjA5MDM1ODc3OH0.tzA42a3Ual4iOKs8riE1x5YoUzBtpSOJ_iQf5GgqjoA';
+let _leadId = null;
+let _leadData = null;
+
+function getUrlParam(key) {
+  return new URLSearchParams(window.location.search).get(key);
+}
+
+function outcomeToEstado(outcome) {
+  const map = { avaliacao:'avaliacao_marcada', reuniao:'reuniao_marcada', followup:'follow_up', excl_interesse:'sem_interesse', excl_area:'fora_area' };
+  return map[outcome] || 'contactada';
+}
+
+// ── AUTO SAVE ──
+let saveTimer;
+function autoSave() {
+  clearTimeout(saveTimer);
+  document.getElementById('statusDot').className = 'status-dot';
+  document.getElementById('statusText').textContent = 'A guardar...';
+  saveTimer = setTimeout(() => {
+    localStorage.setItem('ficha_angariacao_v2', JSON.stringify(F));
+    document.getElementById('statusDot').className = 'status-dot saved';
+    document.getElementById('statusText').textContent = 'Guardado localmente';
+  }, 800);
+}
+
+async function guardarFicha() {
+  if (!F.consultor) { alert('Por favor preencha o nome do consultor antes de guardar.'); return; }
+
+  const toast = document.getElementById('toast');
+
+  if (_leadId) {
+    document.getElementById('statusText').textContent = 'A guardar no Supabase...';
+    const estado = outcomeToEstado(F.outcome);
+    const updates = {
+      ficha: F,
+      estado: estado,
+      estado_alterado_em: new Date().toISOString(),
+      outcome: F.outcome || null,
+      notas: [F.notas_imovel, F.notas_motivacao, F.notas_situacao, F.notas_contrato, F.notas_curiosidade, F.notas_finais].filter(Boolean).join('\n---\n') || null,
+      notas_imovel: F.notas_imovel || null
+    };
+    if (F.data_reuniao) {
+      updates.reuniao_data = F.data_reuniao;
+      updates.reuniao_hora = F.hora_reuniao || null;
+      updates.reuniao_local = F.local || null;
+    }
+    if (F.retorno_data) {
+      updates.retorno_data = F.retorno_data;
+      updates.retorno_hora = F.retorno_hora || null;
+      updates.retorno_notas = F.notas_finais || null;
+      if (!F.outcome || F.outcome === 'followup') updates.estado = 'retorno_agendado';
+    }
+
+    try {
+      const res = await fetch(EGO_URL + '/rest/v1/leads_angariacao?id=eq.' + _leadId, {
+        method: 'PATCH',
+        headers: { 'apikey': EGO_ANON, 'Authorization': 'Bearer ' + EGO_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      document.getElementById('statusDot').className = 'status-dot saved';
+      document.getElementById('statusText').textContent = 'Guardado no Supabase ✓';
+      toast.textContent = '✅ Ficha guardada no Supabase!';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'angariacao-ficha-saved', leadId: _leadId, estado: estado }, '*');
+      }
+    } catch (e) {
+      alert('Erro ao guardar no Supabase: ' + e.message + '\nFicha guardada localmente.');
+      localStorage.setItem('ficha_angariacao_v2', JSON.stringify(F));
+      document.getElementById('statusDot').className = 'status-dot saved';
+      document.getElementById('statusText').textContent = 'Guardado localmente (erro Supabase)';
+    }
+  } else {
+    localStorage.setItem('ficha_angariacao_v2', JSON.stringify(F));
+    document.getElementById('statusDot').className = 'status-dot saved';
+    document.getElementById('statusText').textContent = 'Guardado localmente';
+    toast.textContent = '✅ Ficha guardada localmente!';
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+}
+
+function limparFicha() {
+  if (!confirm('Iniciar nova chamada? Os dados actuais serão apagados.')) return;
+  Object.keys(F).forEach(k => delete F[k]);
+  localStorage.removeItem('ficha_angariacao_v2');
+  activeSteps = ['s1_abertura'];
+  currentStepId = 's1_abertura';
+  _leadId = null;
+  _leadData = null;
+  renderProgress();
+  document.getElementById('flowContainer').innerHTML = renderStepCard('s1_abertura');
+  document.getElementById('f_data') && (document.getElementById('f_data').value = new Date().toISOString().split('T')[0]);
+  document.getElementById('statusDot').className = 'status-dot';
+  document.getElementById('statusText').textContent = 'Por guardar';
+}
+
+// ── INIT ──
+async function init() {
+  renderProgress();
+  document.getElementById('flowContainer').innerHTML = renderStepCard('s1_abertura');
+  const el = document.getElementById('f_data');
+  if (el) el.value = new Date().toISOString().split('T')[0];
+
+  _leadId = getUrlParam('lead_id');
+  const consultor = getUrlParam('consultor');
+  const telefone = getUrlParam('telefone');
+  const nome = getUrlParam('nome');
+
+  if (consultor) {
+    save('consultor', consultor);
+    const inp = document.getElementById('f_consultor');
+    if (inp) inp.value = consultor;
+  }
+  if (telefone) {
+    save('telefone', telefone);
+    const inp = document.getElementById('f_telefone');
+    if (inp) inp.value = telefone;
+  }
+  if (nome) {
+    document.querySelector('.header-title').textContent = 'Script + Ficha — ' + nome;
+  }
+  if (_leadId) {
+    document.querySelector('.header-sub').textContent = 'Lead #' + _leadId.substring(0,8) + ' · Qualificação · FigueiraHome';
+  }
+}
+init();
+</script>
+</body>
+</html>
