@@ -12520,16 +12520,28 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   var objKeys = Object.keys(objecoes).sort(function(a, b) { return objecoes[b] - objecoes[a] })
   var objValues = objKeys.map(function(k) { return objecoes[k] })
 
+  function _relStripHtml(s) {
+    return (s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\n{3,}/g, '\n\n').trim()
+  }
+  function _relDedupKey(texto) {
+    return texto.toLowerCase().replace(/[^a-záàâãéèêíóòôõúçñ0-9]/gi, '').substring(0, 80)
+  }
   var comentarios = []
   visitas.forEach(function(v) {
-    if (v.visita_observacoes) comentarios.push({ cliente: v.cliente_nome || 'Cliente', texto: v.visita_observacoes, data: v.visita_data, tipo: 'visita' })
+    if (v.visita_observacoes) {
+      var clean = _relStripHtml(v.visita_observacoes)
+      if (clean.length > 5) comentarios.push({ cliente: v.cliente_nome || 'Cliente', texto: clean, data: v.visita_data, tipo: 'visita' })
+    }
   })
   notas.forEach(function(n) {
-    if (n.nota_texto && n.nota_texto.length > 10) comentarios.push({ cliente: n.cliente_nome || n.nota_autor || 'Consultor', texto: n.nota_texto, data: n.nota_data_iso, tipo: 'nota' })
+    if (n.nota_texto) {
+      var clean = _relStripHtml(n.nota_texto)
+      if (clean.length > 10) comentarios.push({ cliente: n.cliente_nome || n.nota_autor || 'Consultor', texto: clean, data: n.nota_data_iso, tipo: 'nota' })
+    }
   })
   var seen = {}
   comentarios = comentarios.filter(function(c) {
-    var k = c.texto.substring(0, 50)
+    var k = _relDedupKey(c.texto)
     if (seen[k]) return false
     seen[k] = true
     return true
