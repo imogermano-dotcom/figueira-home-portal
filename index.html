@@ -12441,7 +12441,7 @@ async function relatorioGenerate() {
     var notas = []
     if (visitRefs.length > 0) {
       var { data: nd } = await sbEgo.from('notas')
-        .select('nota_texto,nota_data_iso,nota_autor,cliente_nome')
+        .select('oportunidade_ref,nota_texto,nota_data_iso,nota_autor,cliente_nome')
         .in('oportunidade_ref', visitRefs)
         .order('nota_data_iso', { ascending: false })
         .limit(100)
@@ -12481,9 +12481,43 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   var mesLabels = mesKeys.map(function(k) { var p = k.split('-'); return nomeMes[parseInt(p[1]) - 1] + ' ' + p[0].substring(2) })
   var mesValues = mesKeys.map(function(k) { return meses[k] })
 
+  var _relAutoRe = /^(lead promovida|email enviado com os imoveis|para:.*assunto:.*partilhou|o utilizador.*partilhou por email)/i
+  function _relIsAuto(txt) { return _relAutoRe.test(txt) }
+
+  function _relInferInteresse(txt) {
+    if (!txt) return null
+    var t = txt.toLowerCase()
+    if (/n[aã]o\s+(est[aá]\s+)?interessad|n[aã]o\s+gostou|desistiu|sem\s+interesse|recusou|n[aã]o\s+quer\s+(continuar|avan[çc]ar|prosseguir)/.test(t)) return 'Não Interessado'
+    if (/muito\s+interessad|adorou|apaixonou|vai\s+avan[çc]ar|quer\s+avan[çc]ar\s+com|quer\s+fazer\s+(uma\s+)?proposta|vai\s+fazer\s+(uma\s+)?proposta/.test(t)) return 'Muito Interessado'
+    if (/pouco\s+interessad|com\s+d[uú]vidas|vai\s+pensar|precisa\s+de\s+pensar|n[aã]o\s+convenceu/.test(t)) return 'Pouco Interessado'
+    if (/interessad|gostou|ficou\s+interessad|quer\s+visitar|quer\s+voltar/.test(t)) return 'Interessado'
+    return null
+  }
+  var notasByRef = {}
+  notas.forEach(function(n) {
+    if (!n.oportunidade_ref) return
+    if (!notasByRef[n.oportunidade_ref]) notasByRef[n.oportunidade_ref] = []
+    notasByRef[n.oportunidade_ref].push(n)
+  })
   var interesse = {}
+  var _relTemInferido = false
   visitas.forEach(function(v) {
-    var key = v.visita_interessado || 'Sem registo'
+    var estado = v.visita_interessado
+    var inferido = false
+    if (!estado) {
+      var txtBusca = _relStripHtml(v.visita_observacoes || '')
+      var linked = notasByRef[v.oportunidade_ref] || []
+      linked.forEach(function(n) {
+        var clean = _relStripHtml(n.nota_texto || '')
+        if (clean && !_relIsAuto(clean)) txtBusca += '\n' + clean
+      })
+      estado = _relInferInteresse(txtBusca)
+      inferido = !!estado
+    }
+    v._interesseCalc = estado || null
+    v._interesseInferido = inferido
+    if (inferido) _relTemInferido = true
+    var key = estado || 'Sem registo'
     interesse[key] = (interesse[key] || 0) + 1
   })
   var intKeys = Object.keys(interesse).sort(function(a, b) { return interesse[b] - interesse[a] })
@@ -12523,8 +12557,6 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   function _relStripHtml(s) {
     return (s || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\n{3,}/g, '\n\n').trim()
   }
-  var _relAutoRe = /^(lead promovida|email enviado com os imoveis|para:.*assunto:.*partilhou|o utilizador.*partilhou por email)/i
-  function _relIsAuto(txt) { return _relAutoRe.test(txt) }
   var allNotes = []
   visitas.forEach(function(v) {
     if (v.visita_observacoes) {
@@ -12606,7 +12638,9 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
   if (totalVisitas > 0) {
     html += '<div class="rel-charts-row">'
     if (intKeys.length > 0) {
-      html += '<div class="rel-chart-box"><h4>Nível de Interesse</h4><div class="rel-pie-wrap">'
+      html += '<div class="rel-chart-box"><h4>Nível de Interesse'
+      if (_relTemInferido) html += ' <span style="font-size:.6rem;font-weight:400;color:#9ca3af">(inclui inferido das notas)</span>'
+      html += '</h4><div class="rel-pie-wrap">'
       html += '<canvas id="rel-pie-interesse" width="200" height="200"></canvas>'
       html += '<div id="rel-legend-interesse" class="rel-legend"></div></div></div>'
     }
@@ -12622,7 +12656,10 @@ function relRenderReport(container, ref, imovel, leads, visitas, notas) {
     visitas.forEach(function(v) {
       var d = v.visita_data ? new Date(v.visita_data).toLocaleDateString('pt-PT') : '—'
       html += '<tr><td>' + esc(d) + '</td><td>' + esc(v.cliente_nome || '—') + '</td>'
-      html += '<td><span class="rel-interesse-badge rel-int-' + relIntClass(v.visita_interessado) + '">' + esc(v.visita_interessado || '—') + '</span></td>'
+      var _dispInt = v._interesseCalc || v.visita_interessado
+      html += '<td><span class="rel-interesse-badge rel-int-' + relIntClass(_dispInt) + '">' + esc(_dispInt || '—')
+      if (v._interesseInferido) html += ' <span style="opacity:.7" title="Inferido a partir das notas">*</span>'
+      html += '</span></td>'
       html += '<td>' + esc(v.visita_pontos_negativos || '—') + '</td>'
       html += '<td>' + esc(v.visita_observacoes || '—') + '</td></tr>'
     })
