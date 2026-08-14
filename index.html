@@ -1794,7 +1794,9 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <p style="font-size:.75rem;color:#9ca3af;margin:2px 0 0">Conta <code style="font-size:.72rem;background:#f3f4f6;padding:1px 5px;border-radius:4px">452624345589682</code></p>
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-left:auto" id="meta-presets">
-          <button class="meta-preset-btn active" onclick="metaSetPreset(this,'last_7d')">7 dias</button>
+          <button class="meta-preset-btn" onclick="metaSetPreset(this,'today')">Hoje</button>
+          <button class="meta-preset-btn active" onclick="metaSetPreset(this,'last_2d')">Ontem+hoje</button>
+          <button class="meta-preset-btn" onclick="metaSetPreset(this,'last_7d')">7 dias</button>
           <button class="meta-preset-btn" onclick="metaSetPreset(this,'last_30d')">30 dias</button>
           <button class="meta-preset-btn" onclick="metaSetPreset(this,'this_month')">Este mês</button>
           <button class="meta-preset-btn" onclick="metaSetPreset(this,'last_90d')">90 dias</button>
@@ -10799,7 +10801,7 @@ async function mercadoValidarDuplicado(id, confirmado, cardEl) {
 
 // ── META Ads ──────────────────────────────────────────────────────────────────
 var _metaLoaded = false
-var _metaPreset = 'last_7d'
+var _metaPreset = 'last_2d'
 var _metaData = []
 var _metaSortKey = 'spend'
 var _metaSortAsc = false
@@ -10814,6 +10816,16 @@ function metaInit() {
   _metaLoaded = true
   metaLoad()
   metaLoadYearStats()
+}
+
+function metaLast2dDates() {
+  var today = new Date()
+  var yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  return {
+    since: yesterday.toISOString().split('T')[0],
+    until: today.toISOString().split('T')[0]
+  }
 }
 
 function metaSetPreset(btn, preset) {
@@ -10841,6 +10853,9 @@ async function metaLoad() {
       var until = document.getElementById('meta-until').value
       if (!since || !until) { alert('Selecciona as datas de início e fim.'); return }
       body = { since: since, until: until }
+    } else if (_metaPreset === 'last_2d') {
+      var d = metaLast2dDates()
+      body = { since: d.since, until: d.until }
     } else {
       body = { date_preset: _metaPreset }
     }
@@ -11174,6 +11189,8 @@ function metaOpenDrilldown(campaignId) {
     var _s = document.getElementById('meta-since').value
     var _u = document.getElementById('meta-until').value
     if (_s && _u) periodBody = { since: _s, until: _u }
+  } else if (_metaPreset === 'last_2d') {
+    periodBody = metaLast2dDates()
   } else {
     periodBody = { date_preset: _metaPreset }
   }
