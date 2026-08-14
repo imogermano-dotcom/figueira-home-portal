@@ -769,14 +769,14 @@ function pgBuildGanhas(ano, cons) {
     + '&#127942; Neg&#243;cios Ganhos' + (ano ? ' &mdash; ' + ano : '') + ' (' + vendas.length + ')</div>'
     + '<div class="card"><table style="width:100%;border-collapse:collapse;font-size:.82rem">'
     + '<thead><tr style="background:#f0f4fa">'
-    + '<th style="padding:8px 10px;text-align:left">Oportunidade</th>'
-    + '<th style="padding:8px 10px;text-align:left">Im&#243;vel</th>'
-    + '<th style="padding:8px 10px;text-align:left">Respons&#225;vel</th>'
-    + '<th style="padding:8px 10px;text-align:left">Angariador</th>'
-    + '<th style="padding:8px 10px;text-align:left">Data Fecho</th>'
-    + '<th style="padding:8px 10px;text-align:right">Valor Venda</th>'
-    + '<th style="padding:8px 10px;text-align:right">Comiss&#227;o Ag.</th>'
-    + '<th style="padding:8px 10px;text-align:right">Margem</th>'
+    + '<th style="padding:8px 10px;text-align:left;color:#444;font-weight:700">Oportunidade</th>'
+    + '<th style="padding:8px 10px;text-align:left;color:#444;font-weight:700">Im&#243;vel</th>'
+    + '<th style="padding:8px 10px;text-align:left;color:#444;font-weight:700">Respons&#225;vel</th>'
+    + '<th style="padding:8px 10px;text-align:left;color:#444;font-weight:700">Angariador</th>'
+    + '<th style="padding:8px 10px;text-align:left;color:#444;font-weight:700">Data Fecho</th>'
+    + '<th style="padding:8px 10px;text-align:right;color:#444;font-weight:700">Valor Venda</th>'
+    + '<th style="padding:8px 10px;text-align:right;color:#444;font-weight:700">Comiss&#227;o Ag.</th>'
+    + '<th style="padding:8px 10px;text-align:right;color:#444;font-weight:700">Margem</th>'
     + '</tr></thead>'
     + '<tbody>' + tbody + '</tbody>'
     + '</table></div></div>';
@@ -814,7 +814,7 @@ function pgBuildAceites(consSel){
       var active = s.col===col;
       var arrow = active?(s.dir===1?' ▲':' ▼'):' <span style="opacity:.3">⇅</span>';
       var al = align||'left';
-      return '<th style="padding:8px 10px;text-align:'+al+';cursor:pointer;user-select:none;white-space:nowrap'+(active?';color:#2d6a9f':'')+'" onclick="pgSortBy(\''+tableKey+'\',\''+col+'\')">'+label+arrow+'</th>';
+      return '<th style="padding:8px 10px;text-align:'+al+';cursor:pointer;user-select:none;white-space:nowrap;color:'+(active?'#2d6a9f':'#444')+';font-weight:700" onclick="pgSortBy(\''+tableKey+'\',\''+col+'\')">'+label+arrow+'</th>';
     }
     let tbody=''; let totComm=0;
     sorted.forEach(function(r){
