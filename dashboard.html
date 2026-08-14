@@ -686,17 +686,12 @@ function pgBuildChart(months){
   </svg></div>`;
 }
 
-function pgBuildKpis(months){
-  const keys=Object.keys(months);
-  const tp=keys.reduce((s,k)=>s+(months[k].prop_val||0),0);
-  const tg=keys.reduce((s,k)=>s+(months[k].ganhas_val||0),0);
-  const cp=keys.reduce((s,k)=>s+(months[k].prop_count||0),0);
-  const cg=keys.reduce((s,k)=>s+(months[k].ganhas_count||0),0);
-  const diff=tp-tg; const diffCol=diff>0?'#e67e22':'#27ae60';
+function pgBuildKpis(commGanhas, cntGanhas, commAceites, cntAceites){
+  const potencial = commGanhas + commAceites;
   return `<div class="kpi-row" style="margin-bottom:16px">
-    <div class="kpi green"><label>Comiss&#227;o Neg&#243;cios Ganhos</label><div class="val">${fmtEur(tg)}</div><div class="sub">${cg} neg&#243;cios fechados</div></div>
-    <div class="kpi" style="border-left-color:#2d6a9f"><label>Comiss&#227;o Propostas Aceites</label><div class="val" style="color:#2d6a9f">${fmtEur(tp)}</div><div class="sub">${cp} propostas em pipeline</div></div>
-    <div class="kpi" style="border-left-color:${diffCol}"><label>Por Converter</label><div class="val" style="color:${diffCol}">${fmtEur(Math.abs(diff))}</div><div class="sub">${diff>0?'pipeline por fechar':'ganhos > propostas'}</div></div>
+    <div class="kpi green"><label>Comiss&#227;o Neg&#243;cios Ganhos</label><div class="val">${fmtEur(commGanhas)}</div><div class="sub">${cntGanhas} neg&#243;cios fechados</div></div>
+    <div class="kpi" style="border-left-color:#2d6a9f"><label>Comiss&#227;o Propostas Aceites</label><div class="val" style="color:#2d6a9f">${fmtEur(commAceites)}</div><div class="sub">${cntAceites} propostas em pipeline</div></div>
+    <div class="kpi" style="border-left-color:#8e44ad"><label>Potencial de Fatura&#231;&#227;o</label><div class="val" style="color:#8e44ad">${fmtEur(potencial)}</div><div class="sub">ganhos + aceites em pipeline</div></div>
   </div>`;
 }
 
@@ -761,8 +756,20 @@ function pgBuildMultiYearChart(cons) {
 }
 
 function pgRender(){
-  const months = pgAgg(pgAno, pgCons);
   const sec = document.getElementById('fin-pg-section');
+  // Valores reais para KPIs — derivados dos mesmos dados das tabelas
+  const _ganhas = (D.detalhe_vendas||[]).filter(function(o){
+    return (!pgAno||o.ano_fecho===pgAno)&&(pgCons==='all'||o.responsavel===pgCons);
+  });
+  const _commGanhas = _ganhas.reduce(function(s,o){return s+(o.comm_ag||0);},0);
+  const _ganhasRefs = new Set(_ganhas.map(function(o){return o.ref_im;}).filter(Boolean));
+  const _pendAll = (D.alertas&&D.alertas.pendentes)||[];
+  const _aceitesFiltered = _pendAll.filter(function(r){
+    if(pgCons!=='all'&&r.resp!==pgCons) return false;
+    if(pgAno&&_ganhasRefs.has(r.ref_im)) return false;
+    return r.estado_prop==='Aceite';
+  });
+  const _commAceites = _aceitesFiltered.reduce(function(s,r){return s+(r.comm_est||0);},0);
   let cons_pills='<button class="al-pill'+(pgCons==='all'?' active':'')+'" data-c="all" onclick="pgSetCons(this.dataset.c)" style="padding:4px 10px;border-radius:12px;border:1.5px solid #2d6a9f;background:'+(pgCons==='all'?'#2d6a9f':'#fff')+';color:'+(pgCons==='all'?'#fff':'#555')+';cursor:pointer;font-size:.78rem;font-weight:600">Todos</button>';
   pgAllCons().forEach(c=>{
     const act=pgCons===c;
@@ -780,7 +787,7 @@ function pgRender(){
     '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px">Ano</span>'+ano_pills+'</div>'+
     '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px">Consultor</span>'+cons_pills+'</div>'+
     '</div>'+
-    pgBuildKpis(months)+
+    pgBuildKpis(_commGanhas, _ganhas.length, _commAceites, _aceitesFiltered.length)+
     '<div class="card">'+pgBuildMultiYearChart(pgCons)+'</div>'+
     pgBuildGanhas(pgAno, pgCons)+
     pgBuildAceites(pgCons);
