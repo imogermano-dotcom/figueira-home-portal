@@ -792,23 +792,45 @@ function pgBuildAceites(consSel){
   // Separar em dois grupos
   const aceites = rows.filter(r=>r.estado_prop==='Aceite');
   const emAval  = rows.filter(r=>r.estado_prop==='Em avaliação');
-  function buildTable(list, titulo, cor){
+  function parsePtDate(d) { if(!d) return ''; var p=d.split('/'); return p.length===3?p[2]+p[1]+p[0]:d; }
+  function buildTable(list, titulo, cor, tableKey){
     if(!list.length) return '';
+    var s = _pgTableSort[tableKey];
+    var sorted = list.slice().sort(function(a,b){
+      var va, vb;
+      if(s.col==='ref_im')    { va=a.ref_im||'';    vb=b.ref_im||''; }
+      else if(s.col==='ref')  { va=a.ref||'';       vb=b.ref||''; }
+      else if(s.col==='resp') { va=a.resp||'';      vb=b.resp||''; }
+      else if(s.col==='preco'){ va=a.preco||0;      vb=b.preco||0; }
+      else if(s.col==='proposta'){ va=a.proposta||0; vb=b.proposta||0; }
+      else if(s.col==='pct')  { va=(a.preco&&a.proposta&&a.preco>0)?((a.proposta/a.preco-1)*100):0; vb=(b.preco&&b.proposta&&b.preco>0)?((b.proposta/b.preco-1)*100):0; }
+      else if(s.col==='comm_est'){ va=a.comm_est||0; vb=b.comm_est||0; }
+      else if(s.col==='data_prop'){ va=parsePtDate(a.data_prop); vb=parsePtDate(b.data_prop); }
+      else if(s.col==='etapa'){ va=a.etapa||'';     vb=b.etapa||''; }
+      else { va=''; vb=''; }
+      return va<vb?-s.dir:va>vb?s.dir:0;
+    });
+    function th(label, col, align) {
+      var active = s.col===col;
+      var arrow = active?(s.dir===1?' ▲':' ▼'):' <span style="opacity:.3">⇅</span>';
+      var al = align||'left';
+      return '<th style="padding:8px 10px;text-align:'+al+';cursor:pointer;user-select:none;white-space:nowrap'+(active?';color:#2d6a9f':'')+'" onclick="pgSortBy(\''+tableKey+'\',\''+col+'\')">'+label+arrow+'</th>';
+    }
     let tbody=''; let totComm=0;
-    list.forEach(function(r){
+    sorted.forEach(function(r){
       const pct = (r.preco && r.proposta && r.preco>0) ? Math.round((Number(r.proposta)/r.preco-1)*100) : null;
       const pctStr = pct!=null ? '<span style="color:'+(pct<0?'#e67e22':'#27ae60')+';font-weight:700">'+(pct>0?'+':'')+pct+'%</span>' : '&#8212;';
       const comm = r.comm_est || 0; totComm += comm;
       tbody+='<tr>'
-        +'<td style="font-weight:600;color:#1a3c5e">'+(r.ref_im||'&#8212;')+'</td>'
-        +'<td style="font-size:.8rem;color:#555">'+(r.ref||'&#8212;')+'</td>'
-        +'<td>'+(r.resp||'&#8212;')+'</td>'
-        +'<td style="text-align:right">'+fmtEur(r.preco)+'</td>'
-        +'<td style="text-align:right">'+fmtEur(r.proposta)+'</td>'
-        +'<td style="text-align:right">'+pctStr+'</td>'
-        +'<td style="text-align:right;color:#2d6a9f;font-weight:600">'+fmtEur(comm||null)+'</td>'
-        +'<td style="text-align:center">'+(r.data_prop||'&#8212;')+'</td>'
-        +'<td style="text-align:center">'+(r.etapa||'&#8212;')+'</td>'
+        +'<td style="padding:7px 10px;font-weight:600;color:#1a3c5e">'+(r.ref_im||'&#8212;')+'</td>'
+        +'<td style="padding:7px 10px;font-size:.8rem;color:#555">'+(r.ref||'&#8212;')+'</td>'
+        +'<td style="padding:7px 10px">'+(r.resp||'&#8212;')+'</td>'
+        +'<td style="padding:7px 10px;text-align:right">'+fmtEur(r.preco)+'</td>'
+        +'<td style="padding:7px 10px;text-align:right">'+fmtEur(r.proposta)+'</td>'
+        +'<td style="padding:7px 10px;text-align:right">'+pctStr+'</td>'
+        +'<td style="padding:7px 10px;text-align:right;color:#2d6a9f;font-weight:600">'+fmtEur(comm||null)+'</td>'
+        +'<td style="padding:7px 10px;text-align:center">'+(r.data_prop||'&#8212;')+'</td>'
+        +'<td style="padding:7px 10px;text-align:center">'+(r.etapa||'&#8212;')+'</td>'
         +'</tr>';
     });
     tbody+='<tr style="background:#f0f7f0;font-weight:700;border-top:2px solid '+cor+'">'
@@ -818,23 +840,23 @@ function pgBuildAceites(consSel){
       +'</tr>';
     return '<div style="margin-top:20px">'
       +'<div style="font-size:.8rem;font-weight:700;color:'+cor+';text-transform:uppercase;letter-spacing:.6px;padding:0 0 8px 2px">'+titulo+' ('+list.length+')</div>'
-      +'<div class="card"><table style="width:100%;border-collapse:collapse;font-size:.82rem">'
+      +'<div class="card" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem">'
       +'<thead><tr style="background:#f0f4fa">'
-      +'<th style="padding:8px 10px;text-align:left">Im&#243;vel</th>'
-      +'<th style="padding:8px 10px;text-align:left">Op.</th>'
-      +'<th style="padding:8px 10px;text-align:left">Consultor</th>'
-      +'<th style="padding:8px 10px;text-align:right">Pre&#231;o Venda</th>'
-      +'<th style="padding:8px 10px;text-align:right">Proposta</th>'
-      +'<th style="padding:8px 10px;text-align:right">% Neg.</th>'
-      +'<th style="padding:8px 10px;text-align:right">Comiss&#227;o Est.</th>'
-      +'<th style="padding:8px 10px;text-align:center">Data Proposta</th>'
-      +'<th style="padding:8px 10px;text-align:center">Etapa</th>'
+      +th('Im&#243;vel','ref_im','left')
+      +th('Op.','ref','left')
+      +th('Consultor','resp','left')
+      +th('Pre&#231;o Venda','preco','right')
+      +th('Proposta','proposta','right')
+      +th('% Neg.','pct','right')
+      +th('Comiss&#227;o Est.','comm_est','right')
+      +th('Data Proposta','data_prop','center')
+      +th('Etapa','etapa','center')
       +'</tr></thead>'
       +'<tbody>'+tbody+'</tbody>'
       +'</table></div></div>';
   }
-  return buildTable(aceites,'&#10003; Proposta Aceite — aguarda fecho','#27ae60')
-       + buildTable(emAval, '&#9203; Proposta Em Avalia&#231;&#227;o','#e67e22');
+  return buildTable(aceites,'&#10003; Proposta Aceite — aguarda fecho','#27ae60','aceites')
+       + buildTable(emAval, '&#9203; Proposta Em Avalia&#231;&#227;o','#e67e22','aval');
 }
 
 function pgSetAno(a){ pgAno=(a==='null'||a===null)?null:a; pgRender(); }
