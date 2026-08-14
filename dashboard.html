@@ -694,12 +694,70 @@ function pgBuildKpis(months){
   const cg=keys.reduce((s,k)=>s+(months[k].ganhas_count||0),0);
   const diff=tp-tg; const diffCol=diff>0?'#e67e22':'#27ae60';
   return `<div class="kpi-row" style="margin-bottom:16px">
-    <div class="kpi"><label>Propostas Aceites</label><div class="val">${fmt(cp)}</div><div class="sub">no período</div></div>
-    <div class="kpi green"><label>Comissão Propostas Aceites</label><div class="val">${fmtEur(tp)}</div><div class="sub">soma das propostas</div></div>
-    <div class="kpi"><label>Negócios Ganhos</label><div class="val">${fmt(cg)}</div><div class="sub">no período</div></div>
-    <div class="kpi green"><label>Comissão Negócios Ganhos</label><div class="val">${fmtEur(tg)}</div><div class="sub">valor venda imovel</div></div>
-    <div class="kpi" style="border-left-color:${diffCol}"><label>Diferença (Proposta − Ganho)</label><div class="val" style="color:${diffCol}">${fmtEur(Math.abs(diff))}</div><div class="sub">${diff>0?'pipeline por converter':'ganhos > propostas'}</div></div>
+    <div class="kpi green"><label>Comiss&#227;o Neg&#243;cios Ganhos</label><div class="val">${fmtEur(tg)}</div><div class="sub">${cg} neg&#243;cios fechados</div></div>
+    <div class="kpi" style="border-left-color:#2d6a9f"><label>Comiss&#227;o Propostas Aceites</label><div class="val" style="color:#2d6a9f">${fmtEur(tp)}</div><div class="sub">${cp} propostas em pipeline</div></div>
+    <div class="kpi" style="border-left-color:${diffCol}"><label>Por Converter</label><div class="val" style="color:${diffCol}">${fmtEur(Math.abs(diff))}</div><div class="sub">${diff>0?'pipeline por fechar':'ganhos > propostas'}</div></div>
   </div>`;
+}
+
+function pgBuildMultiYearChart(cons) {
+  const pg = D.prop_ganhos || {};
+  const src = cons==='all' ? Object.values(pg) : (pg[cons]?[pg[cons]]:[]);
+  const allYears = (D.anos_vend||[]).filter(function(y){return y>='2020';}).sort();
+  const years = allYears.slice(-3);
+  if (!years.length) return '<p style="padding:20px;color:#888">Sem dados.</p>';
+  const MMS = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  const MLBL = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const data = {};
+  MMS.forEach(function(mm){ data[mm]={}; years.forEach(function(y){ data[mm][y]=0; }); });
+  src.forEach(function(cm){
+    Object.entries(cm).forEach(function([ym,d]){
+      const y=ym.slice(0,4); const mm=ym.slice(5,7);
+      if(years.indexOf(y)>=0 && data[mm]) data[mm][y]=(data[mm][y]||0)+(d.ganhas_val||0);
+    });
+  });
+  const maxVal=Math.max.apply(null,MMS.map(function(mm){return Math.max.apply(null,years.map(function(y){return data[mm][y]||0;}));}).concat([1]));
+  const W=860,H=320,padL=72,padR=16,padT=30,padB=50;
+  const cW=W-padL-padR, cH=H-padT-padB;
+  const grpW=Math.floor(cW/12);
+  const bw=Math.max(6,Math.floor(grpW*0.72/years.length));
+  const gap=Math.max(2,Math.floor(bw*0.12));
+  const totalBW=years.length*bw+(years.length-1)*gap;
+  const COLORS=['#27ae60','#2d6a9f','#e67e22'];
+  let bars='',xLabels='',yLabels='',legend='';
+  for(let i=0;i<=4;i++){
+    const yv=maxVal*i/4; const yp=padT+cH*(1-i/4);
+    const lbl=yv>=1000000?'€'+(yv/1000000).toFixed(1)+'M':yv>=1000?'€'+(yv/1000).toFixed(0)+'k':'€'+Math.round(yv);
+    bars+=`<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="#e8eef6" stroke-width="1"/>`;
+    yLabels+=`<text x="${padL-6}" y="${yp+4}" text-anchor="end" font-size="10" fill="#aaa">${lbl}</text>`;
+  }
+  MMS.forEach(function(mm,mi){
+    const grpX=padL+mi*grpW+(grpW-totalBW)/2;
+    years.forEach(function(y,yi){
+      const val=data[mm][y]||0;
+      const h=Math.max(val>0?2:0,val/maxVal*cH);
+      const x=grpX+yi*(bw+gap); const yp=padT+cH-h;
+      const col=COLORS[yi%COLORS.length];
+      if(val>0){
+        bars+=`<rect x="${x}" y="${yp}" width="${bw}" height="${h}" fill="${col}" rx="2"/>`;
+        if(h>14){
+          const lbl=val>=1000000?(val/1000000).toFixed(1)+'M':val>=1000?Math.round(val/1000)+'k':Math.round(val);
+          bars+=`<text x="${x+bw/2}" y="${yp-3}" text-anchor="middle" font-size="8" fill="${col}" font-weight="600">${lbl}</text>`;
+        }
+      }
+    });
+    xLabels+=`<text x="${grpX+totalBW/2}" y="${padT+cH+14}" text-anchor="middle" font-size="10" fill="#666">${MLBL[mi]}</text>`;
+  });
+  years.forEach(function(y,yi){
+    const lx=padL+yi*80;
+    legend+=`<rect x="${lx}" y="8" width="12" height="8" fill="${COLORS[yi]}" rx="2"/>`;
+    legend+=`<text x="${lx+16}" y="16" font-size="11" fill="#333">${y}</text>`;
+  });
+  return `<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;font-family:Segoe UI,Arial,sans-serif">
+    ${yLabels}${bars}${xLabels}${legend}
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+cH}" stroke="#ccc" stroke-width="1"/>
+    <line x1="${padL}" y1="${padT+cH}" x2="${W-padR}" y2="${padT+cH}" stroke="#ccc" stroke-width="1"/>
+  </svg></div>`;
 }
 
 function pgRender(){
@@ -723,7 +781,7 @@ function pgRender(){
     '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px">Consultor</span>'+cons_pills+'</div>'+
     '</div>'+
     pgBuildKpis(months)+
-    '<div class="card">'+pgBuildChart(months)+'</div>'+
+    '<div class="card">'+pgBuildMultiYearChart(pgCons)+'</div>'+
     pgBuildGanhas(pgAno, pgCons)+
     pgBuildAceites(pgCons);
 }
@@ -784,8 +842,20 @@ function pgBuildGanhas(ano, cons) {
 
 function pgBuildAceites(consSel){
   const pend = (D.alertas && D.alertas.pendentes) || [];
-  // Excluir "Em avaliação" cujo imóvel está Retirado
-  const rows = pend.filter(r => (consSel==='all' || r.resp===consSel) && !(r.estado_prop==='Em avaliação' && r.im_disp==='Retirado'));
+  // Imóveis já ganhos no ano selecionado — excluir as suas propostas pendentes
+  const ganhasRefIm = new Set(
+    (D.detalhe_vendas || [])
+      .filter(function(o){ return !pgAno || o.ano_fecho === pgAno; })
+      .map(function(o){ return o.ref_im; })
+      .filter(Boolean)
+  );
+  // Excluir: "Em avaliação" cujo imóvel está Retirado, ou cujo imóvel já tem negócio ganho no ano
+  const rows = pend.filter(function(r){
+    if (consSel !== 'all' && r.resp !== consSel) return false;
+    if (r.estado_prop === 'Em avaliação' && r.im_disp === 'Retirado') return false;
+    if (pgAno && ganhasRefIm.has(r.ref_im)) return false;
+    return true;
+  });
   if(!rows.length) return '';
   function fmtEur(v){ if(!v&&v!==0) return '&#8212;'; return '&#8364;'+Math.round(Number(v)).toLocaleString('pt-PT'); }
   function badge(ep){ const c=ep==='Aceite'?'#27ae60':'#e67e22'; return '<span style="background:'+c+';color:#fff;font-size:.65rem;padding:2px 7px;border-radius:8px;font-weight:600">'+ep+'</span>'; }
