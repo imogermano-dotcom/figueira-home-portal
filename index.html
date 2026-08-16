@@ -231,6 +231,35 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .rel-search input:focus{border-color:#3b82f6}
 .rel-search button{padding:8px 20px;border-radius:8px;background:#1a3c5e;color:#fff;border:none;cursor:pointer;font-size:.88rem;font-weight:600}
 .rel-search button:hover{background:#2d6a9f}
+/* Cruzamentos imóvel × cliente */
+.cruz-tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1.5px solid #e0e6f0}
+.cruz-tab{padding:8px 16px;border:none;background:none;cursor:pointer;font-size:.86rem;font-weight:600;color:#6b7280;border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
+.cruz-tab.active{color:#1a3c5e;border-bottom-color:#1a3c5e}
+.cruz-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.cruz-filtros select,.cruz-filtros input{padding:7px 11px;border:1.5px solid #d1d5db;border-radius:7px;font-size:.84rem;outline:none;background:#fff}
+.cruz-filtros input:focus,.cruz-filtros select:focus{border-color:#3b82f6}
+.cruz-btn{padding:7px 16px;border-radius:7px;background:#1a3c5e;color:#fff;border:none;cursor:pointer;font-size:.84rem;font-weight:600}
+.cruz-btn:hover{background:#2d6a9f}
+.cruz-card{background:#fff;border:1.5px solid #e0e6f0;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.cruz-card-head{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.cruz-card-head:hover{background:#f8fafc}
+.cruz-thumb{width:64px;height:48px;object-fit:cover;border-radius:6px;background:#f0f4f8;flex-shrink:0}
+.cruz-ref{font-size:.9rem;font-weight:700;color:#1a3c5e}
+.cruz-meta{font-size:.78rem;color:#6b7280}
+.cruz-badge{margin-left:auto;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.cruz-badge-n{background:#d1fae5;color:#065f46}
+.cruz-badge-0{background:#f3f4f6;color:#9ca3af}
+.cruz-body{border-top:1.5px solid #eef2f7;padding:4px 0}
+.cruz-lead{display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid #f3f4f6;flex-wrap:wrap}
+.cruz-lead:last-child{border-bottom:none}
+.cruz-score{width:44px;text-align:center;padding:3px 0;border-radius:6px;font-size:.78rem;font-weight:700;flex-shrink:0}
+.cruz-s-alto{background:#dcfce7;color:#15803d}
+.cruz-s-medio{background:#fef3c7;color:#92400e}
+.cruz-s-baixo{background:#f1f5f9;color:#64748b}
+.cruz-lead-nome{font-size:.86rem;font-weight:600;color:#111827;min-width:150px}
+.cruz-lead-contacto{font-size:.78rem;color:#2d6a9f;font-weight:600}
+.cruz-lead-motivo{font-size:.74rem;color:#6b7280;margin-left:auto;text-align:right}
+.cruz-lead-pref{font-size:.74rem;color:#9ca3af;flex-basis:100%;padding-left:56px}
 .rel-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .rel-actions button{padding:8px 18px;border-radius:8px;font-size:.84rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d5db;background:#fff;color:#374151;display:flex;align-items:center;gap:6px;transition:all .15s}
 .rel-actions button:hover{background:#f0f4f8;border-color:#9ca3af}
@@ -836,6 +865,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-qualidade" onclick="showTab('qualidade')">🎯 Qualidade Leads</button>
     <button class="pnav-btn" id="tab-angariacao" onclick="showTab('angariacao')">🏠 Angariação</button>
     <button class="pnav-btn" id="tab-relatorio" onclick="showTab('relatorio')">📋 Relatório</button>
+    <button class="pnav-btn" id="tab-cruzamentos" style="display:none" onclick="showTab('cruzamentos')">🔗 Cruzamentos</button>
     <button class="pnav-btn" id="tab-config" style="display:none" onclick="showTab('config')">⚙️ Configuração</button>
     <button class="pnav-btn" id="tab-feedback-admin" style="display:none" onclick="window.open('feedback_painel.html','_blank')">🔎 Feedback IA</button>
   </nav>
@@ -2206,6 +2236,61 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     </main>
   </div>
 
+  <!-- Cruzamentos imóvel ↔ cliente (admin only) -->
+  <div class="portal-page" id="page-cruzamentos">
+    <main style="flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%">
+      <h2 style="font-size:1.1rem;font-weight:700;color:#1a3c5e;margin:0 0 4px">🔗 Cruzamentos — imóveis × clientes</h2>
+      <p style="font-size:.82rem;color:#6b7280;margin:0 0 18px">
+        Cruza as preferências activas dos clientes com o imóvel. Compara natureza, tipologia,
+        zona e orçamento — sem IA, por isso é instantâneo e mostra sempre <i>porquê</i> deu match.
+      </p>
+
+      <div class="cruz-tabs">
+        <button class="cruz-tab active" id="cruz-tab-lista" onclick="cruzModo('lista')">🏠 Carteira disponível</button>
+        <button class="cruz-tab" id="cruz-tab-ref" onclick="cruzModo('ref')">🔎 Por referência</button>
+      </div>
+
+      <!-- Modo A: carteira -->
+      <div id="cruz-modo-lista">
+        <div class="cruz-filtros">
+          <select id="cruz-disp" onchange="cruzLista()">
+            <option value="Disponível">Disponíveis</option>
+            <option value="Disponível|Reservado|Por validar">Disponíveis + reservados + por validar</option>
+            <option value="Em Prospecção">Em prospecção (angariações)</option>
+          </select>
+          <select id="cruz-score" onchange="cruzLista()">
+            <option value="70">Match bom (≥ 70)</option>
+            <option value="85">Só match forte (≥ 85)</option>
+            <option value="60">Incluir match fraco (≥ 60)</option>
+          </select>
+          <button onclick="cruzLista()" class="cruz-btn">↻ Atualizar</button>
+          <span id="cruz-lista-info" style="font-size:.8rem;color:#6b7280"></span>
+        </div>
+        <div id="cruz-lista-out"></div>
+      </div>
+
+      <!-- Modo B: por referência -->
+      <div id="cruz-modo-ref" style="display:none">
+        <div class="cruz-filtros">
+          <input type="text" id="cruz-ref-input" placeholder="Referência do imóvel ou da angariação (ex: FH2550, ANG_1234)"
+                 onkeydown="if(event.key==='Enter')cruzPorRef()" style="min-width:340px">
+          <select id="cruz-ref-neg">
+            <option value="">Negócio: automático</option>
+            <option value="Venda">Venda</option>
+            <option value="Arrendamento">Arrendamento</option>
+          </select>
+          <select id="cruz-ref-score">
+            <option value="60">Match ≥ 60</option>
+            <option value="70" selected>Match ≥ 70</option>
+            <option value="85">Match ≥ 85</option>
+          </select>
+          <button onclick="cruzPorRef()" class="cruz-btn">Procurar clientes</button>
+        </div>
+        <div id="cruz-ref-out"></div>
+      </div>
+    </main>
+  </div>
+
   <!-- Configuração (admin only) -->
   <div class="portal-page" id="page-config">
     <main>
@@ -2317,6 +2402,7 @@ async function loadApp() {
     document.getElementById('tab-kpi').style.display = 'block'
     document.getElementById('tab-config').style.display = 'block'
     document.getElementById('tab-feedback-admin').style.display = 'block'
+    document.getElementById('tab-cruzamentos').style.display = 'block'
     document.getElementById('admin-toggle').style.display = ''
     document.getElementById('ce-btn-atualizar').style.display = 'inline-flex'
   } else {
@@ -2351,7 +2437,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade','angariacao','relatorio'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade','angariacao','relatorio','cruzamentos'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -2369,6 +2455,7 @@ function showTab(name) {
   if (name === 'qualidade' && !_qualLoaded) qualidadeLoad()
   if (name === 'angariacao') angInit()
   if (name === 'relatorio') relatorioInit()
+  if (name === 'cruzamentos') cruzInit()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -12889,6 +12976,175 @@ function relDrawBar(canvasId, labels, values) {
     ctx.fillText(labels[i], 0, 0)
     ctx.restore()
   }
+}
+
+// ── Cruzamentos imóvel × cliente ──────────────────────────────────────────────
+// O cruzamento em si é feito no Postgres (rpc_imoveis_com_clientes /
+// rpc_clientes_para_ref, migração 20260816_cruzamentos.sql). Aqui só se pinta.
+var _cruzLoaded = false
+
+function cruzInit() {
+  if (_cruzLoaded) return
+  _cruzLoaded = true
+  cruzLista()
+}
+
+function cruzModo(m) {
+  document.getElementById('cruz-tab-lista').className = 'cruz-tab' + (m === 'lista' ? ' active' : '')
+  document.getElementById('cruz-tab-ref').className   = 'cruz-tab' + (m === 'ref'   ? ' active' : '')
+  document.getElementById('cruz-modo-lista').style.display = (m === 'lista' ? '' : 'none')
+  document.getElementById('cruz-modo-ref').style.display   = (m === 'ref'   ? '' : 'none')
+  if (m === 'ref') { var i = document.getElementById('cruz-ref-input'); if (i) i.focus() }
+}
+
+function cruzEuro(v) {
+  if (v === null || v === undefined || Number(v) === 0) return '—'
+  return Number(v).toLocaleString('pt-PT', { maximumFractionDigits: 0 }) + ' €'
+}
+
+function cruzScoreClass(s) {
+  return s >= 85 ? 'cruz-s-alto' : (s >= 70 ? 'cruz-s-medio' : 'cruz-s-baixo')
+}
+
+async function cruzLista() {
+  var out = document.getElementById('cruz-lista-out')
+  var info = document.getElementById('cruz-lista-info')
+  var disp = document.getElementById('cruz-disp').value.split('|')
+  var smin = parseInt(document.getElementById('cruz-score').value, 10)
+  // Cada imóvel é cruzado com ~6900 preferências activas, por isso o custo
+  // cresce com o tamanho da selecção. 'Disponível' são 67 imóveis; a selecção
+  // alargada 410; 'Em Prospecção' 2645. O limite trava antes do
+  // statement_timeout do Supabase.
+  var limite = disp.indexOf('Em Prospecção') >= 0 ? 60 : (disp.length > 1 ? 150 : 300)
+
+  out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A cruzar imóveis com preferências…</div>'
+  info.textContent = ''
+
+  var { data, error } = await sbEgo.rpc('rpc_imoveis_com_clientes', {
+    p_disponibilidade: disp,
+    p_score_min: smin,
+    p_limite_imoveis: limite
+  })
+
+  if (error) {
+    out.innerHTML = '<div class="err-box">Erro ao cruzar: ' + esc(error.message) + '</div>'
+    return
+  }
+  data = data || []
+  var comMatch = data.filter(function(r) { return r.n_clientes > 0 })
+  info.textContent = comMatch.length + ' de ' + data.length + ' imóveis com clientes possíveis'
+  if (data.length >= limite) info.textContent += ' (limitado a ' + limite + ')'
+
+  if (!data.length) {
+    out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">Nenhum imóvel nesta seleção.</div>'
+    return
+  }
+
+  out.innerHTML = data.map(function(r) {
+    var tem = r.n_clientes > 0
+    var foto = r.foto_principal
+      ? '<img class="cruz-thumb" src="' + esc(r.foto_principal) + '" alt="">'
+      : '<div class="cruz-thumb"></div>'
+    var tit = r.titulo || r.natureza || r.imovel_ref
+    var loc = [r.zona, r.freguesia].filter(Boolean).join(', ')
+    return '<div class="cruz-card" id="cruzc-' + esc(r.imovel_ref) + '">'
+      + '<div class="cruz-card-head" onclick="cruzToggle(\'' + esc(r.imovel_ref).replace(/'/g, "\\'") + '\')">'
+      +   foto
+      +   '<div style="min-width:0">'
+      +     '<div class="cruz-ref">' + esc(r.imovel_ref) + ' · ' + esc(tit.substring(0, 60)) + '</div>'
+      +     '<div class="cruz-meta">' + esc(r.natureza || '—')
+      +       (r.quartos != null ? ' T' + r.quartos : '')
+      +       ' · ' + cruzEuro(r.preco) + (r.negocio === 'Arrendamento' ? '/mês' : '')
+      +       (loc ? ' · ' + esc(loc) : '')
+      +     '</div>'
+      +     (tem ? '<div class="cruz-meta" style="color:#15803d;margin-top:2px">' + esc(r.top_clientes || '') + '</div>' : '')
+      +   '</div>'
+      +   '<span class="cruz-badge ' + (tem ? 'cruz-badge-n' : 'cruz-badge-0') + '">'
+      +     (tem ? r.n_clientes + (r.n_clientes === 1 ? ' cliente' : ' clientes') : 'sem match')
+      +   '</span>'
+      + '</div>'
+      + '<div class="cruz-body" id="cruzb-' + esc(r.imovel_ref) + '" style="display:none"></div>'
+      + '</div>'
+  }).join('')
+}
+
+async function cruzToggle(ref) {
+  var body = document.getElementById('cruzb-' + ref)
+  if (!body) return
+  if (body.style.display !== 'none') { body.style.display = 'none'; return }
+  body.style.display = ''
+  if (body.dataset.carregado === '1') return
+  var smin = parseInt(document.getElementById('cruz-score').value, 10)
+  body.innerHTML = '<div style="padding:14px 16px;color:#6b7280;font-size:.82rem">A carregar clientes…</div>'
+  var leads = await cruzFetchRef(ref, null, smin)
+  if (leads.erro) { body.innerHTML = '<div style="padding:14px 16px;color:#b91c1c;font-size:.82rem">' + esc(leads.erro) + '</div>'; return }
+  body.dataset.carregado = '1'
+  body.innerHTML = leads.html
+}
+
+async function cruzFetchRef(ref, negocio, smin) {
+  var { data, error } = await sbEgo.rpc('rpc_clientes_para_ref', {
+    p_ref: ref,
+    p_negocio: negocio || null,
+    p_score_min: smin,
+    p_limite: 60
+  })
+  if (error) return { erro: 'Erro: ' + error.message }
+  data = data || []
+  if (!data.length) return { html: '<div style="padding:14px 16px;color:#6b7280;font-size:.82rem">Nenhum cliente com preferências compatíveis.</div>', n: 0 }
+
+  var html = data.map(function(c) {
+    var tel = c.cliente_telefone || ''
+    var mail = c.cliente_email || ''
+    var contacto = []
+    if (tel) contacto.push('<a href="tel:' + esc(tel) + '" style="color:inherit;text-decoration:none">' + esc(tel) + '</a>')
+    if (mail) contacto.push('<a href="mailto:' + esc(mail) + '" style="color:inherit;text-decoration:none">' + esc(mail) + '</a>')
+    var pref = []
+    if (c.pref_tipologia) pref.push(esc(c.pref_tipologia))
+    if (c.pref_natureza) pref.push(esc(c.pref_natureza))
+    if (c.pref_zona) pref.push(esc(c.pref_zona))
+    if (c.pref_preco_min || c.pref_preco_max) {
+      pref.push((c.pref_preco_min ? cruzEuro(c.pref_preco_min) : '') + '–' + (c.pref_preco_max ? cruzEuro(c.pref_preco_max) : ''))
+    }
+    return '<div class="cruz-lead">'
+      + '<span class="cruz-score ' + cruzScoreClass(c.score) + '">' + c.score + '</span>'
+      + '<span class="cruz-lead-nome">' + esc(c.cliente_nome || c.oportunidade_ref) + '</span>'
+      + '<span class="cruz-lead-contacto">' + contacto.join(' · ') + '</span>'
+      + '<span class="cruz-lead-motivo">' + esc(c.motivo || '')
+      +   (c.responsavel ? '<br><b>' + esc(c.responsavel) + '</b>' : '')
+      +   (c.ultima_mencao ? ' · ' + esc(c.ultima_mencao) : '')
+      + '</span>'
+      + '<span class="cruz-lead-pref">' + esc(c.oportunidade_ref) + ' — procura: ' + pref.join(' · ') + '</span>'
+      + '</div>'
+  }).join('')
+  return { html: html, n: data.length }
+}
+
+async function cruzPorRef() {
+  var ref = document.getElementById('cruz-ref-input').value.trim()
+  var out = document.getElementById('cruz-ref-out')
+  if (!ref) { out.innerHTML = '<div class="err-box">Insere uma referência.</div>'; return }
+  var neg = document.getElementById('cruz-ref-neg').value || null
+  var smin = parseInt(document.getElementById('cruz-ref-score').value, 10)
+
+  out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A procurar clientes para <b>' + esc(ref) + '</b>…</div>'
+  var r = await cruzFetchRef(ref, neg, smin)
+  if (r.erro) { out.innerHTML = '<div class="err-box">' + esc(r.erro) + '</div>'; return }
+  if (!r.n) {
+    // Distinguir "não há clientes" de "a referência não existe": se a ref não
+    // resolvesse para nenhum imóvel a função devolveria zero linhas na mesma.
+    var { data: im } = await sbEgo.from('imoveis').select('imovel_ref').eq('imovel_ref', ref).maybeSingle()
+    var { data: op } = im ? { data: null } : await sbEgo.from('oportunidades').select('imovel_ref').eq('oportunidade_ref', ref).maybeSingle()
+    if (!im && !op) {
+      out.innerHTML = '<div class="err-box">Referência <b>' + esc(ref) + '</b> não encontrada — nem como imóvel, nem como oportunidade.</div>'
+      return
+    }
+    if (!im && op && !op.imovel_ref) {
+      out.innerHTML = '<div class="err-box">A oportunidade <b>' + esc(ref) + '</b> ainda não tem imóvel associado, por isso não há nada para cruzar.</div>'
+      return
+    }
+  }
+  out.innerHTML = '<div class="cruz-card"><div class="cruz-body" style="border-top:none">' + r.html + '</div></div>'
 }
 </script>
 
