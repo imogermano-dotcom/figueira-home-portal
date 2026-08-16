@@ -13141,6 +13141,12 @@ async function cruzLista() {
   //   410 imóveis (alargada)        score 60 → 5,4s   <-- perto demais dos 8s
   // Daí o tecto de 200 em tudo o que não seja 'Disponível': ~2,7s no pior caso,
   // com margem para cache fria e carga concorrente.
+  //
+  // Re-medido depois da correcção de preço-de-referência: 'Disponível' desceu a
+  // 0,76s (menos linhas sobrevivem, o HashAggregate deixou de derramar), mas o
+  // pior caso NÃO melhorou -- 410 imóveis a score 60 continua em 5,3s, porque a
+  // maioria desses imóveis é de gama média e cai dentro das bandas inferidas.
+  // Os limites abaixo mantêm-se válidos.
   var limite = disp.length > 1 || disp.indexOf('Em Prospecção') >= 0 ? 200 : 300
 
   out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A cruzar imóveis com preferências…</div>'
