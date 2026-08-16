@@ -13133,8 +13133,16 @@ async function cruzPorRef() {
   if (!r.n) {
     // Distinguir "não há clientes" de "a referência não existe": se a ref não
     // resolvesse para nenhum imóvel a função devolveria zero linhas na mesma.
-    var { data: im } = await sbEgo.from('imoveis').select('imovel_ref').eq('imovel_ref', ref).maybeSingle()
-    var { data: op } = im ? { data: null } : await sbEgo.from('oportunidades').select('imovel_ref').eq('oportunidade_ref', ref).maybeSingle()
+    // ilike e nao eq: as refs são coladas do eGO tanto em maiúsculas como em
+    // minúsculas. limit(1) e não maybeSingle porque o "_" de VEN_12850 é um
+    // wildcard para o ilike e pode, em teoria, apanhar mais que uma linha.
+    var { data: ims } = await sbEgo.from('imoveis').select('imovel_ref').ilike('imovel_ref', ref).limit(1)
+    var im = (ims || [])[0]
+    var op = null
+    if (!im) {
+      var { data: ops } = await sbEgo.from('oportunidades').select('imovel_ref').ilike('oportunidade_ref', ref).limit(1)
+      op = (ops || [])[0]
+    }
     if (!im && !op) {
       out.innerHTML = '<div class="err-box">Referência <b>' + esc(ref) + '</b> não encontrada — nem como imóvel, nem como oportunidade.</div>'
       return
