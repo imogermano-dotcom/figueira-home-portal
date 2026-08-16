@@ -2248,6 +2248,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
       <div class="cruz-tabs">
         <button class="cruz-tab active" id="cruz-tab-lista" onclick="cruzModo('lista')">🏠 Carteira disponível</button>
         <button class="cruz-tab" id="cruz-tab-ref" onclick="cruzModo('ref')">🔎 Por referência</button>
+        <button class="cruz-tab" id="cruz-tab-crit" onclick="cruzModo('crit')">✏️ Por características</button>
       </div>
 
       <!-- Modo A: carteira -->
@@ -2287,6 +2288,47 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           <button onclick="cruzPorRef()" class="cruz-btn">Procurar clientes</button>
         </div>
         <div id="cruz-ref-out"></div>
+      </div>
+
+      <!-- Modo C: por características, sem imóvel nenhum -->
+      <div id="cruz-modo-crit" style="display:none">
+        <div class="cruz-filtros">
+          <select id="cruz-crit-nat">
+            <option value="">Natureza: qualquer</option>
+            <option value="Apartamento">Apartamento</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Terreno">Terreno</option>
+            <option value="Prédio">Prédio</option>
+            <option value="Loja / Escritório">Comercial</option>
+            <option value="Garagem">Garagem</option>
+          </select>
+          <select id="cruz-crit-tip">
+            <option value="">Tipologia: qualquer</option>
+            <option value="T0">T0</option><option value="T1">T1</option>
+            <option value="T2">T2</option><option value="T3">T3</option>
+            <option value="T4">T4</option><option value="T5">T5</option>
+            <option value="T6">T6</option>
+          </select>
+          <input type="text" id="cruz-crit-zona" placeholder="Zona (ex: Buarcos, Tavarede)"
+                 onkeydown="if(event.key==='Enter')cruzPorCriterios()" style="min-width:190px">
+          <input type="number" id="cruz-crit-preco" placeholder="Preço (€)" min="0" step="1000"
+                 onkeydown="if(event.key==='Enter')cruzPorCriterios()" style="width:130px">
+          <select id="cruz-crit-neg">
+            <option value="Venda">Venda</option>
+            <option value="Arrendamento">Arrendamento</option>
+          </select>
+          <select id="cruz-crit-score">
+            <option value="60">Match ≥ 60</option>
+            <option value="70" selected>Match ≥ 70</option>
+            <option value="85">Match ≥ 85</option>
+          </select>
+          <button onclick="cruzPorCriterios()" class="cruz-btn">Procurar clientes</button>
+        </div>
+        <p style="font-size:.78rem;color:#6b7280;margin:-6px 0 14px">
+          Campo em branco não filtra — pontua neutro. Na zona, escreve a freguesia ou o bairro:
+          &ldquo;Figueira da Foz&rdquo; aparece em quase todas as preferências, por isso não distingue nada.
+        </p>
+        <div id="cruz-crit-out"></div>
       </div>
     </main>
   </div>
@@ -13002,6 +13044,16 @@ function cruzEuro(v) {
   return Number(v).toLocaleString('pt-PT', { maximumFractionDigits: 0 }) + ' €'
 }
 
+// A ref da oportunidade abre a lead no eGO. 6691 das 6762 oportunidades com
+// preferências activas têm url; as restantes ficam em texto simples.
+// Só se aceita http(s) — o url vem da BD, mas um href não deve confiar nisso.
+function cruzRefLink(ref, url) {
+  var txt = esc(ref)
+  if (!url || !/^https?:\/\//i.test(url)) return txt
+  return '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer"'
+       + ' title="Abrir no eGO" style="color:#1a3c5e;font-weight:600">' + txt + ' ↗</a>'
+}
+
 function cruzScoreClass(s) {
   return s >= 85 ? 'cruz-s-alto' : (s >= 70 ? 'cruz-s-medio' : 'cruz-s-baixo')
 }
@@ -13114,7 +13166,8 @@ async function cruzFetchRef(ref, negocio, smin) {
       +   (c.responsavel ? '<br><b>' + esc(c.responsavel) + '</b>' : '')
       +   (c.ultima_mencao ? ' · ' + esc(c.ultima_mencao) : '')
       + '</span>'
-      + '<span class="cruz-lead-pref">' + esc(c.oportunidade_ref) + ' — procura: ' + pref.join(' · ') + '</span>'
+      + '<span class="cruz-lead-pref">' + cruzRefLink(c.oportunidade_ref, c.oportunidade_url)
+      +   ' — procura: ' + pref.join(' · ') + '</span>'
       + '</div>'
   }).join('')
   return { html: html, n: data.length }
