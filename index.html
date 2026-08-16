@@ -259,7 +259,21 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 .cruz-lead-nome{font-size:.86rem;font-weight:600;color:#111827;min-width:150px}
 .cruz-lead-contacto{font-size:.78rem;color:#2d6a9f;font-weight:600}
 .cruz-lead-motivo{font-size:.74rem;color:#6b7280;margin-left:auto;text-align:right}
-.cruz-lead-pref{font-size:.74rem;color:#9ca3af;flex-basis:100%;padding-left:56px}
+.cruz-lead-pref{font-size:.74rem;color:#9ca3af;flex-basis:100%;padding-left:84px}
+.cruz-chk{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:#1a3c5e;margin:0}
+.cruz-lead.sel{background:#eff6ff}
+/* Barra de seleccao: fixa no fundo, so aparece com alguem escolhido. Fica por
+   cima do conteudo, por isso o main leva padding-bottom quando esta visivel. */
+.cruz-barra{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;
+  align-items:center;gap:10px;flex-wrap:wrap;padding:11px 20px;
+  background:#1a3c5e;color:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.2)}
+.cruz-barra.on{display:flex}
+.cruz-barra b{font-size:.88rem}
+.cruz-barra small{opacity:.8;font-size:.76rem}
+.cruz-barra button{padding:6px 13px;border-radius:6px;border:1.5px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:.79rem;font-weight:600}
+.cruz-barra button:hover{background:rgba(255,255,255,.22)}
+.cruz-barra .fecha{margin-left:auto;border-color:transparent;background:none;opacity:.75}
 .rel-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .rel-actions button{padding:8px 18px;border-radius:8px;font-size:.84rem;font-weight:600;cursor:pointer;border:1.5px solid #d1d5db;background:#fff;color:#374151;display:flex;align-items:center;gap:6px;transition:all .15s}
 .rel-actions button:hover{background:#f0f4f8;border-color:#9ca3af}
@@ -2238,7 +2252,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
 
   <!-- Cruzamentos imóvel ↔ cliente (admin only) -->
   <div class="portal-page" id="page-cruzamentos">
-    <main style="flex:1;padding:24px;max-width:1200px;margin:0 auto;width:100%">
+    <!-- padding-bottom folgado: a barra de selecção é fixa e taparia a última linha -->
+    <main style="flex:1;padding:24px 24px 88px;max-width:1200px;margin:0 auto;width:100%">
       <h2 style="font-size:1.1rem;font-weight:700;color:#1a3c5e;margin:0 0 4px">🔗 Cruzamentos — imóveis × clientes</h2>
       <p style="font-size:.82rem;color:#6b7280;margin:0 0 18px">
         Cruza as preferências activas dos clientes com o imóvel. Compara natureza, tipologia,
@@ -2264,6 +2279,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <option value="85">Só match forte (≥ 85)</option>
             <option value="60">Incluir match fraco (≥ 60)</option>
           </select>
+          <select id="cruz-desde" onchange="cruzLista()">
+            <option value="">Contacto: qualquer altura</option>
+            <option value="90">Activos há ≤ 3 meses</option>
+            <option value="180">Activos há ≤ 6 meses</option>
+            <option value="365">Activos há ≤ 12 meses</option>
+            <option value="730">Activos há ≤ 24 meses</option>
+          </select>
           <button onclick="cruzLista()" class="cruz-btn">↻ Atualizar</button>
           <span id="cruz-lista-info" style="font-size:.8rem;color:#6b7280"></span>
         </div>
@@ -2284,6 +2306,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <option value="60">Match ≥ 60</option>
             <option value="70" selected>Match ≥ 70</option>
             <option value="85">Match ≥ 85</option>
+          </select>
+          <select id="cruz-ref-desde">
+            <option value="">Contacto: qualquer altura</option>
+            <option value="90">Activos há ≤ 3 meses</option>
+            <option value="180">Activos há ≤ 6 meses</option>
+            <option value="365">Activos há ≤ 12 meses</option>
+            <option value="730">Activos há ≤ 24 meses</option>
           </select>
           <button onclick="cruzPorRef()" class="cruz-btn">Procurar clientes</button>
         </div>
@@ -2322,6 +2351,13 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <option value="70">Match ≥ 70</option>
             <option value="85" selected>Match ≥ 85</option>
           </select>
+          <select id="cruz-crit-desde">
+            <option value="">Contacto: qualquer altura</option>
+            <option value="90">Activos há ≤ 3 meses</option>
+            <option value="180">Activos há ≤ 6 meses</option>
+            <option value="365">Activos há ≤ 12 meses</option>
+            <option value="730">Activos há ≤ 24 meses</option>
+          </select>
           <button onclick="cruzPorCriterios()" class="cruz-btn">Procurar clientes</button>
         </div>
         <p style="font-size:.78rem;color:#6b7280;margin:-6px 0 14px">
@@ -2329,6 +2365,18 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           &ldquo;Figueira da Foz&rdquo; aparece em quase todas as preferências, por isso não distingue nada.
         </p>
         <div id="cruz-crit-out"></div>
+      </div>
+
+      <!-- Barra de seleccao. Acumula entre imóveis e entre modos: dá para juntar
+           clientes de várias fichas antes de exportar. -->
+      <div class="cruz-barra" id="cruz-barra">
+        <b id="cruz-barra-n">0 selecionados</b>
+        <small id="cruz-barra-det"></small>
+        <button onclick="cruzTodos()">Selecionar visíveis</button>
+        <button onclick="cruzCopiar('email')">📋 Emails</button>
+        <button onclick="cruzCopiar('tel')">📋 Telefones</button>
+        <button onclick="cruzCsv()">⬇ CSV</button>
+        <button class="fecha" onclick="cruzLimpar()">✕ Limpar</button>
       </div>
     </main>
   </div>
@@ -13024,6 +13072,11 @@ function relDrawBar(canvasId, labels, values) {
 // O cruzamento em si é feito no Postgres (rpc_imoveis_com_clientes /
 // rpc_clientes_para_ref, migração 20260816_cruzamentos.sql). Aqui só se pinta.
 var _cruzLoaded = false
+// Registo dos clientes já pintados (ref -> linha da RPC) e o que está escolhido.
+// A selecção é acumulada de propósito: sobrevive a abrir/fechar fichas e a mudar
+// de modo, para se poder juntar clientes de vários imóveis antes de exportar.
+var cruzReg = {}
+var cruzSel = {}
 
 function cruzInit() {
   if (_cruzLoaded) return
@@ -13059,6 +13112,15 @@ function cruzScoreClass(s) {
   return s >= 85 ? 'cruz-s-alto' : (s >= 70 ? 'cruz-s-medio' : 'cruz-s-baixo')
 }
 
+// Lê um dos selects "Activos há ≤ N dias" e devolve a data em ISO, ou null.
+// O corte é feito no Postgres (p_desde) e não aqui: filtrar no browser cortaria
+// depois do limite e devolveria menos linhas do que as que existem.
+function cruzDesde(id) {
+  var d = parseInt((document.getElementById(id) || {}).value, 10)
+  if (!d) return null
+  return new Date(Date.now() - d * 86400000).toISOString().slice(0, 10)
+}
+
 async function cruzLista() {
   var out = document.getElementById('cruz-lista-out')
   var info = document.getElementById('cruz-lista-info')
@@ -13076,7 +13138,8 @@ async function cruzLista() {
   var { data, error } = await sbEgo.rpc('rpc_imoveis_com_clientes', {
     p_disponibilidade: disp,
     p_score_min: smin,
-    p_limite_imoveis: limite
+    p_limite_imoveis: limite,
+    p_desde: cruzDesde('cruz-desde')
   })
 
   if (error) {
@@ -13129,18 +13192,19 @@ async function cruzToggle(ref) {
   if (body.dataset.carregado === '1') return
   var smin = parseInt(document.getElementById('cruz-score').value, 10)
   body.innerHTML = '<div style="padding:14px 16px;color:#6b7280;font-size:.82rem">A carregar clientes…</div>'
-  var leads = await cruzFetchRef(ref, null, smin)
+  var leads = await cruzFetchRef(ref, null, smin, cruzDesde('cruz-desde'))
   if (leads.erro) { body.innerHTML = '<div style="padding:14px 16px;color:#b91c1c;font-size:.82rem">' + esc(leads.erro) + '</div>'; return }
   body.dataset.carregado = '1'
   body.innerHTML = leads.html
 }
 
-async function cruzFetchRef(ref, negocio, smin) {
+async function cruzFetchRef(ref, negocio, smin, desde) {
   return cruzLeads('rpc_clientes_para_ref', {
     p_ref: ref,
     p_negocio: negocio || null,
     p_score_min: smin,
-    p_limite: 60
+    p_limite: 60,
+    p_desde: desde || null
   })
 }
 
@@ -13166,7 +13230,13 @@ async function cruzLeads(rpc, params) {
     if (c.pref_preco_min || c.pref_preco_max) {
       pref.push((c.pref_preco_min ? cruzEuro(c.pref_preco_min) : '') + '–' + (c.pref_preco_max ? cruzEuro(c.pref_preco_max) : ''))
     }
-    return '<div class="cruz-lead">'
+    // O registo fica guardado por ref; a checkbox só carrega a chave. Assim não
+    // se mete o telefone e o email do cliente dentro de atributos HTML.
+    cruzReg[c.oportunidade_ref] = c
+    var on = cruzSel[c.oportunidade_ref] ? ' checked' : ''
+    return '<div class="cruz-lead' + (on ? ' sel' : '') + '">'
+      + '<input type="checkbox" class="cruz-chk" data-ref="' + esc(c.oportunidade_ref) + '"'
+      +   ' onchange="cruzPick(this)" title="Selecionar para contacto"' + on + '>'
       + '<span class="cruz-score ' + cruzScoreClass(c.score) + '">' + c.score + '</span>'
       + '<span class="cruz-lead-nome">' + esc(c.cliente_nome || c.oportunidade_ref) + '</span>'
       + '<span class="cruz-lead-contacto">' + contacto.join(' · ') + '</span>'
@@ -13189,7 +13259,7 @@ async function cruzPorRef() {
   var smin = parseInt(document.getElementById('cruz-ref-score').value, 10)
 
   out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A procurar clientes para <b>' + esc(ref) + '</b>…</div>'
-  var r = await cruzFetchRef(ref, neg, smin)
+  var r = await cruzFetchRef(ref, neg, smin, cruzDesde('cruz-ref-desde'))
   if (r.erro) { out.innerHTML = '<div class="err-box">' + esc(r.erro) + '</div>'; return }
   if (!r.n) {
     // Distinguir "não há clientes" de "a referência não existe": se a ref não
@@ -13243,7 +13313,8 @@ async function cruzPorCriterios() {
     p_preco: preco > 0 ? preco : null,
     p_negocio: neg,
     p_score_min: smin,
-    p_limite: LIM
+    p_limite: LIM,
+    p_desde: cruzDesde('cruz-crit-desde')
   })
   if (r.erro) { out.innerHTML = '<div class="err-box">' + esc(r.erro) + '</div>'; return }
   var n = r.n || 0
@@ -13252,6 +13323,124 @@ async function cruzPorCriterios() {
     : n + ' cliente' + (n === 1 ? '' : 's') + ' para <b>' + esc(resumo) + '</b>'
   out.innerHTML = '<div style="font-size:.8rem;color:#6b7280;margin-bottom:8px">' + cabec + '</div>'
     + '<div class="cruz-card"><div class="cruz-body" style="border-top:none">' + r.html + '</div></div>'
+}
+
+// ── Selecção de clientes para contactar ──────────────────────────────────────
+// Por agora a saída é local: copiar contactos ou exportar CSV. O envio de email,
+// SMS ou o encaminhamento para o agente de IA entra depois, a partir da mesma
+// selecção — o CSV já leva as colunas todas de que isso precisa.
+
+function cruzPick(el) {
+  var ref = el.dataset.ref
+  if (el.checked) cruzSel[ref] = true
+  else delete cruzSel[ref]
+  var linha = el.closest('.cruz-lead')
+  if (linha) linha.className = 'cruz-lead' + (el.checked ? ' sel' : '')
+  cruzBarra()
+}
+
+// Só o que está pintado no ecrã — inclui as fichas abertas noutros imóveis.
+function cruzTodos() {
+  document.querySelectorAll('#page-cruzamentos .cruz-chk').forEach(function(el) {
+    if (!el.checked) { el.checked = true; cruzPick(el) }
+  })
+}
+
+function cruzLimpar() {
+  cruzSel = {}
+  document.querySelectorAll('#page-cruzamentos .cruz-chk').forEach(function(el) {
+    el.checked = false
+    var linha = el.closest('.cruz-lead')
+    if (linha) linha.className = 'cruz-lead'
+  })
+  cruzBarra()
+}
+
+// A mesma pessoa aparece em várias oportunidades (uma por procura). Para
+// contactar interessa a pessoa, não a oportunidade: junta-se por email, senão
+// por telefone, senão pela ref.
+function cruzSelecionados() {
+  var vistos = {}
+  var lista = []
+  Object.keys(cruzSel).forEach(function(ref) {
+    var c = cruzReg[ref]
+    if (!c) return
+    var chave = (c.cliente_email || '').trim().toLowerCase()
+      || (c.cliente_telefone || '').replace(/\D/g, '')
+      || ref
+    if (vistos[chave]) return
+    vistos[chave] = true
+    lista.push(c)
+  })
+  return lista.sort(function(a, b) { return (b.score || 0) - (a.score || 0) })
+}
+
+function cruzBarra() {
+  var barra = document.getElementById('cruz-barra')
+  var lista = cruzSelecionados()
+  var n = Object.keys(cruzSel).length
+  barra.className = 'cruz-barra' + (n ? ' on' : '')
+  if (!n) return
+  var mails = lista.filter(function(c) { return (c.cliente_email || '').trim() }).length
+  var tels  = lista.filter(function(c) { return (c.cliente_telefone || '').trim() }).length
+  document.getElementById('cruz-barra-n').textContent =
+    lista.length + (lista.length === 1 ? ' cliente' : ' clientes')
+  document.getElementById('cruz-barra-det').textContent =
+    mails + ' com email · ' + tels + ' com telefone'
+    + (n > lista.length ? ' · ' + n + ' oportunidades' : '')
+}
+
+function cruzCopiar(campo) {
+  var vals = cruzSelecionados()
+    .map(function(c) { return ((campo === 'email' ? c.cliente_email : c.cliente_telefone) || '').trim() })
+    .filter(Boolean)
+  vals = vals.filter(function(v, i) { return vals.indexOf(v) === i })
+  if (!vals.length) { alert('Nenhum dos clientes selecionados tem ' + (campo === 'email' ? 'email' : 'telefone') + '.'); return }
+  var txt = vals.join(campo === 'email' ? '; ' : '\n')
+  // clipboard API só existe em https; o fallback cobre o resto.
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function() { alert(vals.length + ' copiados.') },
+                                           function() { cruzCopiaFallback(txt, vals.length) })
+  } else {
+    cruzCopiaFallback(txt, vals.length)
+  }
+}
+
+function cruzCopiaFallback(txt, n) {
+  var ta = document.createElement('textarea')
+  ta.value = txt
+  ta.style.position = 'fixed'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  ta.select()
+  var ok = false
+  try { ok = document.execCommand('copy') } catch (e) { ok = false }
+  document.body.removeChild(ta)
+  alert(ok ? n + ' copiados.' : 'Não deu para copiar automaticamente:\n\n' + txt)
+}
+
+function cruzCsv() {
+  var lista = cruzSelecionados()
+  if (!lista.length) return
+  var cols = ['oportunidade_ref', 'cliente_nome', 'cliente_telefone', 'cliente_email',
+              'score', 'motivo', 'responsavel', 'etapa_atual', 'ultima_mencao',
+              'pref_natureza', 'pref_tipologia', 'pref_zona', 'pref_preco_min',
+              'pref_preco_max', 'oportunidade_url']
+  function cel(v) {
+    if (v == null) return ''
+    var s = String(v)
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+  }
+  // ; e BOM: é o que o Excel português abre direito sem passos extra.
+  var csv = '﻿' + cols.join(';') + '\n'
+    + lista.map(function(c) { return cols.map(function(k) { return cel(c[k]) }).join(';') }).join('\n')
+  var a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  a.download = 'clientes-cruzamento-' + new Date().toISOString().slice(0, 10) + '.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(a.href)
 }
 </script>
 
