@@ -2319,8 +2319,8 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
           </select>
           <select id="cruz-crit-score">
             <option value="60">Match ≥ 60</option>
-            <option value="70" selected>Match ≥ 70</option>
-            <option value="85">Match ≥ 85</option>
+            <option value="70">Match ≥ 70</option>
+            <option value="85" selected>Match ≥ 85</option>
           </select>
           <button onclick="cruzPorCriterios()" class="cruz-btn">Procurar clientes</button>
         </div>
@@ -13032,11 +13032,12 @@ function cruzInit() {
 }
 
 function cruzModo(m) {
-  document.getElementById('cruz-tab-lista').className = 'cruz-tab' + (m === 'lista' ? ' active' : '')
-  document.getElementById('cruz-tab-ref').className   = 'cruz-tab' + (m === 'ref'   ? ' active' : '')
-  document.getElementById('cruz-modo-lista').style.display = (m === 'lista' ? '' : 'none')
-  document.getElementById('cruz-modo-ref').style.display   = (m === 'ref'   ? '' : 'none')
-  if (m === 'ref') { var i = document.getElementById('cruz-ref-input'); if (i) i.focus() }
+  ;['lista', 'ref', 'crit'].forEach(function(k) {
+    document.getElementById('cruz-tab-' + k).className = 'cruz-tab' + (m === k ? ' active' : '')
+    document.getElementById('cruz-modo-' + k).style.display = (m === k ? '' : 'none')
+  })
+  var foco = m === 'ref' ? 'cruz-ref-input' : (m === 'crit' ? 'cruz-crit-zona' : null)
+  if (foco) { var i = document.getElementById(foco); if (i) i.focus() }
 }
 
 function cruzEuro(v) {
@@ -13135,12 +13136,19 @@ async function cruzToggle(ref) {
 }
 
 async function cruzFetchRef(ref, negocio, smin) {
-  var { data, error } = await sbEgo.rpc('rpc_clientes_para_ref', {
+  return cruzLeads('rpc_clientes_para_ref', {
     p_ref: ref,
     p_negocio: negocio || null,
     p_score_min: smin,
     p_limite: 60
   })
+}
+
+// Chama uma das RPC de cruzamento e devolve {html, n} ou {erro}. As três
+// (por ref, por critérios) devolvem a mesma forma de linha, por isso partilham
+// o renderer.
+async function cruzLeads(rpc, params) {
+  var { data, error } = await sbEgo.rpc(rpc, params)
   if (error) return { erro: 'Erro: ' + error.message }
   data = data || []
   if (!data.length) return { html: '<div style="padding:14px 16px;color:#6b7280;font-size:.82rem">Nenhum cliente com preferências compatíveis.</div>', n: 0 }
@@ -13206,6 +13214,44 @@ async function cruzPorRef() {
     }
   }
   out.innerHTML = '<div class="cruz-card"><div class="cruz-body" style="border-top:none">' + r.html + '</div></div>'
+}
+
+async function cruzPorCriterios() {
+  var out   = document.getElementById('cruz-crit-out')
+  var nat   = document.getElementById('cruz-crit-nat').value || null
+  var tip   = document.getElementById('cruz-crit-tip').value || null
+  var zona  = document.getElementById('cruz-crit-zona').value.trim() || null
+  var preco = parseFloat(document.getElementById('cruz-crit-preco').value)
+  var neg   = document.getElementById('cruz-crit-neg').value
+  var smin  = parseInt(document.getElementById('cruz-crit-score').value, 10)
+
+  if (!nat && !tip && !zona && !(preco > 0)) {
+    out.innerHTML = '<div class="err-box">Preenche pelo menos um critério — sem nenhum, sairiam todos os clientes.</div>'
+    return
+  }
+
+  var resumo = [nat, tip, zona, preco > 0 ? cruzEuro(preco) : null].filter(Boolean).join(' · ')
+  out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A procurar clientes para <b>' + esc(resumo) + '</b>…</div>'
+
+  // Uma procura larga (só zona, p.ex.) apanha milhares de clientes. Devolvem-se
+  // os melhores e diz-se que foram cortados, em vez de fingir que são todos.
+  var LIM = 200
+  var r = await cruzLeads('rpc_clientes_para_criterios', {
+    p_natureza: nat,
+    p_tipologia: tip,
+    p_zona: zona,
+    p_preco: preco > 0 ? preco : null,
+    p_negocio: neg,
+    p_score_min: smin,
+    p_limite: LIM
+  })
+  if (r.erro) { out.innerHTML = '<div class="err-box">' + esc(r.erro) + '</div>'; return }
+  var n = r.n || 0
+  var cabec = n >= LIM
+    ? 'Os ' + LIM + ' melhores clientes para <b>' + esc(resumo) + '</b> — há mais acima do limiar'
+    : n + ' cliente' + (n === 1 ? '' : 's') + ' para <b>' + esc(resumo) + '</b>'
+  out.innerHTML = '<div style="font-size:.8rem;color:#6b7280;margin-bottom:8px">' + cabec + '</div>'
+    + '<div class="cruz-card"><div class="cruz-body" style="border-top:none">' + r.html + '</div></div>'
 }
 </script>
 
