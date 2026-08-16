@@ -13129,8 +13129,19 @@ async function cruzLista() {
   // Cada imóvel é cruzado com ~6900 preferências activas, por isso o custo
   // cresce com o tamanho da selecção. 'Disponível' são 67 imóveis; a selecção
   // alargada 410; 'Em Prospecção' 2645. O limite trava antes do
-  // statement_timeout do Supabase.
-  var limite = disp.indexOf('Em Prospecção') >= 0 ? 60 : (disp.length > 1 ? 150 : 300)
+  // statement_timeout do Supabase (8s).
+  //
+  // Os limites são dimensionados pelo PIOR caso, que é score 60 e não 70: o
+  // custo é dominado pelas linhas que sobrevivem ao corte, e baixar o score de
+  // 70 para 60 quase duplica-as (o HashAggregate passa a derramar ~100MB para
+  // disco). Medido a 2026-08-16 com o motor set-based:
+  //   67 imóveis  (Disponível)      score 70 → 0,9s
+  //   200 imóveis (Em Prospecção)   score 60 → 2,7s
+  //   400 imóveis (Em Prospecção)   score 70 → 4,8s
+  //   410 imóveis (alargada)        score 60 → 5,4s   <-- perto demais dos 8s
+  // Daí o tecto de 200 em tudo o que não seja 'Disponível': ~2,7s no pior caso,
+  // com margem para cache fria e carga concorrente.
+  var limite = disp.length > 1 || disp.indexOf('Em Prospecção') >= 0 ? 200 : 300
 
   out.innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280;font-size:.88rem">A cruzar imóveis com preferências…</div>'
   info.textContent = ''
