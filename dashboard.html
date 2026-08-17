@@ -331,7 +331,7 @@ function showTab(p,t,btn){
     if(pgSec) pgSec.style.display='none';
     if(refsSec) refsSec.style.display='none';
     if(tvSec) tvSec.style.display='none';
-    if(dbgSec) dbgSec.style.display= t==='cascata' ? 'block' : 'none';
+    if(dbgSec) dbgSec.style.display= (t==='cascata'||t==='comm_cons') ? 'block' : 'none';
     if(finTbl) finTbl.style.display='block';
     if(t==='pg'){ if(pgSec)pgSec.style.display='block'; if(finTbl)finTbl.style.display='none'; }
   }
@@ -501,11 +501,20 @@ function finRender(){
     }).sort((a,b) => (b.data_fecho||'').localeCompare(a.data_fecho||''));
     if(!rows.length){ sec.innerHTML=''; return; }
     function fE(v){ return v>0?'&#8364;'+Math.round(v).toLocaleString('pt-PT'):'&#8212;'; }
+    const showPapel = finSelCons!=='all';
+    function papelBadge(r){
+      const isAng = r.angariador===finSelCons, isVend = r.responsavel===finSelCons;
+      if(isAng&&isVend) return '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #16a34a33;padding:1px 7px;border-radius:8px;font-size:.71rem;font-weight:600">Angaria&#231;&#227;o + Venda</span>';
+      if(isAng) return '<span style="background:#eff6ff;color:#2563eb;border:1px solid #2563eb33;padding:1px 7px;border-radius:8px;font-size:.71rem;font-weight:600">Angaria&#231;&#227;o Vendida</span>';
+      if(isVend) return '<span style="background:#fdf4ff;color:#a21caf;border:1px solid #a21caf33;padding:1px 7px;border-radius:8px;font-size:.71rem;font-weight:600">Venda Realizada</span>';
+      return '&#8212;';
+    }
     let tb='';
     rows.forEach(r=>{ tb+='<tr>'
       +'<td style="color:#888;font-size:.78rem">'+(r.data_fecho||'&#8212;')+'</td>'
       +'<td style="font-weight:600;color:#1a3c5e">'+(r.ref||'&#8212;')+'</td>'
-      +'<td>'+(r.ref_im||'&#8212;')+'</td>'
+      +'<td style="font-weight:600">'+(r.ref_im||'&#8212;')+'</td>'
+      +(showPapel?'<td>'+papelBadge(r)+'</td>':'')
       +'<td>'+(r.responsavel||'&#8212;')+'</td>'
       +'<td>'+(r.angariador&&r.angariador!==r.responsavel?r.angariador:'(mesmo)')+'</td>'
       +'<td style="text-align:right">'+fE(r.valor)+'</td>'
@@ -546,7 +555,7 @@ function finRender(){
     const totalAceitesComm   = aceiteRows.reduce((s,r)=>s+(parseFloat(r.xlsx_comm_ag)||((parseFloat(r.proposta)||0)*0.05)),0);
     const totalAceitesValor  = aceiteRows.reduce((s,r)=>s+(parseFloat(r.proposta)||0),0);
     const tfootF = '<tfoot><tr style="font-weight:700;background:#f0f4f8">'
-      +'<td colspan="5" style="text-align:right;font-size:.8rem;color:#555">Total</td>'
+      +'<td colspan="'+(showPapel?6:5)+'" style="text-align:right;font-size:.8rem;color:#555">Total</td>'
       +'<td style="text-align:right">&#8364;'+Math.round(totalFechadosValor).toLocaleString('pt-PT')+'</td>'
       +'<td style="text-align:right;color:#27ae60">&#8364;'+Math.round(totalFechadosComm).toLocaleString('pt-PT')+'</td>'
       +'</tr></tfoot>';
@@ -557,9 +566,10 @@ function finRender(){
       +'<td></td><td></td>'
       +'</tr></tfoot>' : '';
 
-    sec.innerHTML='<details open><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;padding:8px 0">&#128196; Negócios fechados ('+rows.length+')</summary>'
+    const negTitle = '&#128196; Neg&#243;cios fechados'+(showPapel?' &#8212; '+finSelCons:'')+' ('+rows.length+')';
+    sec.innerHTML='<details open><summary style="cursor:pointer;font-size:.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;padding:8px 0">'+negTitle+'</summary>'
       +'<div class="card" style="margin-top:8px;overflow-x:auto"><table>'
-      +'<thead><tr><th>Data Fecho</th><th style="text-align:left">Oportunidade</th><th style="text-align:left">Imóvel</th><th style="text-align:left">Consultor Venda</th><th style="text-align:left">Angariador</th><th>Valor</th><th>Comissão Ag.</th></tr></thead>'
+      +'<thead><tr><th>Data Fecho</th><th style="text-align:left">Oportunidade</th><th style="text-align:left">Imóvel</th>'+(showPapel?'<th style="text-align:left">Papel</th>':'')+'<th style="text-align:left">Consultor Venda</th><th style="text-align:left">Angariador</th><th>Valor</th><th>Comissão Ag.</th></tr></thead>'
       +'<tbody>'+tb+'</tbody>'+tfootF+'</table></div></details>'
       + aceiteSection.replace('</table></div></details>', tfootA+'</table></div></details>');
   })();
@@ -580,6 +590,24 @@ function finBuildTables(ano){
     cs.forEach(c=>{const r=fin[c];let rt=0;let cells=anos.map((a,i)=>{const v=r[a]?r[a][field]||0:0;tc2[i]+=v;rt+=v;return v?'<td>'+minibar(v,mx,col,yAvg[a])+'</td>':'<td>&#8212;</td>';}).join('');g+=rt;if(rt===0)return;b+='<tr><td>'+c+'</td>'+cells+'<td><strong>'+fmtFn(rt)+'</strong></td></tr>';});
     return '<table>'+h+'<tbody>'+b+'</tbody><tfoot><tr><td>Total</td>'+tc2.map(v=>'<td>'+fmtFn(v)+'</td>').join('')+'<td>'+fmtFn(g)+'</td></tr></tfoot></table>';
   }
+  function mkConsPerf(){
+    const dv = D.detalhe_vendas || [];
+    const rows = ano==='all' ? dv : dv.filter(r=>r.ano_fecho===ano);
+    const stats = {};
+    cs.forEach(c=>stats[c]={ang:0,vend:0});
+    rows.forEach(r=>{
+      if(r.angariador && stats[r.angariador]!==undefined) stats[r.angariador].ang++;
+      if(r.responsavel && stats[r.responsavel]!==undefined) stats[r.responsavel].vend++;
+    });
+    let h='<thead><tr><th>Consultor</th><th>Angaria&#231;&#245;es Vendidas</th><th>Vendas Realizadas</th><th>Total</th></tr></thead>',b='',tA=0,tV=0;
+    cs.forEach(c=>{
+      const s=stats[c]; if(!s||(s.ang===0&&s.vend===0)) return;
+      tA+=s.ang; tV+=s.vend;
+      b+='<tr><td>'+c+'</td><td>'+(s.ang||'&#8212;')+'</td><td>'+(s.vend||'&#8212;')+'</td><td><strong>'+(s.ang+s.vend)+'</strong></td></tr>';
+    });
+    if(!b) return '<p style="color:#888;padding:12px 0">Sem transa&#231;&#245;es no per&#237;odo seleccionado.</p>';
+    return '<table>'+h+'<tbody>'+b+'</tbody><tfoot><tr><td>Total</td><td>'+tA+'</td><td>'+tV+'</td><td>'+(tA+tV)+'</td></tr></tfoot></table>';
+  }
   function mkCas(){
     let h='<thead><tr><th>Ano</th><th>Neg&#243;cios</th><th>Valor Im&#243;veis</th><th>Comiss&#227;o Ag&#234;ncia</th><th>Pago Consultores</th><th>Margem Ag&#234;ncia</th></tr></thead>',b='',t={neg:0,v:0,c:0,p:0,m:0};
     const casSource = finSelCons==='all' ? yr : (fin[finSelCons]||{});
@@ -589,7 +617,12 @@ function finBuildTables(ano){
   document.getElementById('fin-tables').innerHTML=
     '<div class="tab-content active" id="fin-tab-valor">'+mk('valor',fmtEur,'#2d6a9f')+'</div>'+
     '<div class="tab-content" id="fin-tab-comm_ag">'+mk('comm_ag',fmtEur,'#27ae60')+'</div>'+
-    '<div class="tab-content" id="fin-tab-comm_cons">'+mk('comm_cons',fmtEur,'#e67e22')+'</div>'+
+    '<div class="tab-content" id="fin-tab-comm_cons">'
+      +'<div style="font-size:.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">&#128202; Performance por Consultor &#8212; '+(ano==='all'?'Acumulado':ano)+'</div>'
+      +mkConsPerf()
+      +'<div style="font-size:.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin:20px 0 8px">&#128176; Ganhos (&#8364;)</div>'
+      +mk('comm_cons',fmtEur,'#e67e22')
+    +'</div>'+
     '<div class="tab-content" id="fin-tab-margem">'+mk('margem',fmtEur,'#8e44ad')+'</div>'+
     '<div class="tab-content" id="fin-tab-cascata">'+mkCas()+'</div>';
 }
