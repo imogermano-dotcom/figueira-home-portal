@@ -593,20 +593,27 @@ function finBuildTables(ano){
   function mkConsPerf(){
     const dv = D.detalhe_vendas || [];
     const rows = ano==='all' ? dv : dv.filter(r=>r.ano_fecho===ano);
+    const pend = (D.alertas && D.alertas.pendentes) || [];
+    const aceites = pend.filter(r=>r.estado_prop==='Aceite' && r.im_disp!=='Retirado' && (ano==='all' || (r.data_prop||'').slice(0,4)===ano));
     const stats = {};
-    cs.forEach(c=>stats[c]={ang:0,vend:0});
+    cs.forEach(c=>stats[c]={ang:0,vend:0,vendVal:0,acCount:0,acVal:0});
     rows.forEach(r=>{
       if(r.angariador && stats[r.angariador]!==undefined) stats[r.angariador].ang++;
-      if(r.responsavel && stats[r.responsavel]!==undefined) stats[r.responsavel].vend++;
+      if(r.responsavel && stats[r.responsavel]!==undefined){ stats[r.responsavel].vend++; stats[r.responsavel].vendVal+=(r.valor||0); }
     });
-    let h='<thead><tr><th>Consultor</th><th>Angaria&#231;&#245;es Vendidas</th><th>Vendas Realizadas</th><th>Total</th></tr></thead>',b='',tA=0,tV=0;
+    aceites.forEach(r=>{
+      const c=r.resp;
+      if(c && stats[c]!==undefined){ stats[c].acCount++; stats[c].acVal+=(parseFloat(r.proposta)||0); }
+    });
+    function fE(v){ return v>0?'&#8364;'+Math.round(v).toLocaleString('pt-PT'):'&#8212;'; }
+    let h='<thead><tr><th>Consultor</th><th>Angaria&#231;&#245;es Vendidas</th><th>Vendas Realizadas</th><th>Valor Neg&#243;cios Ganhos</th><th>Propostas Aceites</th><th>Valor Propostas Aceites</th><th>Total</th></tr></thead>',b='',tA=0,tV=0,tVV=0,tAC=0,tACV=0;
     cs.forEach(c=>{
-      const s=stats[c]; if(!s||(s.ang===0&&s.vend===0)) return;
-      tA+=s.ang; tV+=s.vend;
-      b+='<tr><td>'+c+'</td><td>'+(s.ang||'&#8212;')+'</td><td>'+(s.vend||'&#8212;')+'</td><td><strong>'+(s.ang+s.vend)+'</strong></td></tr>';
+      const s=stats[c]; if(!s||(s.ang===0&&s.vend===0&&s.acCount===0)) return;
+      tA+=s.ang; tV+=s.vend; tVV+=s.vendVal; tAC+=s.acCount; tACV+=s.acVal;
+      b+='<tr><td>'+c+'</td><td>'+(s.ang||'&#8212;')+'</td><td>'+(s.vend||'&#8212;')+'</td><td style="text-align:right">'+fE(s.vendVal)+'</td><td>'+(s.acCount||'&#8212;')+'</td><td style="text-align:right">'+fE(s.acVal)+'</td><td><strong>'+(s.ang+s.vend)+'</strong></td></tr>';
     });
     if(!b) return '<p style="color:#888;padding:12px 0">Sem transa&#231;&#245;es no per&#237;odo seleccionado.</p>';
-    return '<table>'+h+'<tbody>'+b+'</tbody><tfoot><tr><td>Total</td><td>'+tA+'</td><td>'+tV+'</td><td>'+(tA+tV)+'</td></tr></tfoot></table>';
+    return '<div style="overflow-x:auto"><table>'+h+'<tbody>'+b+'</tbody><tfoot><tr><td>Total</td><td>'+tA+'</td><td>'+tV+'</td><td style="text-align:right">'+fE(tVV)+'</td><td>'+tAC+'</td><td style="text-align:right">'+fE(tACV)+'</td><td>'+(tA+tV)+'</td></tr></tfoot></table></div>';
   }
   function mkCas(){
     let h='<thead><tr><th>Ano</th><th>Neg&#243;cios</th><th>Valor Im&#243;veis</th><th>Comiss&#227;o Ag&#234;ncia</th><th>Pago Consultores</th><th>Margem Ag&#234;ncia</th></tr></thead>',b='',t={neg:0,v:0,c:0,p:0,m:0};
