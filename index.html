@@ -875,6 +875,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-old-leads" onclick="showTab('old-leads')">📞 Old Leads</button>
     <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
     <button class="pnav-btn" id="tab-meta" onclick="showTab('meta')">📱 META Ads</button>
+    <button class="pnav-btn" id="tab-sociais" onclick="showTab('sociais')">📣 Performance Sociais</button>
     <button class="pnav-btn" id="tab-ce" onclick="showTab('ce')">🏡 Certificados CE</button>
     <button class="pnav-btn" id="tab-qualidade" onclick="showTab('qualidade')">🎯 Qualidade Leads</button>
     <button class="pnav-btn" id="tab-angariacao" onclick="showTab('angariacao')">🏠 Angariação</button>
@@ -2003,6 +2004,149 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     </main>
   </div>
 
+  <!-- Performance Sociais -->
+  <div class="portal-page" id="page-sociais">
+    <main style="flex:1;padding:24px;max-width:1600px;margin:0 auto;width:100%">
+
+      <!-- Controlos -->
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:16px 20px">
+        <div>
+          <h2 style="font-size:1rem;font-weight:700;color:#1a3c5e;margin:0">📣 Performance Sociais — Imóveis promovidos</h2>
+          <p style="font-size:.75rem;color:#9ca3af;margin:2px 0 0" id="sociais-sub">META Ads × funil eGO · leads com origem figueirahome.com / Facebook / Instagram</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+          <label style="font-size:.76rem;font-weight:600;color:#6b7280">Ano</label>
+          <select id="sociais-ano" onchange="sociaisSetAno(this.value)" style="padding:6px 10px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-weight:600;color:#374151;outline:none;cursor:pointer">
+            <option value="todos">Todos os anos</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:.76rem;font-weight:600;color:#6b7280">Origem</label>
+          <div id="sociais-origem-tabs" style="display:flex;gap:4px">
+            <button class="meta-ftab active" onclick="sociaisSetOrigem('fh',this)">Só redes / site</button>
+            <button class="meta-ftab" onclick="sociaisSetOrigem('todas',this)">Todas as origens</button>
+          </div>
+        </div>
+        <button onclick="sociaisLoad(true)" id="sociais-load-btn" style="padding:8px 18px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.84rem;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Recarregar</button>
+      </div>
+
+      <div id="sociais-loading" class="loading" style="display:none">A carregar campanhas META e funil eGO…</div>
+      <div id="sociais-error" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;border-radius:10px;padding:14px 18px;font-size:.85rem;margin-bottom:16px"></div>
+      <div id="sociais-avisos" style="display:none;background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;border-radius:10px;padding:12px 16px;font-size:.8rem;margin-bottom:16px"></div>
+
+      <div id="sociais-content" style="display:none">
+
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px" id="sociais-kpis">
+          <div class="meta-kpi" style="border-left:3px solid #1a3c5e">
+            <div class="meta-kpi-label">Imóveis promovidos</div>
+            <div class="meta-kpi-value" id="sk-imoveis">—</div>
+            <div class="meta-kpi-sub" id="sk-imoveis-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #7c3aed">
+            <div class="meta-kpi-label">Investimento</div>
+            <div class="meta-kpi-value" id="sk-spend">—</div>
+            <div class="meta-kpi-sub" id="sk-spend-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #2d6a9f">
+            <div class="meta-kpi-label">Leads</div>
+            <div class="meta-kpi-value" id="sk-leads">—</div>
+            <div class="meta-kpi-sub" id="sk-leads-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #0891b2">
+            <div class="meta-kpi-label">Contactados</div>
+            <div class="meta-kpi-value" id="sk-contactados">—</div>
+            <div class="meta-kpi-sub" id="sk-contactados-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #d97706">
+            <div class="meta-kpi-label">Visitas</div>
+            <div class="meta-kpi-value" id="sk-visitas">—</div>
+            <div class="meta-kpi-sub" id="sk-visitas-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #059669">
+            <div class="meta-kpi-label">Propostas</div>
+            <div class="meta-kpi-value" id="sk-propostas">—</div>
+            <div class="meta-kpi-sub" id="sk-propostas-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #16a34a">
+            <div class="meta-kpi-label">Custo / lead</div>
+            <div class="meta-kpi-value" id="sk-cpl">—</div>
+            <div class="meta-kpi-sub" id="sk-cpl-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #be123c">
+            <div class="meta-kpi-label">Dias até 1ª aceite</div>
+            <div class="meta-kpi-value" id="sk-dias">—</div>
+            <div class="meta-kpi-sub" id="sk-dias-sub"></div>
+          </div>
+        </div>
+
+        <!-- Filtros de estado -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:12px 18px">
+          <span style="font-size:.76rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">Estado da proposta</span>
+          <div id="sociais-estado-tabs" style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="meta-ftab active" onclick="sociaisSetEstado('all',this)">Todos</button>
+            <button class="meta-ftab" onclick="sociaisSetEstado('aceite',this)">✅ Aceite</button>
+            <button class="meta-ftab" onclick="sociaisSetEstado('avaliacao',this)">⏳ Em avaliação</button>
+            <button class="meta-ftab" onclick="sociaisSetEstado('outra',this)">❌ Rejeitada</button>
+            <button class="meta-ftab" onclick="sociaisSetEstado('sem',this)">— Sem proposta</button>
+          </div>
+          <input type="text" id="sociais-busca" oninput="sociaisRender()" placeholder="Filtrar por ref, título ou consultor…" style="margin-left:auto;padding:6px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;outline:none;min-width:240px">
+          <button onclick="sociaisExportCsv()" style="padding:6px 14px;background:#fff;color:#1a3c5e;border:1.5px solid #1a3c5e;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap">⬇️ CSV</button>
+        </div>
+
+        <!-- Tabela -->
+        <div style="background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;margin-bottom:20px">
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+              <thead>
+                <tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb">
+                  <th onclick="sociaisSortBy('ref')" style="text-align:left;padding:10px 14px;font-weight:700;color:#374151;min-width:200px;cursor:pointer;white-space:nowrap">Imóvel</th>
+                  <th onclick="sociaisSortBy('inicio')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">1ª campanha</th>
+                  <th onclick="sociaisSortBy('dias_ativos')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Duração</th>
+                  <th onclick="sociaisSortBy('leads')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Leads</th>
+                  <th onclick="sociaisSortBy('contactados')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Contactados</th>
+                  <th onclick="sociaisSortBy('visitas')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Visitas</th>
+                  <th onclick="sociaisSortBy('propostas')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Propostas</th>
+                  <th onclick="sociaisSortBy('prop_final')" style="text-align:right;padding:10px 14px;font-weight:700;color:#374151;min-width:190px;cursor:pointer;white-space:nowrap">Negociação final</th>
+                  <th onclick="sociaisSortBy('dias_ate_aceite')" style="text-align:center;padding:10px 10px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Dias → 1ª aceite</th>
+                  <th onclick="sociaisSortBy('spend')" style="text-align:right;padding:10px 14px;font-weight:700;color:#374151;cursor:pointer;white-space:nowrap">Custo</th>
+                  <th onclick="sociaisSortBy('consultor')" style="text-align:left;padding:10px 14px;font-weight:700;color:#374151;min-width:140px;cursor:pointer;white-space:nowrap">Consultor</th>
+                </tr>
+              </thead>
+              <tbody id="sociais-tbody"></tbody>
+            </table>
+          </div>
+          <div id="sociais-vazio" style="display:none;padding:28px;text-align:center;color:#9ca3af;font-size:.85rem">Sem imóveis para os filtros escolhidos.</div>
+        </div>
+
+        <!-- Sem correspondência -->
+        <div id="sociais-orfas" style="display:none;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:16px 20px;margin-bottom:20px">
+          <h3 style="font-size:.88rem;font-weight:700;color:#92400e;margin:0 0 8px">⚠️ Referências sem correspondência no eGO</h3>
+          <p style="font-size:.76rem;color:#6b7280;margin:0 0 10px">Campanhas cujo nome contém uma referência que não existe no eGO — normalmente erro de escrita no nome da campanha.</p>
+          <div id="sociais-orfas-lista" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+
+        <!-- Campanhas sem referência -->
+        <div id="sociais-semref" style="display:none;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);padding:16px 20px">
+          <h3 style="font-size:.88rem;font-weight:700;color:#1a3c5e;margin:0 0 8px">Campanhas sem referência de imóvel</h3>
+          <p style="font-size:.76rem;color:#6b7280;margin:0 0 10px" id="sociais-semref-sub"></p>
+          <div style="overflow-x:auto;max-height:260px;overflow-y:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+              <thead><tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb">
+                <th style="text-align:left;padding:8px 12px;font-weight:700;color:#374151">Campanha</th>
+                <th style="text-align:center;padding:8px 12px;font-weight:700;color:#374151">Período</th>
+                <th style="text-align:right;padding:8px 12px;font-weight:700;color:#374151">Leads</th>
+                <th style="text-align:right;padding:8px 12px;font-weight:700;color:#374151">Custo</th>
+              </tr></thead>
+              <tbody id="sociais-semref-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
   <!-- Certificados Energéticos -->
   <div class="portal-page" id="page-ce">
     <main style="flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%">
@@ -2527,7 +2671,7 @@ async function loadApp() {
 
 // ── Tab navigation ───────────────────────────────────────────────────────────
 function showTab(name) {
-  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade','angariacao','relatorio','cruzamentos'].forEach(function(n) {
+  ['search','kpi','conteudos','agendamento','biblioteca','old-leads','config','mercado','meta','ce','qualidade','angariacao','relatorio','cruzamentos','sociais'].forEach(function(n) {
     var page = document.getElementById('page-'+n)
     var btn = document.getElementById('tab-'+n)
     if (page) page.className = 'portal-page' + (n === name ? ' active' : '')
@@ -2546,6 +2690,7 @@ function showTab(name) {
   if (name === 'angariacao') angInit()
   if (name === 'relatorio') relatorioInit()
   if (name === 'cruzamentos') cruzInit()
+  if (name === 'sociais' && !_sociaisLoaded) sociaisInit()
 }
 
 // ── Admin panel (Configuração) ────────────────────────────────────────────────
@@ -13454,6 +13599,392 @@ function cruzCsv() {
   var a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
   a.download = 'clientes-cruzamento-' + new Date().toISOString().slice(0, 10) + '.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(a.href)
+}
+
+// ── Performance Sociais ───────────────────────────────────────────────────────
+// Cruza campanhas META (edge function social-performance) com o funil eGO
+// (RPC social_imovel_stats). Ver PERFORMANCE_SOCIAIS_CONTEXT.md.
+var SOCIAIS_FN = EGO_URL + '/functions/v1/social-performance'
+var _sociaisLoaded = false
+var _sociaisCacheMeta = {}    // ano -> resposta da edge function
+var _sociaisCacheStats = {}   // 'ano|origem' -> { ref: statsRow }
+var _sociaisRows = []
+var _sociaisSemRef = []
+var _sociaisAno = 'todos'
+var _sociaisOrigem = 'fh'
+var _sociaisEstado = 'all'
+var _sociaisOrd = { col: 'inicio', dir: -1 }
+var _sociaisAnosVistos = null
+
+function sociaisFmtEur(v) {
+  if (v == null || isNaN(v)) return '—'
+  return Number(v).toLocaleString('pt-PT', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €'
+}
+function sociaisFmtEur2(v) {
+  if (v == null || isNaN(v)) return '—'
+  return Number(v).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+}
+function sociaisFmtNum(v) {
+  if (v == null || isNaN(v)) return '—'
+  return Number(v).toLocaleString('pt-PT')
+}
+function sociaisFmtData(d) {
+  if (!d) return '—'
+  var s = String(d).slice(0, 10).split('-')
+  return s.length === 3 ? s[2] + '/' + s[1] + '/' + s[0] : String(d)
+}
+function sociaisEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+function sociaisDiasEntre(a, b) {
+  if (!a || !b) return null
+  var d1 = new Date(String(a).slice(0, 10)), d2 = new Date(String(b).slice(0, 10))
+  if (isNaN(d1) || isNaN(d2)) return null
+  return Math.round((d2 - d1) / 86400000)
+}
+function sociaisBadgeEstado(e) {
+  if (e === 'aceite')    return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;background:#dcfce7;color:#166534;font-size:.68rem;font-weight:700">Aceite</span>'
+  if (e === 'avaliacao') return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;background:#fef3c7;color:#92400e;font-size:.68rem;font-weight:700">Em avaliação</span>'
+  if (e === 'outra')     return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;background:#fee2e2;color:#991b1b;font-size:.68rem;font-weight:700">Rejeitada</span>'
+  return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-size:.68rem;font-weight:700">Sem proposta</span>'
+}
+
+function sociaisInit() {
+  _sociaisLoaded = true
+  sociaisLoad()
+}
+
+function sociaisSetAno(v) {
+  _sociaisAno = v
+  sociaisLoad()
+}
+function sociaisSetOrigem(v, btn) {
+  _sociaisOrigem = v
+  document.querySelectorAll('#sociais-origem-tabs .meta-ftab').forEach(function(b) { b.classList.remove('active') })
+  if (btn) btn.classList.add('active')
+  sociaisLoad()
+}
+function sociaisSetEstado(v, btn) {
+  _sociaisEstado = v
+  document.querySelectorAll('#sociais-estado-tabs .meta-ftab').forEach(function(b) { b.classList.remove('active') })
+  if (btn) btn.classList.add('active')
+  sociaisRender()
+}
+function sociaisSortBy(col) {
+  if (_sociaisOrd.col === col) _sociaisOrd.dir = -_sociaisOrd.dir
+  else _sociaisOrd = { col: col, dir: (col === 'ref' || col === 'consultor') ? 1 : -1 }
+  sociaisRender()
+}
+
+async function sociaisFetchMeta(ano) {
+  if (_sociaisCacheMeta[ano]) return _sociaisCacheMeta[ano]
+  var body = {}
+  if (ano !== 'todos') {
+    var hoje = new Date().toISOString().slice(0, 10)
+    body.since = ano + '-01-01'
+    body.until = (ano + '-12-31') > hoje ? hoje : (ano + '-12-31')
+  }
+  var r = await fetch(SOCIAIS_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + EGO_ANON },
+    body: JSON.stringify(body)
+  })
+  var j = await r.json()
+  if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status))
+  _sociaisCacheMeta[ano] = j
+  return j
+}
+
+async function sociaisFetchStats(refs, origem, ano) {
+  var chave = ano + '|' + origem
+  if (_sociaisCacheStats[chave]) return _sociaisCacheStats[chave]
+  var res = await sbEgo.rpc('social_imovel_stats', { p_refs: refs, p_origem_modo: origem })
+  if (res.error) throw new Error(res.error.message || 'Erro na RPC social_imovel_stats')
+  var m = {}
+  ;(res.data || []).forEach(function(row) { m[row.imovel_ref] = row })
+  _sociaisCacheStats[chave] = m
+  return m
+}
+
+async function sociaisLoad(forcar) {
+  if (forcar) { _sociaisCacheMeta = {}; _sociaisCacheStats = {} }
+  var elLoad = document.getElementById('sociais-loading')
+  var elErr = document.getElementById('sociais-error')
+  var elCont = document.getElementById('sociais-content')
+  var elAv = document.getElementById('sociais-avisos')
+  elLoad.style.display = 'block'
+  elErr.style.display = 'none'
+  elAv.style.display = 'none'
+  elCont.style.display = 'none'
+  try {
+    var meta = await sociaisFetchMeta(_sociaisAno)
+    var refs = (meta.imoveis || []).map(function(i) { return i.ref })
+    var stats = refs.length ? await sociaisFetchStats(refs, _sociaisOrigem, _sociaisAno) : {}
+
+    _sociaisRows = (meta.imoveis || []).map(function(im) {
+      var s = stats[im.ref] || null
+      var estado = s ? (s.estado_prop || 'sem') : 'sem'
+      var propFinal = s && s.proposta_final != null ? Number(s.proposta_final) : null
+      var precoPed = s && s.proposta_final_preco != null ? Number(s.proposta_final_preco)
+                   : (s && s.venda_preco != null ? Number(s.venda_preco) : null)
+      var delta = (propFinal != null && precoPed) ? ((propFinal - precoPed) / precoPed) * 100 : null
+      return {
+        ref: im.ref,
+        titulo: s ? (s.titulo || '') : '',
+        semMatch: !s,
+        inicio: im.primeira_campanha,
+        fim: im.ultima_atividade,
+        dias_ativos: im.dias_ativos,
+        dias_calendario: im.dias_calendario,
+        n_campanhas: im.n_campanhas,
+        spend: im.spend,
+        leads_meta: im.leads_meta,
+        impressions: im.impressions,
+        clicks: im.clicks,
+        anos: im.anos || [],
+        campanhas: im.campanhas || [],
+        leads: s ? Number(s.leads || 0) : 0,
+        contactados: s ? Number(s.contactados || 0) : 0,
+        visitas: s ? Number(s.visitas || 0) : 0,
+        propostas: s ? Number(s.propostas || 0) : 0,
+        propostas_todas: s ? Number(s.propostas_todas_origens || 0) : 0,
+        prop_final: propFinal,
+        prop_final_estado: s ? s.proposta_final_estado : null,
+        prop_final_data: s ? s.proposta_final_data : null,
+        preco_pedido: precoPed,
+        delta_pct: delta,
+        primeira_aceite: s ? s.primeira_aceite_data : null,
+        dias_ate_aceite: s ? sociaisDiasEntre(im.primeira_campanha, s.primeira_aceite_data) : null,
+        consultor: s ? (s.consultor || s.vendedor || s.angariador || '') : '',
+        estado: estado
+      }
+    })
+
+    _sociaisSemRef = meta.outras_campanhas || []
+
+    // Lista de anos — construída a partir do fetch "todos" (o único que os cobre todos)
+    if (_sociaisAno === 'todos') {
+      var anos = {}
+      _sociaisRows.forEach(function(r) { (r.anos || []).forEach(function(a) { anos[a] = 1 }) })
+      _sociaisAnosVistos = Object.keys(anos).sort().reverse()
+      var sel = document.getElementById('sociais-ano')
+      var html = '<option value="todos">Todos os anos</option>'
+      _sociaisAnosVistos.forEach(function(a) { html += '<option value="' + a + '">' + a + '</option>' })
+      sel.innerHTML = html
+      sel.value = _sociaisAno
+    }
+
+    // Avisos da API META (fatias de ano que falharam) + janela truncada
+    var avisos = (meta.avisos || []).slice()
+    if (meta.periodo && meta.periodo.truncado) {
+      avisos.push('A META só permite consultar os últimos 37 meses — o período foi limitado a partir de ' + sociaisFmtData(meta.periodo.limite_meta) + '.')
+    }
+    if (avisos.length) {
+      elAv.innerHTML = '⚠️ ' + avisos.map(sociaisEsc).join('<br>⚠️ ')
+      elAv.style.display = 'block'
+    }
+
+    document.getElementById('sociais-sub').textContent =
+      (_sociaisOrigem === 'fh'
+        ? 'META Ads × funil eGO · só leads com origem figueirahome.com / Facebook / Instagram'
+        : 'META Ads × funil eGO · todas as origens de lead')
+      + ' · campanhas de ' + sociaisFmtData(meta.periodo.since) + ' a ' + sociaisFmtData(meta.periodo.until)
+      + ' · funil eGO acumulado (todo o histórico do imóvel)'
+
+    elCont.style.display = 'block'
+    sociaisRender()
+  } catch (e) {
+    elErr.textContent = '❌ ' + (e.message || e)
+    elErr.style.display = 'block'
+  } finally {
+    elLoad.style.display = 'none'
+  }
+}
+
+function sociaisFiltradas() {
+  var q = (document.getElementById('sociais-busca').value || '').trim().toLowerCase()
+  return _sociaisRows.filter(function(r) {
+    if (_sociaisEstado !== 'all' && r.estado !== _sociaisEstado) return false
+    if (q && (r.ref + ' ' + r.titulo + ' ' + r.consultor).toLowerCase().indexOf(q) < 0) return false
+    return true
+  })
+}
+
+function sociaisRender() {
+  var lista = sociaisFiltradas()
+  var col = _sociaisOrd.col, dir = _sociaisOrd.dir
+  lista.sort(function(a, b) {
+    var va = a[col], vb = b[col]
+    if (va == null && vb == null) return 0
+    if (va == null) return 1
+    if (vb == null) return -1
+    if (typeof va === 'string') return va.localeCompare(vb, 'pt') * dir
+    return (va - vb) * dir
+  })
+
+  // KPIs
+  var tot = { spend: 0, leads: 0, leadsMeta: 0, cont: 0, vis: 0, prop: 0, aceites: 0, dias: [], negociado: 0, pedido: 0 }
+  lista.forEach(function(r) {
+    tot.spend += r.spend || 0
+    tot.leads += r.leads || 0
+    tot.leadsMeta += r.leads_meta || 0
+    tot.cont += r.contactados || 0
+    tot.vis += r.visitas || 0
+    tot.prop += r.propostas || 0
+    if (r.estado === 'aceite') {
+      tot.aceites++
+      if (r.dias_ate_aceite != null && r.dias_ate_aceite >= 0) tot.dias.push(r.dias_ate_aceite)
+      if (r.prop_final != null && r.preco_pedido) { tot.negociado += r.prop_final; tot.pedido += r.preco_pedido }
+    }
+  })
+  var mediaDias = tot.dias.length ? Math.round(tot.dias.reduce(function(a, b) { return a + b }, 0) / tot.dias.length) : null
+  function pct(n, d) { return d ? Math.round((n / d) * 100) + '%' : '—' }
+
+  document.getElementById('sk-imoveis').textContent = sociaisFmtNum(lista.length)
+  document.getElementById('sk-imoveis-sub').textContent = lista.filter(function(r) { return r.semMatch }).length + ' sem ficha eGO'
+  document.getElementById('sk-spend').textContent = sociaisFmtEur(tot.spend)
+  document.getElementById('sk-spend-sub').textContent = lista.length ? 'média ' + sociaisFmtEur(tot.spend / lista.length) + '/imóvel' : ''
+  document.getElementById('sk-leads').textContent = sociaisFmtNum(tot.leads)
+  document.getElementById('sk-leads-sub').textContent = sociaisFmtNum(tot.leadsMeta) + ' registadas na META'
+  document.getElementById('sk-contactados').textContent = sociaisFmtNum(tot.cont)
+  document.getElementById('sk-contactados-sub').textContent = pct(tot.cont, tot.leads) + ' das leads'
+  document.getElementById('sk-visitas').textContent = sociaisFmtNum(tot.vis)
+  document.getElementById('sk-visitas-sub').textContent = pct(tot.vis, tot.leads) + ' das leads'
+  document.getElementById('sk-propostas').textContent = sociaisFmtNum(tot.prop)
+  document.getElementById('sk-propostas-sub').textContent = tot.aceites + ' aceite' + (tot.aceites === 1 ? '' : 's')
+  document.getElementById('sk-cpl').textContent = tot.leads ? sociaisFmtEur2(tot.spend / tot.leads) : '—'
+  document.getElementById('sk-cpl-sub').textContent = tot.aceites ? sociaisFmtEur(tot.spend / tot.aceites) + '/venda' : ''
+  document.getElementById('sk-dias').textContent = mediaDias != null ? mediaDias : '—'
+  document.getElementById('sk-dias-sub').textContent = tot.pedido
+    ? 'negociação média ' + ((tot.negociado - tot.pedido) / tot.pedido * 100).toFixed(1).replace('.', ',') + '%'
+    : (tot.dias.length ? 'média de ' + tot.dias.length + ' venda(s)' : '')
+
+  // Tabela
+  var tb = document.getElementById('sociais-tbody')
+  var html = ''
+  lista.forEach(function(r, i) {
+    var deltaTxt = ''
+    if (r.delta_pct != null) {
+      var cor = r.delta_pct < 0 ? '#dc2626' : '#059669'
+      deltaTxt = '<span style="color:' + cor + ';font-weight:600">' + (r.delta_pct > 0 ? '+' : '') + r.delta_pct.toFixed(1).replace('.', ',') + '%</span>'
+    }
+    var negoc = r.prop_final != null
+      ? '<div style="font-weight:700;color:#1a3c5e">' + sociaisFmtEur(r.prop_final) + ' ' + deltaTxt + '</div>'
+        + '<div style="font-size:.7rem;color:#9ca3af">pedido ' + sociaisFmtEur(r.preco_pedido) + ' · ' + sociaisFmtData(r.prop_final_data) + '</div>'
+        + '<div style="margin-top:3px">' + sociaisBadgeEstado(r.estado) + '</div>'
+      : '<div style="color:#9ca3af">—</div><div style="margin-top:3px">' + sociaisBadgeEstado(r.estado) + '</div>'
+
+    html += '<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="sociaisToggle(' + i + ')" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'
+      + '<td style="padding:10px 14px">'
+        + '<div style="font-weight:700;color:#1a3c5e">' + sociaisEsc(r.ref)
+        + (r.semMatch ? ' <span style="font-size:.66rem;color:#b45309;font-weight:600">sem ficha eGO</span>' : '') + '</div>'
+        + '<div style="font-size:.72rem;color:#6b7280;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + sociaisEsc(r.titulo) + '</div>'
+      + '</td>'
+      + '<td style="padding:10px;text-align:center;white-space:nowrap">' + sociaisFmtData(r.inicio)
+        + '<div style="font-size:.7rem;color:#9ca3af">' + r.n_campanhas + ' campanha' + (r.n_campanhas === 1 ? '' : 's') + '</div></td>'
+      + '<td style="padding:10px;text-align:center;white-space:nowrap"><b>' + r.dias_ativos + '</b> d'
+        + '<div style="font-size:.7rem;color:#9ca3af">' + r.dias_calendario + ' d corridos</div></td>'
+      + '<td style="padding:10px;text-align:center"><b>' + sociaisFmtNum(r.leads) + '</b>'
+        + '<div style="font-size:.7rem;color:#9ca3af">' + sociaisFmtNum(r.leads_meta) + ' META</div></td>'
+      + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.contactados) + '</td>'
+      + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.visitas) + '</td>'
+      + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.propostas)
+        + (r.propostas_todas > r.propostas ? '<div style="font-size:.7rem;color:#9ca3af">' + r.propostas_todas + ' todas orig.</div>' : '') + '</td>'
+      + '<td style="padding:10px 14px;text-align:right">' + negoc + '</td>'
+      + '<td style="padding:10px;text-align:center;font-weight:700;color:' + (r.dias_ate_aceite != null ? '#1a3c5e' : '#d1d5db') + '">'
+        + (r.dias_ate_aceite != null ? r.dias_ate_aceite : '—') + '</td>'
+      + '<td style="padding:10px 14px;text-align:right;font-weight:600;color:#7c3aed">' + sociaisFmtEur2(r.spend) + '</td>'
+      + '<td style="padding:10px 14px">' + sociaisEsc(r.consultor || '—') + '</td>'
+      + '</tr>'
+      + '<tr id="sociais-det-' + i + '" style="display:none;background:#f8fafc"><td colspan="11" style="padding:12px 20px">'
+        + sociaisDetalhe(r) + '</td></tr>'
+  })
+  tb.innerHTML = html
+  document.getElementById('sociais-vazio').style.display = lista.length ? 'none' : 'block'
+
+  // Refs sem correspondência no eGO
+  var orfas = _sociaisRows.filter(function(r) { return r.semMatch })
+  var box = document.getElementById('sociais-orfas')
+  if (orfas.length) {
+    document.getElementById('sociais-orfas-lista').innerHTML = orfas.map(function(r) {
+      return '<span style="padding:4px 10px;border-radius:20px;background:#fef3c7;color:#92400e;font-size:.76rem;font-weight:700">'
+        + sociaisEsc(r.ref) + ' · ' + sociaisFmtEur2(r.spend) + '</span>'
+    }).join('')
+    box.style.display = 'block'
+  } else box.style.display = 'none'
+
+  // Campanhas sem ref
+  var sr = document.getElementById('sociais-semref')
+  if (_sociaisSemRef.length) {
+    var gastoSR = _sociaisSemRef.reduce(function(a, c) { return a + (c.spend || 0) }, 0)
+    var leadsSR = _sociaisSemRef.reduce(function(a, c) { return a + (c.leads || 0) }, 0)
+    document.getElementById('sociais-semref-sub').textContent =
+      _sociaisSemRef.length + ' campanhas · ' + sociaisFmtEur2(gastoSR) + ' · ' + sociaisFmtNum(leadsSR) + ' leads — não têm "FH####" no nome, logo não são atribuíveis a um imóvel.'
+    document.getElementById('sociais-semref-tbody').innerHTML = _sociaisSemRef
+      .slice().sort(function(a, b) { return (b.spend || 0) - (a.spend || 0) })
+      .map(function(c) {
+        return '<tr style="border-bottom:1px solid #f1f5f9">'
+          + '<td style="padding:7px 12px">' + sociaisEsc(c.nome) + '</td>'
+          + '<td style="padding:7px 12px;text-align:center;white-space:nowrap;color:#6b7280">' + sociaisFmtData(c.inicio) + ' → ' + sociaisFmtData(c.fim) + '</td>'
+          + '<td style="padding:7px 12px;text-align:right">' + sociaisFmtNum(c.leads) + '</td>'
+          + '<td style="padding:7px 12px;text-align:right;color:#7c3aed;font-weight:600">' + sociaisFmtEur2(c.spend) + '</td>'
+          + '</tr>'
+      }).join('')
+    sr.style.display = 'block'
+  } else sr.style.display = 'none'
+}
+
+function sociaisDetalhe(r) {
+  var linhas = (r.campanhas || []).slice().sort(function(a, b) { return (a.inicio || '').localeCompare(b.inicio || '') })
+    .map(function(c) {
+      return '<tr style="border-bottom:1px solid #e5e7eb">'
+        + '<td style="padding:6px 10px">' + sociaisEsc(c.nome) + '</td>'
+        + '<td style="padding:6px 10px;text-align:center;white-space:nowrap;color:#6b7280">' + sociaisFmtData(c.inicio) + ' → ' + sociaisFmtData(c.fim) + '</td>'
+        + '<td style="padding:6px 10px;text-align:center">' + c.dias_ativos + ' d</td>'
+        + '<td style="padding:6px 10px;text-align:right">' + sociaisFmtNum(c.leads) + '</td>'
+        + '<td style="padding:6px 10px;text-align:right;color:#7c3aed;font-weight:600">' + sociaisFmtEur2(c.spend) + '</td>'
+        + '</tr>'
+    }).join('')
+  var extra = '<div style="font-size:.74rem;color:#6b7280;margin-bottom:8px">'
+    + 'Impressões ' + sociaisFmtNum(r.impressions) + ' · Cliques ' + sociaisFmtNum(r.clicks)
+    + (r.primeira_aceite ? ' · 1ª proposta aceite em ' + sociaisFmtData(r.primeira_aceite) : '')
+    + '</div>'
+  return extra + '<table style="width:100%;border-collapse:collapse;font-size:.76rem">'
+    + '<thead><tr style="border-bottom:1.5px solid #d1d5db;color:#6b7280">'
+    + '<th style="text-align:left;padding:6px 10px">Campanha</th><th style="padding:6px 10px">Período</th>'
+    + '<th style="padding:6px 10px">Dias ativos</th><th style="text-align:right;padding:6px 10px">Leads</th>'
+    + '<th style="text-align:right;padding:6px 10px">Custo</th></tr></thead><tbody>' + linhas + '</tbody></table>'
+}
+
+function sociaisToggle(i) {
+  var el = document.getElementById('sociais-det-' + i)
+  if (el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none'
+}
+
+function sociaisExportCsv() {
+  var cols = ['ref', 'titulo', 'primeira_campanha', 'dias_ativos', 'dias_calendario', 'n_campanhas', 'custo_eur',
+              'leads_ego', 'leads_meta', 'contactados', 'visitas', 'propostas', 'proposta_final_eur',
+              'preco_pedido_eur', 'negociacao_pct', 'estado_proposta', 'primeira_aceite', 'dias_ate_1a_aceite', 'consultor']
+  function cel(v) {
+    if (v == null) return ''
+    var s = String(v)
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+  }
+  var linhas = sociaisFiltradas().map(function(r) {
+    return [r.ref, r.titulo, r.inicio, r.dias_ativos, r.dias_calendario, r.n_campanhas,
+            (r.spend || 0).toFixed(2), r.leads, r.leads_meta, r.contactados, r.visitas, r.propostas,
+            r.prop_final != null ? r.prop_final : '', r.preco_pedido != null ? r.preco_pedido : '',
+            r.delta_pct != null ? r.delta_pct.toFixed(2) : '', r.estado, r.primeira_aceite || '',
+            r.dias_ate_aceite != null ? r.dias_ate_aceite : '', r.consultor].map(cel).join(';')
+  })
+  var csv = '﻿' + cols.join(';') + '\n' + linhas.join('\n')
+  var a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  a.download = 'performance-sociais-' + _sociaisAno + '-' + new Date().toISOString().slice(0, 10) + '.csv'
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
