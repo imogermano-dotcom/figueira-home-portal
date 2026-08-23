@@ -2027,7 +2027,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <button class="meta-ftab" onclick="sociaisSetOrigem('todas',this)">Todas as origens</button>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px" title="Usada para estimar a comissão quando a ficha do imóvel não tem a % preenchida no eGO.">
+        <div style="display:flex;align-items:center;gap:6px" title="Só é usada quando o negócio ainda não está fechado (sem valor real no eGO) e a ficha do imóvel não tem a % preenchida.">
           <label style="font-size:.76rem;font-weight:600;color:#6b7280">Comissão base</label>
           <input type="number" id="sociais-taxa" value="5" min="0" max="20" step="0.5" onchange="sociaisRender()" style="width:64px;padding:6px 8px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-weight:600;color:#374151;outline:none">
           <span style="font-size:.8rem;color:#6b7280;font-weight:600">%</span>
@@ -2083,12 +2083,12 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="meta-kpi-value" id="sk-dias">—</div>
             <div class="meta-kpi-sub" id="sk-dias-sub"></div>
           </div>
-          <div class="meta-kpi" style="border-left:3px solid #0d9488" title="Soma da comissão da agência sobre as propostas ACEITES dos imóveis listados. Usa a % da ficha do eGO quando existe; caso contrário a comissão base indicada em cima.">
+          <div class="meta-kpi" style="border-left:3px solid #0d9488" title="Soma da comissão da agência dos imóveis listados. Quando o negócio já está Ganho usa-se o valor real registado no eGO; se a proposta está aceite mas o negócio ainda não fechou, estima-se pela % da ficha ou pela comissão base indicada em cima.">
             <div class="meta-kpi-label">Comissões geradas</div>
             <div class="meta-kpi-value" id="sk-receita">—</div>
             <div class="meta-kpi-sub" id="sk-receita-sub"></div>
           </div>
-          <div class="meta-kpi" style="border-left:3px solid #ca8a04" title="Comissões ÷ investimento em campanhas. Atenção: com um ano seleccionado o custo é só desse ano, mas as comissões são de todo o histórico do imóvel — o rácio fica optimista.">
+          <div class="meta-kpi" style="border-left:3px solid #ca8a04" title="Comissões ÷ investimento em campanhas. Atenção: com um ano seleccionado o custo é só desse ano, mas as comissões são de todo o histórico do imóvel — o rácio fica optimista. Inclui comissões ainda estimadas (negócios aceites mas não fechados).">
             <div class="meta-kpi-label">Retorno (ROI)</div>
             <div class="meta-kpi-value" id="sk-roi">—</div>
             <div class="meta-kpi-sub" id="sk-roi-sub"></div>
@@ -13678,10 +13678,16 @@ function sociaisTaxaBase() {
 
 // Comissão da agência gerada por este imóvel. Só conta quando a proposta foi
 // aceite — antes disso não há receita, há expectativa.
+// Devolve { eur, real, pct, pctEstim } ou null.
+//   real: true  -> valor que o eGO gravou quando a oportunidade passou a "Ganha"
+//                  (oportunidades.xlsx_comm_ag). É o número da escritura.
+//   real: false -> negócio aceite mas ainda não fechado; estimamos
+//                  proposta × (% da ficha, ou a taxa base dos controlos).
 function sociaisComissao(r) {
   if (r.estado !== 'aceite' || r.prop_final == null) return null
+  if (r.comissao_valor != null) return { eur: r.comissao_valor, real: true, pct: null, pctEstim: false }
   var pct = r.comissao_pct != null ? r.comissao_pct : sociaisTaxaBase()
-  return r.prop_final * pct / 100
+  return { eur: r.prop_final * pct / 100, real: false, pct: pct, pctEstim: r.comissao_pct == null }
 }
 
 function sociaisInit() {
@@ -13785,6 +13791,9 @@ async function sociaisLoad(forcar) {
         propostas: s ? Number(s.propostas || 0) : 0,
         propostas_todas: s ? Number(s.propostas_todas_origens || 0) : 0,
         comissao_pct: (s && s.comissao_pct != null) ? Number(s.comissao_pct) : null,
+        comissao_valor: (s && s.comissao_valor != null) ? Number(s.comissao_valor) : null,
+        comissao_data: s ? s.comissao_data : null,
+        negocio_ganho: s ? !!s.negocio_ganho : false,
         prop_final: propFinal,
         prop_final_estado: s ? s.proposta_final_estado : null,
         prop_final_data: s ? s.proposta_final_data : null,
@@ -13861,7 +13870,7 @@ function sociaisRender() {
 
   // KPIs
   var tot = { spend: 0, leads: 0, leadsMeta: 0, cont: 0, vis: 0, prop: 0, aceites: 0, dias: [], negociado: 0, pedido: 0,
-              comissao: 0, comReal: 0, comEstim: 0 }
+              comissao: 0, comReal: 0, comEstim: 0, comRealEur: 0, comEstimEur: 0 }
   lista.forEach(function(r) {
     tot.spend += r.spend || 0
     tot.leads += r.leads || 0
@@ -13875,8 +13884,9 @@ function sociaisRender() {
       if (r.prop_final != null && r.preco_pedido) { tot.negociado += r.prop_final; tot.pedido += r.preco_pedido }
       var c = sociaisComissao(r)
       if (c != null) {
-        tot.comissao += c
-        if (r.comissao_pct != null) tot.comReal++; else tot.comEstim++
+        tot.comissao += c.eur
+        if (c.real) { tot.comReal++; tot.comRealEur += c.eur }
+        else        { tot.comEstim++; tot.comEstimEur += c.eur }
       }
     }
   })
@@ -13904,10 +13914,16 @@ function sociaisRender() {
 
   // Retorno: comissões das propostas aceites vs. o que se gastou em campanhas.
   document.getElementById('sk-receita').textContent = tot.comissao ? sociaisFmtEur(tot.comissao) : '—'
-  document.getElementById('sk-receita-sub').textContent = tot.comissao
-    ? (tot.comReal + tot.comEstim) + ' venda(s) · ' + tot.comReal + ' com % do eGO, '
-      + tot.comEstim + ' a ' + String(sociaisTaxaBase()).replace('.', ',') + '%'
-    : 'sem propostas aceites no filtro'
+  var receitaSub = ''
+  if (tot.comissao) {
+    var partes = []
+    if (tot.comReal)  partes.push(tot.comReal + ' fechada(s) · ' + sociaisFmtEur(tot.comRealEur))
+    if (tot.comEstim) partes.push(tot.comEstim + ' estimada(s) · ' + sociaisFmtEur(tot.comEstimEur))
+    receitaSub = partes.join(' + ')
+  } else {
+    receitaSub = 'sem propostas aceites no filtro'
+  }
+  document.getElementById('sk-receita-sub').textContent = receitaSub
   var elRoi = document.getElementById('sk-roi')
   if (tot.spend > 0 && tot.comissao > 0) {
     var mult = tot.comissao / tot.spend
@@ -13934,9 +13950,12 @@ function sociaisRender() {
     }
     var com = sociaisComissao(r)
     var comTxt = com != null
-      ? '<div style="font-size:.7rem;color:#0d9488;font-weight:700">comissão ' + sociaisFmtEur(com)
-        + ' <span style="color:#9ca3af;font-weight:500">(' + String(r.comissao_pct != null ? r.comissao_pct : sociaisTaxaBase()).replace('.', ',') + '%'
-        + (r.comissao_pct == null ? ' est.' : '') + ')</span></div>'
+      ? '<div style="font-size:.7rem;color:#0d9488;font-weight:700">comissão ' + (com.real ? '' : '~') + sociaisFmtEur(com.eur)
+        + ' <span style="color:#9ca3af;font-weight:500">('
+        + (com.real
+            ? 'fechada' + (r.comissao_data ? ' ' + sociaisFmtData(r.comissao_data) : '')
+            : 'est. ' + String(com.pct).replace('.', ',') + '%')
+        + ')</span></div>'
       : ''
     var negoc = r.prop_final != null
       ? '<div style="font-weight:700;color:#1a3c5e">' + sociaisFmtEur(r.prop_final) + ' ' + deltaTxt + '</div>'
@@ -14022,8 +14041,12 @@ function sociaisDetalhe(r) {
     + 'Impressões ' + sociaisFmtNum(r.impressions) + ' · Cliques ' + sociaisFmtNum(r.clicks)
     + (r.primeira_aceite ? ' · 1ª proposta aceite em ' + sociaisFmtData(r.primeira_aceite) : '')
     + (comD != null
-        ? ' · <b style="color:#0d9488">comissão ' + sociaisFmtEur(comD) + '</b> vs ' + sociaisFmtEur2(r.spend)
-          + ' de campanhas' + (r.spend > 0 ? ' → retorno ×' + (comD / r.spend).toFixed(1).replace('.', ',') : '')
+        ? ' · <b style="color:#0d9488">comissão ' + (comD.real ? '' : '~') + sociaisFmtEur(comD.eur) + '</b>'
+          + (comD.real
+              ? ' (registada no eGO' + (r.comissao_data ? ' em ' + sociaisFmtData(r.comissao_data) : '') + ')'
+              : ' (estimada a ' + String(comD.pct).replace('.', ',') + '%, negócio ainda não fechado)')
+          + ' vs ' + sociaisFmtEur2(r.spend)
+          + ' de campanhas' + (r.spend > 0 ? ' → retorno ×' + (comD.eur / r.spend).toFixed(1).replace('.', ',') : '')
         : '')
     + '</div>'
   return extra + '<table style="width:100%;border-collapse:collapse;font-size:.76rem">'
@@ -14042,7 +14065,7 @@ function sociaisExportCsv() {
   var cols = ['ref', 'titulo', 'primeira_campanha', 'dias_ativos', 'dias_calendario', 'n_campanhas', 'custo_eur',
               'leads_ego', 'leads_meta', 'contactados', 'visitas', 'visitas_todas_origens', 'propostas', 'proposta_final_eur',
               'preco_pedido_eur', 'negociacao_pct', 'estado_proposta', 'primeira_aceite', 'dias_ate_1a_aceite',
-              'comissao_pct', 'comissao_pct_estimada', 'comissao_eur', 'consultor']
+              'comissao_eur', 'comissao_fonte', 'comissao_pct_usada', 'comissao_data', 'consultor']
   function cel(v) {
     if (v == null) return ''
     var s = String(v)
@@ -14055,9 +14078,10 @@ function sociaisExportCsv() {
             r.prop_final != null ? r.prop_final : '', r.preco_pedido != null ? r.preco_pedido : '',
             r.delta_pct != null ? r.delta_pct.toFixed(2) : '', r.estado, r.primeira_aceite || '',
             r.dias_ate_aceite != null ? r.dias_ate_aceite : '',
-            com != null ? (r.comissao_pct != null ? r.comissao_pct : sociaisTaxaBase()) : '',
-            com != null ? (r.comissao_pct != null ? 'nao' : 'sim') : '',
-            com != null ? com.toFixed(2) : '',
+            com != null ? com.eur.toFixed(2) : '',
+            com != null ? (com.real ? 'eGO' : 'estimativa') : '',
+            (com != null && !com.real) ? com.pct : '',
+            (com != null && com.real) ? (r.comissao_data || '') : '',
             r.consultor].map(cel).join(';')
   })
   var csv = '﻿' + cols.join(';') + '\n' + linhas.join('\n')
