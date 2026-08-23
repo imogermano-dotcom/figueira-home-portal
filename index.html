@@ -875,7 +875,7 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
     <button class="pnav-btn" id="tab-old-leads" onclick="showTab('old-leads')">📞 Old Leads</button>
     <button class="pnav-btn" id="tab-mercado" onclick="showTab('mercado')">🏠 Mercado</button>
     <button class="pnav-btn" id="tab-meta" onclick="showTab('meta')">📱 META Ads</button>
-    <button class="pnav-btn" id="tab-sociais" onclick="showTab('sociais')">📣 Performance Sociais</button>
+    <button class="pnav-btn" id="tab-sociais" style="display:none" onclick="showTab('sociais')">📣 Performance Sociais</button>
     <button class="pnav-btn" id="tab-ce" onclick="showTab('ce')">🏡 Certificados CE</button>
     <button class="pnav-btn" id="tab-qualidade" onclick="showTab('qualidade')">🎯 Qualidade Leads</button>
     <button class="pnav-btn" id="tab-angariacao" onclick="showTab('angariacao')">🏠 Angariação</button>
@@ -2027,6 +2027,11 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <button class="meta-ftab" onclick="sociaisSetOrigem('todas',this)">Todas as origens</button>
           </div>
         </div>
+        <div style="display:flex;align-items:center;gap:6px" title="Usada para estimar a comissão quando a ficha do imóvel não tem a % preenchida no eGO.">
+          <label style="font-size:.76rem;font-weight:600;color:#6b7280">Comissão base</label>
+          <input type="number" id="sociais-taxa" value="5" min="0" max="20" step="0.5" onchange="sociaisRender()" style="width:64px;padding:6px 8px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.82rem;font-weight:600;color:#374151;outline:none">
+          <span style="font-size:.8rem;color:#6b7280;font-weight:600">%</span>
+        </div>
         <button onclick="sociaisLoad(true)" id="sociais-load-btn" style="padding:8px 18px;background:#1a3c5e;color:#fff;border:none;border-radius:8px;font-size:.84rem;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Recarregar</button>
       </div>
 
@@ -2077,6 +2082,16 @@ header h1{font-size:1.1rem;font-weight:700;letter-spacing:.4px}
             <div class="meta-kpi-label">Dias até 1ª aceite</div>
             <div class="meta-kpi-value" id="sk-dias">—</div>
             <div class="meta-kpi-sub" id="sk-dias-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #0d9488" title="Soma da comissão da agência sobre as propostas ACEITES dos imóveis listados. Usa a % da ficha do eGO quando existe; caso contrário a comissão base indicada em cima.">
+            <div class="meta-kpi-label">Comissões geradas</div>
+            <div class="meta-kpi-value" id="sk-receita">—</div>
+            <div class="meta-kpi-sub" id="sk-receita-sub"></div>
+          </div>
+          <div class="meta-kpi" style="border-left:3px solid #ca8a04" title="Comissões ÷ investimento em campanhas. Atenção: com um ano seleccionado o custo é só desse ano, mas as comissões são de todo o histórico do imóvel — o rácio fica optimista.">
+            <div class="meta-kpi-label">Retorno (ROI)</div>
+            <div class="meta-kpi-value" id="sk-roi">—</div>
+            <div class="meta-kpi-sub" id="sk-roi-sub"></div>
           </div>
         </div>
 
@@ -2637,6 +2652,7 @@ async function loadApp() {
     document.getElementById('tab-config').style.display = 'block'
     document.getElementById('tab-feedback-admin').style.display = 'block'
     document.getElementById('tab-cruzamentos').style.display = 'block'
+    document.getElementById('tab-sociais').style.display = 'block'
     document.getElementById('admin-toggle').style.display = ''
     document.getElementById('ce-btn-atualizar').style.display = 'inline-flex'
   } else {
@@ -13653,6 +13669,21 @@ function sociaisBadgeEstado(e) {
   return '<span style="display:inline-block;padding:1px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-size:.68rem;font-weight:700">Sem proposta</span>'
 }
 
+// Taxa de comissão por defeito, usada quando a ficha do imóvel no eGO não tem
+// a % preenchida (só ~2,5% das fichas têm; as que têm andam entre 3% e 5%).
+function sociaisTaxaBase() {
+  var v = parseFloat((document.getElementById('sociais-taxa') || {}).value)
+  return (isFinite(v) && v >= 0) ? v : 5
+}
+
+// Comissão da agência gerada por este imóvel. Só conta quando a proposta foi
+// aceite — antes disso não há receita, há expectativa.
+function sociaisComissao(r) {
+  if (r.estado !== 'aceite' || r.prop_final == null) return null
+  var pct = r.comissao_pct != null ? r.comissao_pct : sociaisTaxaBase()
+  return r.prop_final * pct / 100
+}
+
 function sociaisInit() {
   _sociaisLoaded = true
   sociaisLoad()
@@ -13750,8 +13781,10 @@ async function sociaisLoad(forcar) {
         leads: s ? Number(s.leads || 0) : 0,
         contactados: s ? Number(s.contactados || 0) : 0,
         visitas: s ? Number(s.visitas || 0) : 0,
+        visitas_todas: s ? Number(s.visitas_todas_origens || 0) : 0,
         propostas: s ? Number(s.propostas || 0) : 0,
         propostas_todas: s ? Number(s.propostas_todas_origens || 0) : 0,
+        comissao_pct: (s && s.comissao_pct != null) ? Number(s.comissao_pct) : null,
         prop_final: propFinal,
         prop_final_estado: s ? s.proposta_final_estado : null,
         prop_final_data: s ? s.proposta_final_data : null,
@@ -13827,7 +13860,8 @@ function sociaisRender() {
   })
 
   // KPIs
-  var tot = { spend: 0, leads: 0, leadsMeta: 0, cont: 0, vis: 0, prop: 0, aceites: 0, dias: [], negociado: 0, pedido: 0 }
+  var tot = { spend: 0, leads: 0, leadsMeta: 0, cont: 0, vis: 0, prop: 0, aceites: 0, dias: [], negociado: 0, pedido: 0,
+              comissao: 0, comReal: 0, comEstim: 0 }
   lista.forEach(function(r) {
     tot.spend += r.spend || 0
     tot.leads += r.leads || 0
@@ -13839,6 +13873,11 @@ function sociaisRender() {
       tot.aceites++
       if (r.dias_ate_aceite != null && r.dias_ate_aceite >= 0) tot.dias.push(r.dias_ate_aceite)
       if (r.prop_final != null && r.preco_pedido) { tot.negociado += r.prop_final; tot.pedido += r.preco_pedido }
+      var c = sociaisComissao(r)
+      if (c != null) {
+        tot.comissao += c
+        if (r.comissao_pct != null) tot.comReal++; else tot.comEstim++
+      }
     }
   })
   var mediaDias = tot.dias.length ? Math.round(tot.dias.reduce(function(a, b) { return a + b }, 0) / tot.dias.length) : null
@@ -13863,6 +13902,27 @@ function sociaisRender() {
     ? 'negociação média ' + ((tot.negociado - tot.pedido) / tot.pedido * 100).toFixed(1).replace('.', ',') + '%'
     : (tot.dias.length ? 'média de ' + tot.dias.length + ' venda(s)' : '')
 
+  // Retorno: comissões das propostas aceites vs. o que se gastou em campanhas.
+  document.getElementById('sk-receita').textContent = tot.comissao ? sociaisFmtEur(tot.comissao) : '—'
+  document.getElementById('sk-receita-sub').textContent = tot.comissao
+    ? (tot.comReal + tot.comEstim) + ' venda(s) · ' + tot.comReal + ' com % do eGO, '
+      + tot.comEstim + ' a ' + String(sociaisTaxaBase()).replace('.', ',') + '%'
+    : 'sem propostas aceites no filtro'
+  var elRoi = document.getElementById('sk-roi')
+  if (tot.spend > 0 && tot.comissao > 0) {
+    var mult = tot.comissao / tot.spend
+    elRoi.textContent = '×' + mult.toFixed(1).replace('.', ',')
+    elRoi.style.color = mult >= 1 ? '#059669' : '#dc2626'
+    document.getElementById('sk-roi-sub').textContent =
+      (tot.comissao - tot.spend >= 0 ? 'lucro ' : 'perda ')
+      + sociaisFmtEur(Math.abs(tot.comissao - tot.spend))
+      + ' · ' + (mult - 1 >= 0 ? '+' : '') + Math.round((mult - 1) * 100) + '% sobre o investido'
+  } else {
+    elRoi.textContent = '—'
+    elRoi.style.color = ''
+    document.getElementById('sk-roi-sub').textContent = tot.spend ? 'ainda sem comissões fechadas' : ''
+  }
+
   // Tabela
   var tb = document.getElementById('sociais-tbody')
   var html = ''
@@ -13872,9 +13932,16 @@ function sociaisRender() {
       var cor = r.delta_pct < 0 ? '#dc2626' : '#059669'
       deltaTxt = '<span style="color:' + cor + ';font-weight:600">' + (r.delta_pct > 0 ? '+' : '') + r.delta_pct.toFixed(1).replace('.', ',') + '%</span>'
     }
+    var com = sociaisComissao(r)
+    var comTxt = com != null
+      ? '<div style="font-size:.7rem;color:#0d9488;font-weight:700">comissão ' + sociaisFmtEur(com)
+        + ' <span style="color:#9ca3af;font-weight:500">(' + String(r.comissao_pct != null ? r.comissao_pct : sociaisTaxaBase()).replace('.', ',') + '%'
+        + (r.comissao_pct == null ? ' est.' : '') + ')</span></div>'
+      : ''
     var negoc = r.prop_final != null
       ? '<div style="font-weight:700;color:#1a3c5e">' + sociaisFmtEur(r.prop_final) + ' ' + deltaTxt + '</div>'
         + '<div style="font-size:.7rem;color:#9ca3af">pedido ' + sociaisFmtEur(r.preco_pedido) + ' · ' + sociaisFmtData(r.prop_final_data) + '</div>'
+        + comTxt
         + '<div style="margin-top:3px">' + sociaisBadgeEstado(r.estado) + '</div>'
       : '<div style="color:#9ca3af">—</div><div style="margin-top:3px">' + sociaisBadgeEstado(r.estado) + '</div>'
 
@@ -13891,7 +13958,8 @@ function sociaisRender() {
       + '<td style="padding:10px;text-align:center"><b>' + sociaisFmtNum(r.leads) + '</b>'
         + '<div style="font-size:.7rem;color:#9ca3af">' + sociaisFmtNum(r.leads_meta) + ' META</div></td>'
       + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.contactados) + '</td>'
-      + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.visitas) + '</td>'
+      + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.visitas)
+        + (r.visitas_todas > r.visitas ? '<div style="font-size:.7rem;color:#9ca3af">' + r.visitas_todas + ' todas orig.</div>' : '') + '</td>'
       + '<td style="padding:10px;text-align:center">' + sociaisFmtNum(r.propostas)
         + (r.propostas_todas > r.propostas ? '<div style="font-size:.7rem;color:#9ca3af">' + r.propostas_todas + ' todas orig.</div>' : '') + '</td>'
       + '<td style="padding:10px 14px;text-align:right">' + negoc + '</td>'
@@ -13949,9 +14017,14 @@ function sociaisDetalhe(r) {
         + '<td style="padding:6px 10px;text-align:right;color:#7c3aed;font-weight:600">' + sociaisFmtEur2(c.spend) + '</td>'
         + '</tr>'
     }).join('')
+  var comD = sociaisComissao(r)
   var extra = '<div style="font-size:.74rem;color:#6b7280;margin-bottom:8px">'
     + 'Impressões ' + sociaisFmtNum(r.impressions) + ' · Cliques ' + sociaisFmtNum(r.clicks)
     + (r.primeira_aceite ? ' · 1ª proposta aceite em ' + sociaisFmtData(r.primeira_aceite) : '')
+    + (comD != null
+        ? ' · <b style="color:#0d9488">comissão ' + sociaisFmtEur(comD) + '</b> vs ' + sociaisFmtEur2(r.spend)
+          + ' de campanhas' + (r.spend > 0 ? ' → retorno ×' + (comD / r.spend).toFixed(1).replace('.', ',') : '')
+        : '')
     + '</div>'
   return extra + '<table style="width:100%;border-collapse:collapse;font-size:.76rem">'
     + '<thead><tr style="border-bottom:1.5px solid #d1d5db;color:#6b7280">'
@@ -13967,19 +14040,25 @@ function sociaisToggle(i) {
 
 function sociaisExportCsv() {
   var cols = ['ref', 'titulo', 'primeira_campanha', 'dias_ativos', 'dias_calendario', 'n_campanhas', 'custo_eur',
-              'leads_ego', 'leads_meta', 'contactados', 'visitas', 'propostas', 'proposta_final_eur',
-              'preco_pedido_eur', 'negociacao_pct', 'estado_proposta', 'primeira_aceite', 'dias_ate_1a_aceite', 'consultor']
+              'leads_ego', 'leads_meta', 'contactados', 'visitas', 'visitas_todas_origens', 'propostas', 'proposta_final_eur',
+              'preco_pedido_eur', 'negociacao_pct', 'estado_proposta', 'primeira_aceite', 'dias_ate_1a_aceite',
+              'comissao_pct', 'comissao_pct_estimada', 'comissao_eur', 'consultor']
   function cel(v) {
     if (v == null) return ''
     var s = String(v)
     return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
   }
   var linhas = sociaisFiltradas().map(function(r) {
+    var com = sociaisComissao(r)
     return [r.ref, r.titulo, r.inicio, r.dias_ativos, r.dias_calendario, r.n_campanhas,
-            (r.spend || 0).toFixed(2), r.leads, r.leads_meta, r.contactados, r.visitas, r.propostas,
+            (r.spend || 0).toFixed(2), r.leads, r.leads_meta, r.contactados, r.visitas, r.visitas_todas, r.propostas,
             r.prop_final != null ? r.prop_final : '', r.preco_pedido != null ? r.preco_pedido : '',
             r.delta_pct != null ? r.delta_pct.toFixed(2) : '', r.estado, r.primeira_aceite || '',
-            r.dias_ate_aceite != null ? r.dias_ate_aceite : '', r.consultor].map(cel).join(';')
+            r.dias_ate_aceite != null ? r.dias_ate_aceite : '',
+            com != null ? (r.comissao_pct != null ? r.comissao_pct : sociaisTaxaBase()) : '',
+            com != null ? (r.comissao_pct != null ? 'nao' : 'sim') : '',
+            com != null ? com.toFixed(2) : '',
+            r.consultor].map(cel).join(';')
   })
   var csv = '﻿' + cols.join(';') + '\n' + linhas.join('\n')
   var a = document.createElement('a')
