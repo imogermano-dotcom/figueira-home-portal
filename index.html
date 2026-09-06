@@ -9957,7 +9957,7 @@ async function mercadoRunAvaliacao() {
   var ha2ISO  = ha2anos.toISOString().split('T')[0]
 
   var SEL_ACT = 'property_code,titulo,quartos,area_m2,preco_atual,preco_m2_atual,municipio,morada,url,thumbnail_url,thumbnail_storage_url,vendedor_tipo,agencia_nome_atual'
-  var SEL_VND = 'property_code,titulo,quartos,area_m2,preco_venda,preco_m2_atual,variacao_preco_pct,municipio,morada,url,thumbnail_url,thumbnail_storage_url,primeiro_visto_em,retirado_em,data_venda'
+  var SEL_VND = 'property_code,titulo,quartos,area_m2,preco_venda,preco_m2_atual,municipio,morada,url,thumbnail_url,thumbnail_storage_url,primeiro_visto_em,retirado_em,data_venda'
 
   var qAct = sb.from('idealista_imoveis').select(SEL_ACT)
     .eq('ativo',true).eq('fonte','idealista').eq('operacao',op)
