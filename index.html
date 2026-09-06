@@ -10596,7 +10596,7 @@ async function mercadoLoadAlteracoes() {
 
   try {
     var [ rBaixas, rRetirados, rNovas ] = await Promise.all([
-      sb.from('idealista_historico_preco').select('property_code,preco_anterior,preco_novo,variacao_eur,variacao_pct,registado_em').eq('direcao','baixa').gte('registado_em', desdeIso).order('variacao_pct',{ascending:true}).limit(50),
+      sb.from('idealista_historico_preco').select('property_code,preco_anterior,preco_novo,variacao_eur,variacao_pct,registado_em').eq('direcao','descida').gte('registado_em', desdeIso).order('variacao_pct',{ascending:true}).limit(50),
       sb.from('idealista_imoveis').select('property_code,titulo,preco_atual,property_type,municipio,retirado_em,fonte').eq('ativo',false).gte('retirado_em', desdeIso).order('retirado_em',{ascending:false}).limit(50),
       sb.from('idealista_imoveis').select('property_code,titulo,preco_atual,property_type,municipio,primeiro_visto_em,fonte').eq('ativo',true).gte('primeiro_visto_em', desdeIso).order('primeiro_visto_em',{ascending:false}).limit(50)
     ])
@@ -13630,7 +13630,7 @@ var _sociaisCacheMeta = {}    // ano -> resposta da edge function
 var _sociaisCacheStats = {}   // 'ano|origem' -> { ref: statsRow }
 var _sociaisRows = []
 var _sociaisSemRef = []
-var _sociaisAno = 'todos'
+var _sociaisAno = String(new Date().getFullYear())   // por defeito abre no ano corrente
 var _sociaisOrigem = 'fh'
 var _sociaisEstado = 'all'
 var _sociaisOrd = { col: 'inicio', dir: -1 }
@@ -13692,7 +13692,26 @@ function sociaisComissao(r) {
 
 function sociaisInit() {
   _sociaisLoaded = true
+  // O ano corrente entra já no <select> para não haver um piscar em "Todos os
+  // anos" enquanto o primeiro pedido não volta. A lista completa é montada no
+  // fim do carregamento.
+  var sel = document.getElementById('sociais-ano')
+  sel.innerHTML = '<option value="todos">Todos os anos</option>'
+    + '<option value="' + _sociaisAno + '">' + _sociaisAno + '</option>'
+  sel.value = _sociaisAno
   sociaisLoad()
+}
+
+// Anos que se podem escolher quando ainda não houve um carregamento "todos"
+// (o único que vê o histórico inteiro). Usa-se a janela que a própria META
+// permite — 37 meses — reportada em periodo.limite_meta.
+function sociaisAnosPossiveis(meta) {
+  var fim = new Date().getFullYear()
+  var ini = fim - 3
+  if (meta && meta.periodo && meta.periodo.limite_meta) ini = Number(String(meta.periodo.limite_meta).slice(0, 4))
+  var anos = []
+  for (var a = fim; a >= ini; a--) anos.push(String(a))
+  return anos
 }
 
 function sociaisSetAno(v) {
@@ -13791,6 +13810,8 @@ async function sociaisLoad(forcar) {
         propostas: s ? Number(s.propostas || 0) : 0,
         propostas_todas: s ? Number(s.propostas_todas_origens || 0) : 0,
         comissao_pct: (s && s.comissao_pct != null) ? Number(s.comissao_pct) : null,
+        fracoes: s ? Number(s.fracoes || 0) : 0,
+        prop_final_ref: s ? s.proposta_final_ref : null,
         comissao_valor: (s && s.comissao_valor != null) ? Number(s.comissao_valor) : null,
         comissao_data: s ? s.comissao_data : null,
         negocio_ganho: s ? !!s.negocio_ganho : false,
@@ -13808,17 +13829,21 @@ async function sociaisLoad(forcar) {
 
     _sociaisSemRef = meta.outras_campanhas || []
 
-    // Lista de anos — construída a partir do fetch "todos" (o único que os cobre todos)
+    // Lista de anos. O fetch "todos" é o único que vê o histórico inteiro, por
+    // isso é esse que fixa a lista definitiva; enquanto não acontecer usa-se a
+    // janela permitida pela META.
     if (_sociaisAno === 'todos') {
       var anos = {}
       _sociaisRows.forEach(function(r) { (r.anos || []).forEach(function(a) { anos[a] = 1 }) })
       _sociaisAnosVistos = Object.keys(anos).sort().reverse()
-      var sel = document.getElementById('sociais-ano')
-      var html = '<option value="todos">Todos os anos</option>'
-      _sociaisAnosVistos.forEach(function(a) { html += '<option value="' + a + '">' + a + '</option>' })
-      sel.innerHTML = html
-      sel.value = _sociaisAno
     }
+    var lista = _sociaisAnosVistos || sociaisAnosPossiveis(meta)
+    if (_sociaisAno !== 'todos' && lista.indexOf(_sociaisAno) < 0) lista = [_sociaisAno].concat(lista)
+    var selAno = document.getElementById('sociais-ano')
+    var htmlAnos = '<option value="todos">Todos os anos</option>'
+    lista.forEach(function(a) { htmlAnos += '<option value="' + a + '">' + a + '</option>' })
+    selAno.innerHTML = htmlAnos
+    selAno.value = _sociaisAno
 
     // Avisos da API META (fatias de ano que falharam) + janela truncada
     var avisos = (meta.avisos || []).slice()
@@ -13959,7 +13984,8 @@ function sociaisRender() {
       : ''
     var negoc = r.prop_final != null
       ? '<div style="font-weight:700;color:#1a3c5e">' + sociaisFmtEur(r.prop_final) + ' ' + deltaTxt + '</div>'
-        + '<div style="font-size:.7rem;color:#9ca3af">pedido ' + sociaisFmtEur(r.preco_pedido) + ' · ' + sociaisFmtData(r.prop_final_data) + '</div>'
+        + '<div style="font-size:.7rem;color:#9ca3af">pedido ' + sociaisFmtEur(r.preco_pedido) + ' · ' + sociaisFmtData(r.prop_final_data)
+          + (r.fracoes && r.prop_final_ref && r.prop_final_ref !== r.ref ? ' · ' + sociaisEsc(r.prop_final_ref) : '') + '</div>'
         + comTxt
         + '<div style="margin-top:3px">' + sociaisBadgeEstado(r.estado) + '</div>'
       : '<div style="color:#9ca3af">—</div><div style="margin-top:3px">' + sociaisBadgeEstado(r.estado) + '</div>'
@@ -13967,7 +13993,9 @@ function sociaisRender() {
     html += '<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="sociaisToggle(' + i + ')" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'
       + '<td style="padding:10px 14px">'
         + '<div style="font-weight:700;color:#1a3c5e">' + sociaisEsc(r.ref)
-        + (r.semMatch ? ' <span style="font-size:.66rem;color:#b45309;font-weight:600">sem ficha eGO</span>' : '') + '</div>'
+        + (r.semMatch ? ' <span style="font-size:.66rem;color:#b45309;font-weight:600">sem ficha eGO</span>' : '')
+        + (r.fracoes ? ' <span style="font-size:.64rem;color:#6d28d9;background:#f5f3ff;border-radius:20px;padding:1px 7px;font-weight:700" title="Empreendimento: a campanha usa a referência-mãe, mas o funil está nas fichas das fracções (FH…_XX). Os números somam todas.">' + r.fracoes + ' fracções</span>' : '')
+        + '</div>'
         + '<div style="font-size:.72rem;color:#6b7280;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + sociaisEsc(r.titulo) + '</div>'
       + '</td>'
       + '<td style="padding:10px;text-align:center;white-space:nowrap">' + sociaisFmtData(r.inicio)
@@ -14064,7 +14092,7 @@ function sociaisToggle(i) {
 function sociaisExportCsv() {
   var cols = ['ref', 'titulo', 'primeira_campanha', 'dias_ativos', 'dias_calendario', 'n_campanhas', 'custo_eur',
               'leads_ego', 'leads_meta', 'contactados', 'visitas', 'visitas_todas_origens', 'propostas', 'proposta_final_eur',
-              'preco_pedido_eur', 'negociacao_pct', 'estado_proposta', 'primeira_aceite', 'dias_ate_1a_aceite',
+              'preco_pedido_eur', 'negociacao_pct', 'proposta_final_ficha', 'fracoes', 'estado_proposta', 'primeira_aceite', 'dias_ate_1a_aceite',
               'comissao_eur', 'comissao_fonte', 'comissao_pct_usada', 'comissao_data', 'consultor']
   function cel(v) {
     if (v == null) return ''
@@ -14076,7 +14104,7 @@ function sociaisExportCsv() {
     return [r.ref, r.titulo, r.inicio, r.dias_ativos, r.dias_calendario, r.n_campanhas,
             (r.spend || 0).toFixed(2), r.leads, r.leads_meta, r.contactados, r.visitas, r.visitas_todas, r.propostas,
             r.prop_final != null ? r.prop_final : '', r.preco_pedido != null ? r.preco_pedido : '',
-            r.delta_pct != null ? r.delta_pct.toFixed(2) : '', r.estado, r.primeira_aceite || '',
+            r.delta_pct != null ? r.delta_pct.toFixed(2) : '', r.prop_final_ref || '', r.fracoes || '', r.estado, r.primeira_aceite || '',
             r.dias_ate_aceite != null ? r.dias_ate_aceite : '',
             com != null ? com.eur.toFixed(2) : '',
             com != null ? (com.real ? 'eGO' : 'estimativa') : '',
