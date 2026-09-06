@@ -3304,7 +3304,7 @@ finInit();
 // ═══════════════════════════════════════════════════════════════
 //  KPIs MENSAIS — scorecard consultor × KPI (mês / YTD / desvio)
 // ═══════════════════════════════════════════════════════════════
-var kpiState = { year: '2026' };
+var kpiState = { year: '2026', month: null, cons: [] };
 var KPI_SIM_TARGET = 20000;
 
 function kpiSimTargets(netAnual, prop) {
@@ -3358,6 +3358,14 @@ function kpiInit(){
   setTimeout(kpiRender,0);
 }
 
+function kpiToggleCons(name){
+  if(name==='__ALL__'){ kpiState.cons=[]; kpiRender(); return; }
+  var i=kpiState.cons.indexOf(name);
+  if(i>=0) kpiState.cons.splice(i,1); else kpiState.cons.push(name);
+  kpiRender();
+}
+function kpiSetMonth(m){ kpiState.month=m; kpiRender(); }
+
 function kpiRender(){
   var sec=document.getElementById('kpi-matrix-content');
   if(!sec) return;
@@ -3368,72 +3376,88 @@ function kpiRender(){
   });
   var years=Object.keys(ySet).sort();
   var now=new Date();
-  var curMo=(yr===String(now.getFullYear()))?now.getMonth()+1:12;
+  var maxMo=(yr===String(now.getFullYear()))?now.getMonth()+1:12;
+  var curMo=(kpiState.month&&kpiState.month>=1&&kpiState.month<=maxMo)?kpiState.month:maxMo;
   var curYM=yr+'-'+(curMo<10?'0':'')+curMo;
   var ytdMonths=[];
   for(var m=1;m<=curMo;m++) ytdMonths.push(yr+'-'+(m<10?'0':'')+m);
-  // Proration: days elapsed in year / total days (precise, not full months)
+  // Proration: days elapsed até ao mês selecionado / total dias do ano
   var yrStart=new Date(Number(yr),0,1);
   var yrEnd=new Date(Number(yr),11,31);
-  var cutoff=(yr===String(now.getFullYear()))?now:yrEnd;
+  var cutoff=(curMo===maxMo&&yr===String(now.getFullYear()))?now:new Date(Number(yr),curMo,0);
   var daysElapsed=Math.round((cutoff-yrStart)/(1000*60*60*24))+1;
   var daysTotal=Math.round((yrEnd-yrStart)/(1000*60*60*24))+1;
   var yearProp=daysElapsed/daysTotal;
   var targets=kpiSimTargets(KPI_SIM_TARGET,yearProp);
 
+  var consList=kpiState.cons.length?ACTIVE_CONS.filter(function(c){return kpiState.cons.indexOf(c)>=0;}):ACTIVE_CONS;
+
   var h='';
-  // Year pills
-  h+='<div style="padding:18px 24px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
-  h+='<span style="font-size:.8rem;font-weight:600;color:#64748b">Ano</span>';
+  // Ano pills
+  h+='<div style="padding:16px 24px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+  h+='<span style="font-size:.8rem;font-weight:600;color:#64748b;min-width:58px">Ano</span>';
   years.forEach(function(y){
     var sel=y===yr;
-    h+='<button onclick="kpiState.year=\''+y+'\';kpiRender()" style="padding:5px 14px;border-radius:20px;border:1.5px solid '+(sel?'#2563eb':'#e2e8f0')+';background:'+(sel?'#2563eb':'#fff')+';color:'+(sel?'#fff':'#475569')+';font-size:.8rem;font-weight:600;cursor:pointer">'+y+'</button>';
+    h+='<button onclick="kpiState.year=\''+y+'\';kpiState.month=null;kpiRender()" style="padding:5px 14px;border-radius:20px;border:1.5px solid '+(sel?'#2563eb':'#e2e8f0')+';background:'+(sel?'#2563eb':'#fff')+';color:'+(sel?'#fff':'#475569')+';font-size:.8rem;font-weight:600;cursor:pointer">'+y+'</button>';
   });
   h+='</div>';
-  h+='<div style="padding:6px 24px 16px;font-size:.75rem;color:#94a3b8">Mês atual: <b style="color:#374151">'+MO_NAMES[curMo-1]+' '+yr+'</b> · Desvio face a meta de <b style="color:#374151">€'+KPI_SIM_TARGET.toLocaleString('pt-PT')+'/ano</b> · Meta à data: <b style="color:#374151">'+Math.round(yearProp*100)+'% do ano</b> ('+daysElapsed+' dias)</div>';
 
-  // Table
-  h+='<div style="overflow-x:auto;padding:0 16px 24px">';
-  h+='<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem">';
-  // Header row 1
-  h+='<thead><tr style="background:#f8fafc">';
-  h+='<th rowspan="2" style="padding:10px 14px;text-align:left;font-weight:700;color:#374151;border-bottom:2px solid #e2e8f0;border-right:2px solid #e2e8f0;position:sticky;left:0;background:#f8fafc;z-index:2;white-space:nowrap">Consultor</th>';
-  KPI_COLS.forEach(function(kc){
-    h+='<th colspan="3" style="padding:8px 4px;text-align:center;font-weight:700;color:'+kc.color+';border-bottom:1px solid #e2e8f0;border-right:2px solid #e2e8f0;font-size:.78rem;background:#f8fafc">'+kc.label+'</th>';
+  // Mês pills
+  h+='<div style="padding:8px 24px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+  h+='<span style="font-size:.8rem;font-weight:600;color:#64748b;min-width:58px">Mês</span>';
+  for(var mi=1;mi<=maxMo;mi++){
+    var selm=mi===curMo;
+    h+='<button onclick="kpiSetMonth('+mi+')" style="padding:5px 12px;border-radius:20px;border:1.5px solid '+(selm?'#2563eb':'#e2e8f0')+';background:'+(selm?'#2563eb':'#fff')+';color:'+(selm?'#fff':'#475569')+';font-size:.78rem;font-weight:600;cursor:pointer">'+MO_NAMES[mi-1]+'</button>';
+  }
+  h+='</div>';
+
+  // Consultor pills
+  h+='<div style="padding:8px 24px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+  h+='<span style="font-size:.8rem;font-weight:600;color:#64748b;min-width:58px">Consultor</span>';
+  var allSel=kpiState.cons.length===0;
+  h+='<button onclick="kpiToggleCons(\'__ALL__\')" style="padding:5px 14px;border-radius:20px;border:1.5px solid '+(allSel?'#2563eb':'#e2e8f0')+';background:'+(allSel?'#2563eb':'#fff')+';color:'+(allSel?'#fff':'#475569')+';font-size:.78rem;font-weight:600;cursor:pointer">Todos</button>';
+  ACTIVE_CONS.forEach(function(c){
+    var sel=kpiState.cons.indexOf(c)>=0;
+    h+='<button onclick="kpiToggleCons(\''+c.replace(/'/g,"\\'")+'\')" style="padding:5px 12px;border-radius:20px;border:1.5px solid '+(sel?'#2563eb':'#e2e8f0')+';background:'+(sel?'#2563eb':'#fff')+';color:'+(sel?'#fff':'#475569')+';font-size:.78rem;font-weight:600;cursor:pointer">'+c+'</button>';
   });
-  h+='</tr>';
-  // Header row 2 — sub-columns
-  h+='<tr style="background:#f8fafc">';
+  h+='</div>';
+
+  h+='<div style="padding:8px 24px 14px;font-size:.75rem;color:#94a3b8">Mês selecionado: <b style="color:#374151">'+MO_NAMES[curMo-1]+' '+yr+'</b> · Desvio face a meta de <b style="color:#374151">€'+KPI_SIM_TARGET.toLocaleString('pt-PT')+'/ano</b> · Meta à data: <b style="color:#374151">'+Math.round(yearProp*100)+'% do ano</b> ('+daysElapsed+' dias)</div>';
+
+  // Table — 1 coluna por KPI, com Mês / YTD / Desvio empilhados na vertical (sem scroll horizontal)
+  h+='<div style="padding:0 16px 24px">';
+  h+='<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.78rem;table-layout:auto">';
+  h+='<thead><tr style="background:#f8fafc">';
+  h+='<th style="padding:8px 10px;text-align:left;font-weight:700;color:#374151;border-bottom:2px solid #e2e8f0;border-right:2px solid #e2e8f0;white-space:nowrap">Consultor</th>';
   KPI_COLS.forEach(function(kc){
-    ['Mês','YTD','± Desvio'].forEach(function(sub,si){
-      h+='<th style="padding:5px 5px;text-align:center;font-size:.68rem;font-weight:600;color:#94a3b8;border-bottom:2px solid #e2e8f0'+(si===2?';border-right:2px solid #e2e8f0':'')+';white-space:nowrap;min-width:48px">'+sub+'</th>';
-    });
+    h+='<th style="padding:6px 4px;text-align:center;font-weight:700;color:'+kc.color+';border-bottom:2px solid #e2e8f0;border-right:1px solid #e2e8f0;font-size:.7rem;min-width:72px">'+kc.label+'</th>';
   });
   h+='</tr></thead><tbody>';
 
-  // Consultant rows
-  ACTIVE_CONS.forEach(function(cons,ci){
+  // Consultant rows — cada célula: Mês / YTD / Desvio em 3 linhas
+  consList.forEach(function(cons,ci){
     var bg=ci%2===0?'#fff':'#fafafa';
     h+='<tr style="background:'+bg+';">';
-    h+='<td style="padding:10px 14px;font-weight:700;color:#1e293b;white-space:nowrap;position:sticky;left:0;background:'+bg+';border-right:2px solid #e2e8f0;z-index:1;border-bottom:1px solid #f1f5f9">'+cons+'</td>';
+    h+='<td style="padding:6px 10px;font-weight:700;color:#1e293b;white-space:nowrap;border-right:2px solid #e2e8f0;border-bottom:1px solid #f1f5f9">'+cons+'</td>';
     KPI_COLS.forEach(function(kc){
       var moVal=kpiSum(kc.src,kc.field,cons,[curYM]);
       var ytdVal=kpiSum(kc.src,kc.field,cons,ytdMonths);
       var tgt=(targets&&targets[kc.id]!=null)?targets[kc.id]:null;
       var dev=(ytdVal!==null&&tgt!==null)?ytdVal-tgt:null;
       var pct=(dev!==null&&tgt>0)?dev/tgt:null;
-      // Mês
-      h+='<td style="padding:7px 5px;text-align:center;font-weight:600;color:'+(moVal?kc.color:'#e2e8f0')+';border-bottom:1px solid #f1f5f9">'+(moVal!==null?Math.round(moVal*10)/10:'—')+'</td>';
-      // YTD
-      h+='<td style="padding:7px 5px;text-align:center;font-weight:700;color:'+(ytdVal?kc.color:'#e2e8f0')+';border-bottom:1px solid #f1f5f9">'+(ytdVal!==null?Math.round(ytdVal*10)/10:'—')+'</td>';
-      // Desvio
-      var dc='#94a3b8', ds='—', dbg='transparent';
+      var dc='#cbd5e1', ds='—';
       if(dev!==null){
-        var up=dev>=0; dc=up?'#16a34a':'#dc2626'; dbg=up?'#f0fdf4':'#fef2f2';
+        var up=dev>=0; dc=up?'#16a34a':'#dc2626';
         ds=(up?'▲ +':'▼ ')+Math.round(Math.abs(dev)*10)/10;
-        if(pct!==null) ds+='<br><span style="font-size:.63rem;opacity:.75">'+Math.round(Math.abs(pct)*100)+'%</span>';
+        if(pct!==null) ds+=' ('+Math.round(Math.abs(pct)*100)+'%)';
       }
-      h+='<td style="padding:7px 5px;text-align:center;font-weight:700;font-size:.78rem;color:'+dc+';background:'+dbg+';border-right:2px solid #e2e8f0;border-bottom:1px solid #f1f5f9">'+ds+'</td>';
+      h+='<td style="padding:4px 4px;text-align:center;border-right:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;line-height:1.3">';
+      h+='<div style="font-size:.6rem;color:#94a3b8">Mês</div>';
+      h+='<div style="font-weight:600;color:'+(moVal?kc.color:'#e2e8f0')+'">'+(moVal!==null?Math.round(moVal*10)/10:'—')+'</div>';
+      h+='<div style="font-size:.6rem;color:#94a3b8;margin-top:2px">YTD</div>';
+      h+='<div style="font-weight:700;color:'+(ytdVal?kc.color:'#e2e8f0')+'">'+(ytdVal!==null?Math.round(ytdVal*10)/10:'—')+'</div>';
+      h+='<div style="margin-top:2px;font-weight:700;font-size:.65rem;color:'+dc+'">'+ds+'</div>';
+      h+='</td>';
     });
     h+='</tr>';
   });
@@ -3441,12 +3465,10 @@ function kpiRender(){
   // Meta row
   if(targets){
     h+='<tr style="background:#fffbeb;border-top:2px solid #fde68a">';
-    h+='<td style="padding:8px 14px;font-weight:600;color:#92400e;font-size:.75rem;white-space:nowrap;position:sticky;left:0;background:#fffbeb;border-right:2px solid #e2e8f0;z-index:1">Meta YTD<br><span style="font-size:.63rem;color:#a16207">simulador €'+KPI_SIM_TARGET.toLocaleString('pt-PT')+'</span></td>';
+    h+='<td style="padding:6px 10px;font-weight:600;color:#92400e;font-size:.7rem;white-space:nowrap;border-right:2px solid #e2e8f0">Meta YTD<br><span style="font-size:.6rem;color:#a16207">simulador €'+KPI_SIM_TARGET.toLocaleString('pt-PT')+'</span></td>';
     KPI_COLS.forEach(function(kc){
       var tgt=targets[kc.id];
-      h+='<td style="padding:7px 5px;text-align:center;color:#a16207;font-size:.73rem">—</td>';
-      h+='<td style="padding:7px 5px;text-align:center;font-weight:700;color:#92400e;font-size:.78rem">'+(tgt!=null?Math.round(tgt*10)/10:'—')+'</td>';
-      h+='<td style="padding:7px 5px;border-right:2px solid #fde68a;background:#fffbeb"></td>';
+      h+='<td style="padding:4px 4px;text-align:center;font-weight:700;color:#92400e;font-size:.72rem;border-right:1px solid #fde68a">'+(tgt!=null?Math.round(tgt*10)/10:'—')+'</td>';
     });
     h+='</tr>';
   }
